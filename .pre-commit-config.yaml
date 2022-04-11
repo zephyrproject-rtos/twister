@@ -1,0 +1,34 @@
+repos:
+  - repo: https://github.com/pycqa/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        files: ctf/
+        stages: [ commit ]
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        files: ctf/
+        stages: [ commit ]
+        args: ["--profile", "black", "--filter-files"]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: trailing-whitespace
+      - id: double-quote-string-fixer
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        files: ctf/
+        stages: [ commit ]
+        args: ["--profile", "black", "--filter-files"]
+
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+    # rev: 'v0.931'
+    # hooks:
+      # - id: mypy
