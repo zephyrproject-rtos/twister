@@ -1,0 +1,151 @@
+***** delaying boot 500ms (per build configuration) *****
+*** Booting Zephyr OS build zephyr-v3.0.0-2155-g4e9d9f2ef7a1  (delayed boot 500ms) ***
+Running test suite common
+===================================================================
+START - test_bootdelay
+ PASS - test_bootdelay in 0.0 seconds
+===================================================================
+START - test_irq_offload
+ PASS - test_irq_offload in 0.0 seconds
+===================================================================
+START - test_nested_irq_offload
+ SKIP - test_nested_irq_offload in 0.0 seconds
+===================================================================
+START - test_byteorder_memcpy_swap
+ PASS - test_byteorder_memcpy_swap in 0.0 seconds
+===================================================================
+START - test_byteorder_mem_swap
+ PASS - test_byteorder_mem_swap in 0.0 seconds
+===================================================================
+START - test_sys_get_be64
+ PASS - test_sys_get_be64 in 0.0 seconds
+===================================================================
+START - test_sys_put_be64
+ PASS - test_sys_put_be64 in 0.0 seconds
+===================================================================
+START - test_sys_get_be48
+ PASS - test_sys_get_be48 in 0.0 seconds
+===================================================================
+START - test_sys_put_be48
+ PASS - test_sys_put_be48 in 0.0 seconds
+===================================================================
+START - test_sys_get_be32
+ PASS - test_sys_get_be32 in 0.0 seconds
+===================================================================
+START - test_sys_put_be32
+ PASS - test_sys_put_be32 in 0.0 seconds
+===================================================================
+START - test_sys_get_be24
+ PASS - test_sys_get_be24 in 0.0 seconds
+===================================================================
+START - test_sys_put_be24
+ PASS - test_sys_put_be24 in 0.0 seconds
+===================================================================
+START - test_sys_get_be16
+ PASS - test_sys_get_be16 in 0.0 seconds
+===================================================================
+START - test_sys_put_be16
+ PASS - test_sys_put_be16 in 0.0 seconds
+===================================================================
+START - test_sys_get_le16
+ PASS - test_sys_get_le16 in 0.0 seconds
+===================================================================
+START - test_sys_put_le16
+ PASS - test_sys_put_le16 in 0.0 seconds
+===================================================================
+START - test_sys_get_le24
+ PASS - test_sys_get_le24 in 0.0 seconds
+===================================================================
+START - test_sys_put_le24
+ PASS - test_sys_put_le24 in 0.0 seconds
+===================================================================
+START - test_sys_get_le32
+ PASS - test_sys_get_le32 in 0.0 seconds
+===================================================================
+START - test_sys_put_le32
+ PASS - test_sys_put_le32 in 0.0 seconds
+===================================================================
+START - test_sys_get_le48
+ PASS - test_sys_get_le48 in 0.0 seconds
+===================================================================
+START - test_sys_put_le48
+ PASS - test_sys_put_le48 in 0.0 seconds
+===================================================================
+START - test_sys_get_le64
+ PASS - test_sys_get_le64 in 0.0 seconds
+===================================================================
+START - test_sys_put_le64
+ PASS - test_sys_put_le64 in 0.0 seconds
+===================================================================
+START - test_atomic
+ PASS - test_atomic in 0.0 seconds
+===================================================================
+START - test_threads_access_atomic
+ PASS - test_threads_access_atomic in 0.40 seconds
+===================================================================
+START - test_bitfield
+twiddling bits....
+ PASS - test_bitfield in 0.0 seconds
+===================================================================
+START - test_bitarray_declare
+ PASS - test_bitarray_declare in 0.0 seconds
+===================================================================
+START - test_bitarray_set_clear
+ PASS - test_bitarray_set_clear in 0.0 seconds
+===================================================================
+START - test_bitarray_alloc_free
+Testing bit array alloc and free with predefined patterns
+Testing bit array alloc and free with divisor 1
+Testing bit array alloc and free with divisor 2
+Testing bit array alloc and free with divisor 4
+Testing bit array alloc and free with divisor 8
+Testing bit array alloc and free with divisor 16
+Testing bit array alloc and free with divisor 32
+Testing bit array alloc and free with divisor 64
+Testing bit array interval alloc and free
+ PASS - test_bitarray_alloc_free in 0.0 seconds
+===================================================================
+START - test_bitarray_region_set_clear
+Testing bit array region bit tests
+Testing bit array region bit manipulations
+ PASS - test_bitarray_region_set_clear in 0.0 seconds
+===================================================================
+START - test_printk
+22 113 10000 32768 40000 22
+p 112 -10000 -32768 -40000 -22
+0x1 0x01 0x0001 0x00000001 0x0000000000000001
+0x1 0x 1 0x   1 0x       1
+42 42 0042 00000042
+-42 -42 -042 -0000042
+42 42   42       42
+42 42 0042 00000042
+255     42    abcdef        42
+68719476735 -1 18446744073709551615 ffffffffffffffff
+0xcafebabe 0xbeef 0x2a
+ PASS - test_printk in 0.0 seconds
+===================================================================
+START - test_timeout_order
+ PASS - test_timeout_order in 0.150 seconds
+===================================================================
+START - test_clock_uptime
+ PASS - test_clock_uptime in 0.40 seconds
+===================================================================
+START - test_clock_cycle_32
+ PASS - test_clock_cycle_32 in 0.30 seconds
+===================================================================
+START - test_clock_cycle_64
+ FAIL - test_clock_cycle_64 in 0.20 seconds
+===================================================================
+START - test_version
+ PASS - test_version in 0.0 seconds
+===================================================================
+START - test_multilib
+ PASS - test_multilib in 0.0 seconds
+===================================================================
+START - test_thread_context
+ PASS - test_thread_context in 0.40 seconds
+===================================================================
+START - test_errno
+ SKIP - test_errno in 0.0 seconds
+===================================================================
+ZEPHYR FATAL ERROR

@@ -1,0 +1,10 @@
+DEBUG   - DEVICE: ===================================================================
+DEBUG   - DEVICE: START - test_k_busy_wait
+DEBUG   - DEVICE: PASS - test_k_busy_wait in 0.1 seconds
+DEBUG   - DEVICE: ===================================================================
+DEBUG   - DEVICE: START - test_k_busy_wait_user
+DEBUG   - DEVICE: PASS - test_k_busy_wait_user in 0.102 seconds
+DEBUG   - DEVICE: ===================================================================
+DEBUG   - DEVICE: Test suite threads_lifecycle succeeded
+DEBUG   - DEVICE: ===================================================================
+DEBUG   - DEVICE: PROJECT EXECUTION SUCCESSFUL
