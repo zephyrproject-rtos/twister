@@ -49,15 +49,15 @@ class PlatformSpecification:
         self.supported = set(self.supported)
 
     @classmethod
-    def load_from_yaml(cls, filename: str) -> PlatformSpecification:
+    def load_from_yaml(cls, filename: str | Path) -> PlatformSpecification:
         """Load platform from yaml file."""
         with open(filename, 'r', encoding='UTF-8') as file:
             data: dict = yaml.safe_load(file)
-        return cls.from_dict(**data)
+        return cls.from_dict(data)
 
     @classmethod
     def from_dict(cls, data: dict) -> PlatformSpecification:
-        if testing := data.pop('testing'):
+        if testing := data.pop('testing', None):
             testing = Testing(**testing)
             data['testing'] = testing
         return PlatformSpecification(**data)

@@ -1,0 +1,23 @@
+identifier: mps2_an521_remote
+name: ARM V2M MPS2-AN521_remote
+type: mcu
+arch: arm
+ram: 4096
+flash: 4096
+simulation: qemu
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+supported:
+  - clock_controller
+  - eeprom
+  - gpio
+  - i2c
+  - pinmux
+  - serial
+testing:
+  default: true
+  only_tags:
+    - arm
+    - fpu
