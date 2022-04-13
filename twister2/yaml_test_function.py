@@ -57,14 +57,14 @@ class YamlTestCase:
 
     def __call__(
         self,
-        twister_config: TwisterConfig,
+        request: pytest.FixtureRequest,
         dut: DeviceAbstract,
         log_parser: LogParserAbstract,
         subtests,
         *args, **kwargs
-     ):
+    ):
         """Method called by pytest when it runs test."""
-        if self.spec.build_only or twister_config.build_only:
+        if self.spec.build_only or request.config.twister_config.build_only:
             # do not run test for build only
             return
 
