@@ -15,6 +15,7 @@ import pytest
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.log_parser.log_parser_abstract import LogParserAbstract, SubTestStatus
+from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_specification import YamlTestSpecification
 
 logger = logging.getLogger(__name__)
@@ -54,16 +55,25 @@ class YamlTestCase:
         self.spec = spec
         self.__doc__ = description
 
-    def __call__(self, dut: DeviceAbstract, log_parser: LogParserAbstract, subtests, *args, **kwargs):
+    def __call__(
+        self,
+        twister_config: TwisterConfig,
+        dut: DeviceAbstract,
+        log_parser: LogParserAbstract,
+        subtests,
+        *args, **kwargs
+     ):
         """Method called by pytest when it runs test."""
-        logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
+        if self.spec.build_only or twister_config.build_only:
+            # do not run test for build only
+            return
 
-        subtests_list = log_parser.parse(timeout=self.spec.timeout)
+        logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
 
         # using subtests fixture to log single C test
         # https://pypi.org/project/pytest-subtests/
-        for i, test in enumerate(subtests_list):
-            with subtests.test(msg=test.testname, i=i):
+        for test in log_parser.parse(timeout=self.spec.timeout):
+            with subtests.test(msg=test.testname):
                 if test.result == SubTestStatus.SKIP:
                     pytest.skip('Skipped on runtime')
                     continue

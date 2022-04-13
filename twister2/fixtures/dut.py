@@ -24,7 +24,10 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstr
         twister_config=twister_config,
         hardware_map=twister_config.get_hardware_map(platform=function.spec.platform)
     )
-    device.connect()
-    device.flash(build_dir=build_dir, timeout=function.spec.timeout)
+
+    if not twister_config.build_only:
+        device.connect()
+        device.flash(build_dir=build_dir, timeout=function.spec.timeout)
     yield device
-    device.disconnect()
+    if not twister_config.build_only:
+        device.disconnect()
