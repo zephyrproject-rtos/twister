@@ -15,7 +15,6 @@ import pytest
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.log_parser.log_parser_abstract import LogParserAbstract, SubTestStatus
-from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_specification import YamlTestSpecification
 
 logger = logging.getLogger(__name__)
