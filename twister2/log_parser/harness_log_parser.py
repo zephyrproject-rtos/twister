@@ -34,7 +34,7 @@ class HarnessLogParser(LogParserAbstract):
         self.detected_suite_names: list[str] = []
         self.fail_on_fault = fail_on_fault
 
-    def parse(self, timeout: float = 60) -> Generator[SubTestResult, None, None] | None:
+    def parse(self, timeout: float = 60) -> Generator[SubTestResult, None, None]:
         """Parse logs and return list of tests with statuses."""
         end_time = time.time() + timeout
         while self.stream:

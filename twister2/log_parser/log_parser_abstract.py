@@ -17,7 +17,7 @@ class LogParserAbstract(abc.ABC):
         return f'{self.__class__.__name__}()'
 
     @abc.abstractmethod
-    def parse(self, timeout: float = 60) -> Generator[SubTestResult, None, None] | None:
+    def parse(self, timeout: float = 60) -> Generator[SubTestResult, None, None]:
         """Return results of subtests."""
 
 
