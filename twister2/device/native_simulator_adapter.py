@@ -16,13 +16,17 @@ from twister2.exceptions import TwisterFlashException
 logger = logging.getLogger(__name__)
 
 
-class SimulatorAdapter(DeviceAbstract):
+class NativeSimulatorAdapter(DeviceAbstract):
     """Run tests with zephyr.exe."""
 
     def __init__(self, twister_config, hardware_map: HardwareMap | None = None, **kwargs):
         super().__init__(twister_config, hardware_map, **kwargs)
         self._process = None
         self.queue: Queue = Queue()
+
+    @staticmethod
+    def get_command(build_dir: Path | str) -> str:
+        return str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())
 
     def connect(self, timeout: float = 60):
         pass
@@ -37,7 +41,7 @@ class SimulatorAdapter(DeviceAbstract):
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         """Run simulation."""
-        command: str = str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())
+        command: str = self.get_command(build_dir)
         self.log_file = Path(build_dir) / 'device.log'
         logger.info('Flashing device')
         logger.info('Flashing command: %s', command)

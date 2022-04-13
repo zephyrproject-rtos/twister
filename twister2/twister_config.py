@@ -83,3 +83,9 @@ class TwisterConfig:
             if hardware.connected is True
         )
         return next(hardware_map_iter, None)
+
+    def get_platform(self, name: str) -> PlatformSpecification:
+        for platform in self.platforms:
+            if platform.identifier == name:
+                return platform
+        raise KeyError(f'There is not platform with identifier: {name}')

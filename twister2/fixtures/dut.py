@@ -18,7 +18,16 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstr
     function = request.function
     build_dir = Path(twister_config.output_dir) / function.spec.platform / request.node.originalname.replace('.', '/')
 
-    device_type = 'hardware' if twister_config.device_testing else 'simulator'  # TODO:
+    platform = twister_config.get_platform(request.function.spec.platform)
+
+    # TODO: implement
+    if twister_config.device_testing:
+        device_type = 'hardware'
+    elif platform.type == 'native':
+        device_type = 'native'
+    else:
+        device_type = None
+
     device_class: Type[DeviceAbstract] = DeviceFactory.get_device(device_type)
     device = device_class(
         twister_config=twister_config,

@@ -27,8 +27,8 @@ class Testing:
 @dataclass
 class PlatformSpecification:
     """Store platform configuration."""
-    identifier: str = ''  # name
-    name: str = ''
+    identifier: str = ''  # platform name
+    name: str = ''  # long name
     twister: bool = True
     ram: int = 128  # in kilobytes
     flash: int = 512  # in kilobytes
