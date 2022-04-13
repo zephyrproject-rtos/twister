@@ -16,6 +16,7 @@ import yaml
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import YamlTestFunction, yaml_test_function_factory
 from twister2.yaml_test_specification import YamlTestSpecification
+from twister2.platform_specification import PlatformSpecification
 
 logger = logging.getLogger(__name__)
 
@@ -42,21 +43,35 @@ def _generate_test_variants_for_platforms(
     """Generate test variants according to provided platforms."""
     assert isinstance(twister_config, TwisterConfig)
     spec = spec.copy()
-    default_platforms = twister_config.default_platforms
 
-    allowed_platform = spec.get('allowed_platform', '').split() or default_platforms
-    platform_exclude = spec.get('platform_exclude', '').split()
+    platforms = [
+        platform for platform in twister_config.platforms
+        if platform.identifier in twister_config.default_platforms
+    ]
+
     test_name = spec['name']
-
-    logger.debug('Generating tests for %s with selected platforms %s', test_name, default_platforms)
-
-    for platform in allowed_platform:
-        if platform in platform_exclude:
-            continue
-        spec['name'] = test_name + f'[{platform}]'
+    for platform in platforms:
+        spec['name'] = f'{test_name}[{platform.identifier}]'
         spec['original_name'] = test_name
-        spec['platform'] = platform
+        spec['platform'] = platform.identifier
         yaml_test_spec = YamlTestSpecification(**spec)
+
+        if should_skip_for_platform(yaml_test_spec, platform):
+            continue
+        if should_skip_for_arch(yaml_test_spec, platform):
+            continue
+        if should_skip_for_tag(yaml_test_spec, platform):
+            continue
+        if should_skip_for_toolchain(yaml_test_spec, platform):
+            continue
+        if should_skip_for_min_flash(yaml_test_spec, platform):
+            continue
+        if should_skip_for_min_ram(yaml_test_spec, platform):
+            continue
+        # TODO:
+        # filter by build_on_all
+
+        logger.debug('Generated test %s for platform %s', test_name, platform.identifier)
         yield yaml_test_spec
 
 
@@ -116,3 +131,67 @@ def _join_strings(args: list[str]) -> str:
     # remove empty strings
     args = [arg for arg in args if args]
     return ' '.join(args)
+
+
+def _log_test_skip(test_spec: YamlTestSpecification, platform: PlatformSpecification, reason: str) -> None:
+    testcases_logger = logging.getLogger('testcases')  # it logs only to file
+    testcases_logger.info(
+        'Skipped test %s for platform %s - %s',
+        test_spec.original_name, platform.identifier, reason
+    )
+
+
+def should_skip_for_toolchain(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if not platform.toolchain:
+        return False
+    if test_spec.toolchain_allow and not test_spec.toolchain_allow & set(platform.toolchain):
+        _log_test_skip(test_spec, platform, 'platform.toolchain not in testcase.toolchain_allow')
+        return True
+    if test_spec.toolchain_exclude and test_spec.toolchain_exclude & set(platform.toolchain):
+        _log_test_skip(test_spec, platform, 'platform.toolchain in testcase.toolchain_exclude')
+        return True
+    return False
+
+
+def should_skip_for_tag(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if platform.only_tags and not set(platform.only_tags) & test_spec.tags:
+        _log_test_skip(test_spec, platform, 'testcase.tag not in platform.only_tags')
+        return True
+    if platform.ignore_tags and set(platform.ignore_tags) & test_spec.tags:
+        _log_test_skip(test_spec, platform, 'testcase.tag in platform.ignore_tags')
+        return True
+    return False
+
+
+def should_skip_for_arch(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.arch_allow and platform.arch not in test_spec.arch_allow:
+        _log_test_skip(test_spec, platform, 'platform.arch not in testcase.arch_allow')
+        return True
+    if test_spec.arch_exclude and platform.arch in test_spec.arch_exclude:
+        _log_test_skip(test_spec, platform, 'platform.arch in testcase.arch_exclude')
+        return True
+    return False
+
+
+def should_skip_for_platform(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.platform_allow and platform.identifier not in test_spec.platform_allow:
+        _log_test_skip(test_spec, platform, 'platform.identifier not in testcase.platform_allow')
+        return True
+    if test_spec.platform_exclude and platform.identifier in test_spec.platform_exclude:
+        _log_test_skip(test_spec, platform, 'platform.identifier in testcase.platform_exclude')
+        return True
+    return False
+
+
+def should_skip_for_min_ram(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.min_ram > platform.ram:
+        _log_test_skip(test_spec, platform, 'platform.ram is less than testcase.min_ram')
+        return True
+    return False
+
+
+def should_skip_for_min_flash(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.min_flash > platform.flash:
+        _log_test_skip(test_spec, platform, 'platform.flash is less than testcase.min_flash')
+        return True
+    return False

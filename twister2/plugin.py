@@ -6,7 +6,7 @@ import pytest
 
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
-from twister2.helper import configure_logging
+from twister2.log import configure_logging
 from twister2.platform_specification import get_platforms
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
