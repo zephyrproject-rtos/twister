@@ -6,7 +6,6 @@ import pytest
 
 from twister2.filter.filter_interface import FilterInterface
 from twister2.filter.slow_test_filter import SlowTestFilter
-from twister2.filter.tag_filter import TagFilter
 
 logger = logging.getLogger(__name__)
 
