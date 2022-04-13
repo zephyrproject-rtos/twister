@@ -15,12 +15,15 @@ class FilterPlugin:
 
     def __init__(self, config: pytest.Config):
         self.config = config
-        self._filters: list[FilterInterface] = [
-            SlowTestFilter(self.config),
-        ]
+        self._filters: list[FilterInterface] = []
+        self.add_filter(SlowTestFilter(self.config))
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
     def add_filter(self, filter_: FilterInterface) -> None:
         if filter_ not in self._filters:
+            logger.debug('Registered filter %s', filter_)
             self._filters.append(filter_)
 
     @pytest.hookimpl(tryfirst=True)
@@ -35,9 +38,8 @@ class FilterPlugin:
                 if filter_.filter(item):
                     deselected_items.append(item)
                     break
-                else:
-                    selected_items.append(item)
-                    break
+            else:
+                selected_items.append(item)
 
         if deselected_items:
             config.hook.pytest_deselected(items=deselected_items)
