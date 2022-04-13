@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from twister2.filter.filter_plugin import FilterPlugin
+from twister2.filter.tag_filter import TagFilter
 from twister2.helper import configure_logging
 from twister2.platform_specification import get_platforms
 from twister2.report.test_plan_csv import CsvTestPlan
@@ -166,15 +167,19 @@ def pytest_configure(config: pytest.Config):
             name='test_results'
         )
 
-    if config.getoption('tags') and not is_worker_input:
+    filter_plugin = FilterPlugin(config)
+    if config.getoption('tags'):
+        filter_plugin.add_filter(TagFilter(config))
+
+    if not is_worker_input:
         config.pluginmanager.register(
-            plugin=FilterPlugin(config),
+            plugin=filter_plugin,
             name='filter_tests'
         )
 
     logger.debug('ZEPHYR_BASE: %s', zephyr_base)
 
-    board_root = (config.getoption('board_root') or config.getini('board_root'))
+    board_root = config.getoption('board_root') or config.getini('board_root')
 
     config._platforms = get_platforms(zephyr_base, board_root)
     config.twister_config = TwisterConfig.create(config)

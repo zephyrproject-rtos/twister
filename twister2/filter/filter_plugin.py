@@ -16,10 +16,13 @@ class FilterPlugin:
 
     def __init__(self, config: pytest.Config):
         self.config = config
-        self.filters: list[FilterInterface] = [
-            TagFilter(self.config),
+        self._filters: list[FilterInterface] = [
             SlowTestFilter(self.config),
         ]
+
+    def add_filter(self, filter_: FilterInterface) -> None:
+        if filter_ not in self._filters:
+            self._filters.append(filter_)
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(
@@ -29,7 +32,7 @@ class FilterPlugin:
         deselected_items: list[pytest.Item] = []
 
         for item in items:
-            for filter_ in self.filters:
+            for filter_ in self._filters:
                 if filter_.filter(item):
                     deselected_items.append(item)
                     break
