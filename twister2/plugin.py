@@ -7,7 +7,7 @@ import pytest
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
-from twister2.platform_specification import get_platforms
+from twister2.platform_specification import search_platforms
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
 from twister2.report.test_plan_plugin import TestPlanPlugin
@@ -181,7 +181,7 @@ def pytest_configure(config: pytest.Config):
 
     board_root = config.getoption('board_root') or config.getini('board_root')
 
-    config._platforms = get_platforms(zephyr_base, board_root)
+    config._platforms = search_platforms(zephyr_base, board_root)
     config.twister_config = TwisterConfig.create(config)
 
     # register custom markers for twister

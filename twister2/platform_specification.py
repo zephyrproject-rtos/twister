@@ -47,6 +47,8 @@ class PlatformSpecification:
 
     def __post_init__(self):
         self.supported = set(self.supported)
+        if isinstance(self.testing, dict):
+            self.testing = Testing(**self.testing)
 
     @classmethod
     def load_from_yaml(cls, filename: str | Path) -> PlatformSpecification:
@@ -87,7 +89,7 @@ def validate_platforms_list(platforms: list[PlatformSpecification]) -> None:
         pytest.exit(f'There are duplicated platforms: {", ".join(duplicated)}')
 
 
-def get_platforms(zephyr_base: str, board_root: str = None) -> list[PlatformSpecification]:
+def search_platforms(zephyr_base: str, board_root: str = None) -> list[PlatformSpecification]:
     """Return list of platforms."""
     board_root_list = [
         f'{zephyr_base}/boards',

@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from twister2.platform_specification import get_platforms
+from twister2.platform_specification import search_platforms
 from twister2.scripts.hardware_map import scan
 
 
@@ -33,7 +33,7 @@ def main() -> int:
         return scan(persistent=False)
     if args.list_default_platforms:
         zephyr_base = os.environ['ZEPHYR_BASE']
-        platforms = get_platforms(zephyr_base=zephyr_base)
+        platforms = search_platforms(zephyr_base=zephyr_base)
         for platform in platforms:
             print(platform.identifier)
         return 0
