@@ -53,7 +53,7 @@ class WestBuilder(BuilderAbstract):
                 logger.info('Finished building %s for %s', self.source_dir, platform)
             else:
                 logger.error(process.stderr.decode())
-                raise TwisterBuildException('Failed building %s for %s', self.source_dir, platform)
+                raise TwisterBuildException(f'Failed building {self.source_dir} for {platform}')
 
     @staticmethod
     def _prepare_cmake_args(cmake_args: list[str]) -> str:
