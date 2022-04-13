@@ -32,7 +32,7 @@ class TwisterConfig:
         build_only: bool = config.getoption('--build-only')
         default_platforms: list[str] = config.getoption('--platform')
         board_root: list[str] = config.getoption('--board-root')
-        platforms = config._platforms
+        platforms: list[PlatformSpecification] = config._platforms
         output_dir: str = config.getoption('--outdir')
         hardware_map_file = config.getoption('--hardware-map')
         device_testing = config.getoption('--device-testing')
@@ -42,7 +42,10 @@ class TwisterConfig:
             hardware_map_list = HardwareMap.read_from_file(filename=hardware_map_file)
 
         if not default_platforms:
-            default_platforms = [platform.identifier for platform in platforms]
+            default_platforms = [
+                platform.identifier for platform in platforms
+                if platform.testing.default
+            ]
         else:
             default_platforms = list(set(default_platforms))  # remove duplicates
 

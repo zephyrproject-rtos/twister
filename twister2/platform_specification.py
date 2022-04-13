@@ -8,39 +8,59 @@ from typing import Generator
 import pytest
 import yaml
 
+from twister2.helper import string_to_set
+
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class Testing:
+    default: bool = False
+    only_tags: set[str] = field(default_factory=set)
+    ignore_tags: set[str] = field(default_factory=set)
+
+    def __post_init__(self):
+        self.only_tags = string_to_set(self.only_tags)
+        self.ignore_tags = string_to_set(self.ignore_tags)
 
 
 @dataclass
 class PlatformSpecification:
     """Store platform configuration."""
-    # https://github.com/zephyrproject-rtos/zephyr/blob/main/scripts/pylib/twister/twisterlib.py#L1601
     identifier: str = ''  # name
     name: str = ''
     twister: bool = True
     ram: int = 128  # in kilobytes
-    ignore_tags: list = field(default_factory=list)
-    only_tags: list = field(default_factory=list)
-    default: bool = False
     flash: int = 512  # in kilobytes
+    ignore_tags: list[str] = field(default_factory=list)
+    only_tags: list[str] = field(default_factory=list)
+    default: bool = False
     supported: set = field(default_factory=set)
     arch: str = ''
-    type: str = 'na'  # native, unit
-    simulation: str = 'na'  # mdb-nsim, nsim, renode, qemu, tsim, armfvp, xt-sim
-    toolchain: list = field(default_factory=list)  # supported_toolchains
-    env: list = field(default_factory=list)
-    env_satisfied: dict = True
+    type: str = 'na'  # mcu, qemu, sim, unit, native
+    simulation: str = 'na'  # qemu, simics, xt-sim, renode, nsim, mdb-nsim, tsim, armfvp
+    toolchain: list[str] = field(default_factory=list)  # supported_toolchains
+    env: list[str] = field(default_factory=list)
+    env_satisfied: bool = True
     filter_data: dict = field(default_factory=dict)
+    testing: Testing = field(default_factory=Testing)
+
+    def __post_init__(self):
+        self.supported = set(self.supported)
 
     @classmethod
     def load_from_yaml(cls, filename: str) -> PlatformSpecification:
         """Load platform from yaml file."""
         with open(filename, 'r', encoding='UTF-8') as file:
             data: dict = yaml.safe_load(file)
-            testing = data.pop('testing', None)
-            if testing:
-                data.update(testing)
-        return cls(**data)
+        return cls.from_dict(**data)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> PlatformSpecification:
+        if testing := data.pop('testing'):
+            testing = Testing(**testing)
+            data['testing'] = testing
+        return PlatformSpecification(**data)
 
 
 def discover_platforms(directory: Path) -> Generator[PlatformSpecification, None, None]:
