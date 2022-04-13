@@ -55,7 +55,7 @@ class HardwareAdapter(DeviceAbstract):
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         if not self.connection:
-            raise TwisterException('Device not connected')
+            raise TwisterException(f'Device not connected {self.hardware_map.id}')
 
         west = shutil.which('west')
         command = [
@@ -104,13 +104,13 @@ class HardwareAdapter(DeviceAbstract):
             )
         except subprocess.CalledProcessError as e:
             logger.error('Error while flashing')
-            raise TwisterFlashException('Could not flash device') from e
+            raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}') from e
         else:
             if process.returncode == 0:
                 logger.info('Finished flashing %s', build_dir)
             else:
                 logger.error(process.stderr.decode())
-                raise TwisterFlashException('Could not flash device')
+                raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
 
     def save_serial_output_to_file(self, filename: str | Path) -> None:
         """Dump serial output to file."""
