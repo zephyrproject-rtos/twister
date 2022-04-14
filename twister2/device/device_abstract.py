@@ -4,7 +4,6 @@ import abc
 import logging
 import os
 from pathlib import Path
-from threading import Lock
 from typing import Generator
 
 from twister2.device.hardware_map import HardwareMap

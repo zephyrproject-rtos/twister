@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import platform
 import re
 from pathlib import Path
@@ -105,8 +106,29 @@ def scan(persistent: bool = False) -> list[HardwareMap]:
 
 def write_to_file(filename: str | Path, hardware_map_list: list[HardwareMap]) -> None:
     """Save hardware map to file."""
+    new_hardware_map = hardware_map_list.copy()
+
+    # update existing hardware map
+    if os.path.exists(filename):
+        old_hardware_map_list = HardwareMap.read_from_file(filename)
+        for hardware in old_hardware_map_list:
+            hardware.connected = False
+            hardware.serial = None
+
+        while new_hardware_map:
+            new_hardware = new_hardware_map.pop()
+            for old_hardware in reversed(old_hardware_map_list):
+                if old_hardware.id == new_hardware.id and old_hardware.product == new_hardware.product:
+                    old_hardware.serial = new_hardware.serial
+                    old_hardware.connected = True
+                    break
+            else:
+                old_hardware_map_list.append(new_hardware)
+
+        new_hardware_map = old_hardware_map_list
+
     with open(filename, 'w', encoding='UTF-8') as file:
-        hardware_map_list_as_dict = [device.asdict() for device in hardware_map_list]
+        hardware_map_list_as_dict = [device.asdict() for device in new_hardware_map]
         yaml.dump(hardware_map_list_as_dict, file, Dumper=yaml.Dumper, default_flow_style=False)
         logger.info('Saved as %s', filename)
 
@@ -129,5 +151,5 @@ def print_hardware_map(
     print(f'| {"Platform":20} | {"ID":>20} | {"Serial devices":20} |')
     print(f'|{"-" * 22}|{"-" * 22}|{"-" * 22}|')
     for hardware in hardware_map_list:
-        print(f'| {hardware.platform:20} | {hardware.id:20} | {hardware.serial:20} |')
+        print(f'| {hardware.platform:20} | {hardware.id:20} | {hardware.serial or "":20} |')
     print()
