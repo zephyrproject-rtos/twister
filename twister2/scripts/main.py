@@ -2,7 +2,7 @@ import argparse
 import os
 
 from twister2.platform_specification import search_platforms
-from twister2.scripts.hardware_map import scan
+from twister2.scripts.hardware_map import scan, write_to_file, print_hardware_map
 
 
 def main() -> int:
@@ -28,9 +28,14 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.hardware_map_path:
-        return scan(filename=args.hardware_map_path, persistent=False)
+        hardware_map_list = scan(persistent=False)
+        write_to_file(hardware_map_list=hardware_map_list, filename=args.hardware_map_path)
+        print_hardware_map(hardware_map_list)
+        return 0
     if args.list_hardware_map:
-        return scan(persistent=False)
+        hardware_map_list = scan(persistent=False)
+        print_hardware_map(hardware_map_list)
+        return 0
     if args.list_default_platforms:
         zephyr_base = os.environ['ZEPHYR_BASE']
         platforms = search_platforms(zephyr_base=zephyr_base)
@@ -39,7 +44,6 @@ def main() -> int:
         return 0
 
     parser.print_help()
-    return 1
 
 
 if __name__ == '__main__':

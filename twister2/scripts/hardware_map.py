@@ -47,7 +47,7 @@ RUNNER_MAPPING = {
 }
 
 
-def scan(persistent: bool = False, filename: str | None = None) -> int:
+def scan(persistent: bool = False) -> list[HardwareMap]:
     """Scan for connected devices and generate hardware map."""
     hardware_map_list = []
     if persistent and platform.system() == 'Linux':
@@ -64,8 +64,8 @@ def scan(persistent: bool = False, filename: str | None = None) -> int:
     else:
         persistent_map = {}
 
-    serial_devices = list_ports.comports()
     logger.info('Scanning connected hardware...')
+    serial_devices = list_ports.comports()
 
     for device in serial_devices:
         logger.info('Found device: %s', device)
@@ -100,16 +100,34 @@ def scan(persistent: bool = False, filename: str | None = None) -> int:
         else:
             logger.warning('Unsupported device (%s): %s' % (device.manufacturer, device))
 
-        if filename:
-            with open(filename, 'w', encoding='UTF-8') as file:
-                hardware_map_list_as_dict = [device.asdict() for device in hardware_map_list]
-                yaml.dump(hardware_map_list_as_dict, file, Dumper=yaml.Dumper, default_flow_style=False)
-                logger.info('Saved as %s', filename)
-        else:
-            print()
-            print(f'| {"Platform":20} | {"ID":>20} | {"Serial devices":20} |')
-            print(f'|{"-"*22}|{"-"*22}|{"-"*22}|')
-            for hardware in hardware_map_list:
-                print(f'| {hardware.platform:20} | {hardware.id:20} | {hardware.serial:20} |')
-            print()
-        return 0
+    return hardware_map_list
+
+
+def write_to_file(filename: str | Path, hardware_map_list: list[HardwareMap]) -> None:
+    """Save hardware map to file."""
+    with open(filename, 'w', encoding='UTF-8') as file:
+        hardware_map_list_as_dict = [device.asdict() for device in hardware_map_list]
+        yaml.dump(hardware_map_list_as_dict, file, Dumper=yaml.Dumper, default_flow_style=False)
+        logger.info('Saved as %s', filename)
+
+
+def print_hardware_map(
+    hardware_map_list: list[HardwareMap],
+    filtered: list[str] | None = None,
+    connected_only: bool = False,
+    detected: bool = False
+) -> None:
+    """Print hardware devices in pretty way."""
+    # TODO: needs some work
+    if connected_only:
+        hardware_map_list = [
+            hardware for hardware in hardware_map_list
+            if hardware.connected is True
+        ]
+
+    print()
+    print(f'| {"Platform":20} | {"ID":>20} | {"Serial devices":20} |')
+    print(f'|{"-" * 22}|{"-" * 22}|{"-" * 22}|')
+    for hardware in hardware_map_list:
+        print(f'| {hardware.platform:20} | {hardware.id:20} | {hardware.serial:20} |')
+    print()
