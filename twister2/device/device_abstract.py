@@ -17,8 +17,6 @@ class DeviceAbstract(abc.ABC):
 
     def __init__(self, twister_config: TwisterConfig, hardware_map: HardwareMap | None = None, **kwargs):
         self.twister_config = twister_config
-        self.lock: Lock = Lock()
-        self.log_file: Path = Path('device.log')
         self.hardware_map: HardwareMap | None = hardware_map
 
     def __repr__(self):
