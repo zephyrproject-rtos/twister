@@ -62,3 +62,6 @@ dmypy.json
 
 *.log
 *.xml
+
+# Pycharm
+.idea/
