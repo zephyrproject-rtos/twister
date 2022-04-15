@@ -1,0 +1,8 @@
+-rrequirements.txt
+sphinx
+rinohtype
+sphinx-sizzle-theme
+sphinx-rtd-theme
+sphinx-docstring-typing
+sphinx-autodoc-typehints
+m2r2
