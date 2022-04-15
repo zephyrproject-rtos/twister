@@ -20,7 +20,7 @@ class TwisterConfig:
     output_dir: str = 'twister-out'
     board_root: list = field(default_factory=list)
     build_only: bool = False
-    default_platforms: list[str] = field(default_factory=list)
+    default_platforms: list[str] = field(default_factory=list, repr=False)
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
     device_testing: bool = False
@@ -28,14 +28,18 @@ class TwisterConfig:
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
         """Create new instance from pytest.Config."""
-        zephyr_base = config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE')
+        zephyr_base: str = (
+                config.getoption('zephyr_base')
+                or config.getini('zephyr_base')
+                or os.environ.get('ZEPHYR_BASE')
+        )
         build_only: bool = config.getoption('--build-only')
         default_platforms: list[str] = config.getoption('--platform')
         board_root: list[str] = config.getoption('--board-root')
         platforms: list[PlatformSpecification] = config._platforms
         output_dir: str = config.getoption('--outdir')
-        hardware_map_file = config.getoption('--hardware-map')
-        device_testing = config.getoption('--device-testing')
+        hardware_map_file: str = config.getoption('--hardware-map')
+        device_testing: bool = config.getoption('--device-testing')
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:

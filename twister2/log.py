@@ -7,6 +7,7 @@ import pytest
 
 
 def configure_logging(config: pytest.Config) -> None:
+    """Configure logging."""
     output_dir = config.getoption('--outdir')
     os.makedirs(output_dir, exist_ok=True)
     log_file = os.path.join(output_dir, 'twister2.log')

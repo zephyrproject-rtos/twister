@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 class HardwareAdapter(DeviceAbstract):
 
     def __init__(self, twister_config, hardware_map: HardwareMap | None = None):
+        if hardware_map is None:
+            raise TwisterException('Hardware map must be provided for hardware adapter')
         super().__init__(twister_config, hardware_map=hardware_map)
         self.board_id: str = self.hardware_map.probe_id or self.hardware_map.id
         self.connection: Optional[serial.Serial] = None
@@ -92,7 +94,7 @@ class HardwareAdapter(DeviceAbstract):
                 command.append('--')
                 command.extend(command_extra_args)
 
-        logger.info('Flashing device')
+        logger.info('Flashing device %s', self.hardware_map.id)
         logger.info('Flashing command: %s', ' '.join(command))
         try:
             process = subprocess.run(
@@ -103,7 +105,7 @@ class HardwareAdapter(DeviceAbstract):
                 env=self.env,
             )
         except subprocess.CalledProcessError as e:
-            logger.error('Error while flashing')
+            logger.error('Error while flashing device %s', self.hardware_map.id)
             raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}') from e
         else:
             if process.returncode == 0:
