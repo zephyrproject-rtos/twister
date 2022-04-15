@@ -29,9 +29,9 @@ class TwisterConfig:
     def create(cls, config: pytest.Config) -> TwisterConfig:
         """Create new instance from pytest.Config."""
         zephyr_base: str = (
-                config.getoption('zephyr_base')
-                or config.getini('zephyr_base')
-                or os.environ.get('ZEPHYR_BASE')
+            config.getoption('zephyr_base')
+            or config.getini('zephyr_base')
+            or os.environ.get('ZEPHYR_BASE')
         )
         build_only: bool = config.getoption('--build-only')
         default_platforms: list[str] = config.getoption('--platform')
