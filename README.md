@@ -94,13 +94,13 @@ $ pytest tests --tags=@tag1,@tag2
 Examples of usage:
 
 * not tag1
-  * --tags=~@tag1
+  * `--tags=~@tag1`
 * tag1 and tag2:
-  * --tags=@tag1 --tags=@tag2
+  * `--tags=@tag1 --tags=@tag2`
 * tag1 or tag2
-  * --tags=@tag1,@tag2
+  * `--tags=@tag1,@tag2`
 * (tag1 or tag2) and tag3 and not tag4
-  * --tags=@tag1,@tag2 --tags=@tag3 --tags=~@tag4
+  * `--tags=@tag1,@tag2 --tags=@tag3 --tags=~@tag4`
 
 ## Tools
 
