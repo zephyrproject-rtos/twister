@@ -2,6 +2,10 @@ class TwisterException(Exception):
     """General twister exception."""
 
 
+class TwisterConfigurationException(TwisterException):
+    """Exception for all configuration errors."""
+
+
 class YamlException(TwisterException):
     """Custom exception for error reporting."""
 

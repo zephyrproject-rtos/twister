@@ -7,7 +7,9 @@ from typing import Generator
 
 import pytest
 import yaml
+from marshmallow import fields, Schema, validate
 
+from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import string_to_set
 
 logger = logging.getLogger(__name__)
@@ -55,7 +57,12 @@ class PlatformSpecification:
         """Load platform from yaml file."""
         with open(filename, 'r', encoding='UTF-8') as file:
             data: dict = yaml.safe_load(file)
-        return cls.from_dict(data)
+        try:
+            data = PlatformSchema().load(data)
+            return cls.from_dict(data)
+        except Exception as e:
+            logger.exception('Cannot create PlatformSpecification from yaml data: %s', data)
+            raise TwisterConfigurationException('Cannot create PlatformSpecification from yaml data') from e
 
     @classmethod
     def from_dict(cls, data: dict) -> PlatformSpecification:
@@ -63,6 +70,41 @@ class PlatformSpecification:
             testing = Testing(**testing)
             data['testing'] = testing
         return PlatformSpecification(**data)
+
+
+# Using marshmallow schema definition for validation of data read from yaml
+_validate_type = validate.OneOf(
+    ['mcu', 'qemu', 'sim', 'unit', 'native']
+)
+_validate_simulation = validate.OneOf(
+    ['qemu', 'simics', 'xt-sim', 'renode', 'nsim', 'mdb-nsim', 'tsim', 'armfvp']
+)
+
+
+class TestingSchema(Schema):
+    default = fields.Bool()
+    only_tags = fields.List(fields.Str)
+    ignore_tags = fields.List(fields.Str)
+
+
+class PlatformSchema(Schema):
+    identifier = fields.Str()
+    name = fields.Str()
+    twister = fields.Bool()
+    ram = fields.Int()
+    flash = fields.Int()
+    ignore_tags = fields.List(fields.Str())
+    only_tags = fields.List(fields.Str())
+    default = fields.Bool()
+    supported = fields.List(fields.Str())
+    arch = fields.Str()
+    type = fields.Str(validate=_validate_type)
+    simulation = fields.Str(validate=_validate_simulation)
+    toolchain = fields.List(fields.Str())
+    env = fields.List(fields.Str())
+    env_satisfied = fields.Bool()
+    filter_data = fields.Dict()
+    testing = fields.Nested(TestingSchema())
 
 
 def discover_platforms(directory: Path) -> Generator[PlatformSpecification, None, None]:
