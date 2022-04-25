@@ -19,6 +19,7 @@ def testcase() -> YamlTestSpecification:
     return YamlTestSpecification(
         name='dummy_test',
         original_name='dummy_test',
+        rel_to_base_path='out_of_tree',
         platform='platform',
         path=Path('dummy_path')
     )

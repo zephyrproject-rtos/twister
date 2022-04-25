@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 from twister2.helper import string_to_set, string_to_list
 
@@ -12,7 +13,9 @@ class YamlTestSpecification:
     name: str  #: test case name plus platform
     original_name: str  #: keeps test case name without platform
     path: Path  #: path to a folder where C files are stored
+    rel_to_base_path: Path  #: path relative to zephyr base
     platform: str  #: platform name used for this test
+    build_dir: Optional[Path] = None  #: path to dir with build results
     tags: set[str] = field(default_factory=set)
     type: str = 'integration'
     filter: str = ''

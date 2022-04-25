@@ -113,6 +113,11 @@ def _read_test_specifications_from_yaml(
         spec.update(common)
         spec['name'] = test_name
         spec['path'] = Path(filepath).parent
+        try:
+            spec['rel_to_base_path'] = Path.relative_to(spec['path'], twister_config.zephyr_base)
+        except ValueError:
+            # Test not in zephyr tree
+            spec['rel_to_base_path'] = "out_of_tree"
 
         for test_spec in _generate_test_variants_for_platforms(spec, twister_config):
             yield test_spec

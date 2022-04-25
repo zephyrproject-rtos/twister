@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import Type
 
 import pytest
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstract:
     twister_config: TwisterConfig = request.config.twister_config
     function = request.function
-    build_dir = Path(twister_config.output_dir) / function.spec.platform / request.node.originalname.replace('.', '/')
+    build_dir = function.spec.build_dir
 
     platform = twister_config.get_platform(request.function.spec.platform)
 

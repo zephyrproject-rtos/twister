@@ -13,21 +13,23 @@ logger = logging.getLogger(__name__)
 
 class WestBuilder(BuilderAbstract):
 
-    def build(self, platform: str, build_dir: str | Path | None = None, **kwargs) -> None:
+    def build(self, platform: str, scenario: str, build_dir: str | Path | None = None, **kwargs) -> None:
         """
         Build Zephyr application.
 
         :param platform: board to build for with optional board revision
         :param build_dir: build directory to create or use
+        :param scenario: test scenario name
         :keyword cmake_args: list of extra cmake arguments
         """
         west = shutil.which('west')
         command = [
             west,
             'build',
+            str(self.source_dir),
             '--pristine', 'always',
             '--board', platform,
-            str(self.source_dir),
+            '--test-item', scenario
         ]
         if build_dir:
             command.extend(['--build-dir', str(build_dir)])
@@ -42,8 +44,9 @@ class WestBuilder(BuilderAbstract):
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=self.zephyr_base.resolve(),
-                env=self.env,
+                # FIXME: below lines are causing failures, need proper investigation
+                # cwd=self.zephyr_base.resolve(),
+                # env=self.env,
             )
         except subprocess.CalledProcessError as e:
             logger.error('Failed building %s for %s', self.source_dir, platform)

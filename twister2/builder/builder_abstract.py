@@ -26,7 +26,7 @@ class BuilderAbstract(abc.ABC):
         return env
 
     @abc.abstractmethod
-    def build(self, platform: str, build_dir: str | Path | None = None, **kwargs) -> None:
+    def build(self, platform: str, scenario: str, build_dir: str | Path | None = None, **kwargs) -> None:
         """Build Zephyr application."""
 
     @contextlib.contextmanager
