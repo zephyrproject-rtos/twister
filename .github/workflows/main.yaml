@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - poc
 
 jobs:
   tests:
@@ -20,6 +21,19 @@ jobs:
         uses: fedora-python/tox-github-action@master
         with:
           tox_env: ${{ matrix.tox_env }}
+          python-version: ${{ matrix.python-version }}
     strategy:
       matrix:
-        tox_env: [ py38, py39, py310, flake8 ]
+        tox_env: [ py38, py39, py310 ]
+
+  lint:
+    runs-on: ubuntu-latest
+    name: flake8
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run flake8
+        id: flake8
+        uses: fedora-python/tox-github-action@master
+        with:
+          tox_env: flake8
+          python-version: py38
