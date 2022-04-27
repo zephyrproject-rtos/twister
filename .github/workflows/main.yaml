@@ -21,7 +21,6 @@ jobs:
         uses: fedora-python/tox-github-action@master
         with:
           tox_env: ${{ matrix.tox_env }}
-          python-version: ${{ matrix.python-version }}
     strategy:
       matrix:
         tox_env: [ py38, py39, py310 ]
@@ -36,4 +35,4 @@ jobs:
         uses: fedora-python/tox-github-action@master
         with:
           tox_env: flake8
-          python-version: py38
+          python-version: '3.8'
