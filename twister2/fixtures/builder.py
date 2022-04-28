@@ -30,10 +30,3 @@ def builder(request: pytest.FixtureRequest) -> BuilderAbstract:
         cmake_args=function.spec.extra_args,
     )
     yield builder
-
-
-def get_relative_path(path1: str, path2: str) -> str:
-    """Return relative path to other path."""
-    path1 = str(Path(path1).resolve())
-    path2 = str(Path(path2).resolve())
-    return path2.replace(path1, '')

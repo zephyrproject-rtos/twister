@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(scope='function')
 def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstract:
+    """Return device instance."""
     twister_config: TwisterConfig = request.config.twister_config
     function = request.function
     build_dir = function.spec.build_dir

@@ -15,11 +15,18 @@ class BuilderFactory:
 
     @classmethod
     def register_builder_class(cls, name: str, klass: Type[BuilderAbstract]):
+        """Register builder class."""
         if name not in cls._builders:
             cls._builders[name] = klass
 
     @classmethod
     def get_builder(cls, name: str) -> Type[BuilderAbstract]:
+        """
+        Return builder class.
+
+        :param name: builder name
+        :return: builder class
+        """
         try:
             return cls._builders[name]
         except KeyError as e:

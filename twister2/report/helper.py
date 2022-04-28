@@ -1,4 +1,8 @@
+"""
+Module contains helper function used in report package.
+"""
 import pytest
+
 from twister2.yaml_test_function import YamlTestFunction
 
 

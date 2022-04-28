@@ -16,6 +16,12 @@ class TagFilter(FilterInterface):
         self.tag_matcher: TagMatcher = TagMatcher(self.user_tags)
 
     def filter(self, item: pytest.Item) -> bool:
+        """
+        Check if test should be deselected.
+
+        :param item: pytest test item
+        :return: True if test should be deselected
+        """
         if self.user_tags:
             item_tags: set[str] = self.get_item_tags(item)
             return not self.tag_matcher.should_run_with(item_tags)
@@ -34,7 +40,10 @@ class TagFilter(FilterInterface):
 class TagMatcher:
     """Check if test item should be run or not."""
 
-    def __init__(self, tags: Sequence[str] | None = None):
+    def __init__(self, tags: Sequence[str] | None = None) -> None:
+        """
+        :param tags: list of tags selected by user
+        """
         self.selected: List[Set[str]] = []  #: store selected tags
         self.deselected: List[Set[str]] = []  #: store deselected tags
         if tags is None:
@@ -59,6 +68,10 @@ class TagMatcher:
                 self.deselected.append(exclude_tags)
 
     def should_run_with(self, tags: Set[str]) -> bool:
+        """
+        :param tags: tags assigned to test
+        :return: True if test should be executed
+        """
         results = []
         tags = set(tags)
         for selected_tags in self.selected:

@@ -6,7 +6,7 @@ import pytest
 
 
 class FilterInterface(abc.ABC):
-    """Filter tests by tag."""
+    """Filter interface."""
 
     def __init__(self, config: pytest.Config):
         self.config = config

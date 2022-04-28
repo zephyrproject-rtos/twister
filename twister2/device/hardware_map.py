@@ -9,6 +9,7 @@ import yaml
 
 @dataclass
 class HardwareMap:
+    """Class keeps configuration for connected hardware."""
     id: str
     product: str
     platform: str

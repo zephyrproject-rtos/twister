@@ -20,6 +20,7 @@ class LogParserFactory:
 
     @classmethod
     def get_parser(cls, name: str) -> Type[LogParserAbstract]:
+        """Return log parser class."""
         try:
             return cls._parsers[name]
         except KeyError as e:

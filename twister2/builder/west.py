@@ -15,7 +15,7 @@ class WestBuilder(BuilderAbstract):
 
     def build(self, platform: str, scenario: str, build_dir: str | Path | None = None, **kwargs) -> None:
         """
-        Build Zephyr application.
+        Build Zephyr application with `west`.
 
         :param platform: board to build for with optional board revision
         :param build_dir: build directory to create or use

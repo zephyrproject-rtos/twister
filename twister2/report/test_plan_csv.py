@@ -16,17 +16,21 @@ class CsvTestPlan(BaseReportWriter):
     def __init__(self, filename: str, delimiter: str = ';', quotechar: str = '"'):
         """
         :param filename: output file name
-        :param: delimiter:
-        :param quotechar:
+        :param: delimiter: CSV delimiter (default: ;)
+        :param quotechar: CSV quote char (default: ")
         """
-        self.filename = self._normalize_logfile_path(filename)
+        self.filename = self._normalize_filename_path(filename)
         self.delimiter = delimiter
         self.quotechar = quotechar
 
     def write(self, data: dict) -> None:
+        """
+        :param data: report data
+        """
         if not data or not data.get('tests'):
             logger.warning('No data to generate test plan')
             return
+
         tests = data['tests']
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w', encoding='UTF-8', newline='') as fd:

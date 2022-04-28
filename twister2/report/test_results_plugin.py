@@ -1,3 +1,6 @@
+"""
+Plugin to generate custom report for twister.
+"""
 from __future__ import annotations
 
 import platform
@@ -140,7 +143,7 @@ class TestResultsPlugin:
             return Status.PASSED
 
     def _generate_report(self, session: pytest.Session) -> dict:
-        """Return rendered report as string"""
+        """Return test report data as dictionary."""
         tests_list: list = []
         subtests_total = 0
         subtests_pass_count = 0

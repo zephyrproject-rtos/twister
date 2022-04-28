@@ -10,11 +10,18 @@ logger = logging.getLogger(__name__)
 
 
 class JsonTestPlan(BaseReportWriter):
+    """Write test plan as json file."""
 
     def __init__(self, filename: str) -> None:
-        self.filename = self._normalize_logfile_path(filename)
+        """
+        :param filename: path to file where report is saved
+        """
+        self.filename = self._normalize_filename_path(filename)
 
     def write(self, data: dict) -> None:
+        """
+        :param data: test plan data that can be serialized to json
+        """
         if not data:
             logger.warning('No data to generate test plan')
             return
