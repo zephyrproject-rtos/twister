@@ -20,6 +20,7 @@ class Testing:
     default: bool = False
     only_tags: set[str] = field(default_factory=set)
     ignore_tags: set[str] = field(default_factory=set)
+    timeout_multiplier: int = None
 
     def __post_init__(self):
         self.only_tags = string_to_set(self.only_tags)
@@ -85,6 +86,7 @@ class TestingSchema(Schema):
     default = fields.Bool()
     only_tags = fields.List(fields.Str)
     ignore_tags = fields.List(fields.Str)
+    timeout_multiplier = fields.Int()
 
 
 class PlatformSchema(Schema):
