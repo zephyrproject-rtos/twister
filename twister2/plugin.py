@@ -140,6 +140,9 @@ def pytest_configure(config: pytest.Config):
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
         )
 
+    # Export zephyr_base variable so other tools like west would also use the same one
+    os.environ['ZEPHYR_BASE'] = zephyr_base
+
     is_worker_input = hasattr(config, 'workerinput')  # xdist worker
 
     configure_logging(config)

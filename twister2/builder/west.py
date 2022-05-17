@@ -44,9 +44,6 @@ class WestBuilder(BuilderAbstract):
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                # FIXME: below lines are causing failures, need proper investigation
-                # cwd=self.zephyr_base.resolve(),
-                # env=self.env,
             )
         except subprocess.CalledProcessError as e:
             logger.error('Failed building %s for %s', self.source_dir, platform)

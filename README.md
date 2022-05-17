@@ -36,8 +36,10 @@ pytest --help
 
 Run tests:
 ```
-pytest tests/kernel/common -vv --zephyr-base=path_to_zephyr --platform=native_posix --results-json=twister-out/results.json --log-level=DEBUG
+pytest <PATH_TO_ZEPHYR>/tests/kernel/common -vv --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --results-json=twister-out/results.json --log-level=DEBUG
 ```
+
+If environmental variable ZEPHYR_BASE is set, one can omit `--zephyr-base` argument.
 
 Show what fixtures and tests would be executed but don't execute anything:
 ```
