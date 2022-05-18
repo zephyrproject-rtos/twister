@@ -1,8 +1,9 @@
 import textwrap
 
+pytest_plugins = ['pytester']
+
 
 def test_filter_plugin(testdir):
-    testdir.makeconftest('pytest_plugins = ["twister2.plugin"]')
     testdir.makepyfile(
         textwrap.dedent(
             """\
