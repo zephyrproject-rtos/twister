@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run tests
         id: test
-        uses: fedora-python/tox-github-action@master
+        uses: actions/setup-python@v2
         with:
           tox_env: ${{ matrix.tox_env }}
     strategy:
@@ -32,7 +32,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run flake8
         id: flake8
-        uses: fedora-python/tox-github-action@master
+        uses: actions/setup-python@v2
         with:
           tox_env: flake8
-          python-version: '3.8'
