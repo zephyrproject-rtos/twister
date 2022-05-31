@@ -42,7 +42,6 @@ class NativeSimulatorAdapter(DeviceAbstract):
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         """Run simulation."""
         command: str = self.get_command(build_dir)
-        self.log_file = Path(build_dir) / 'device.log'
         logger.info('Flashing device')
         logger.info('Flashing command: %s', command)
         try:
@@ -55,6 +54,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
 
             t1 = self._collect_process_output(self._process)
             t2 = self._wait_and_terminate_process(self._process, timeout=timeout)
+            logger.info('Started process %s', self._process.pid)
             t1.start()
             t2.start()
             t1.join()
@@ -66,7 +66,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
             if self._process.returncode == 0:
                 logger.info('Finished flashing %s', build_dir)
             else:
-                logger.error(self._process.stderr)
+                logger.error(self._process.stderr.read())
                 raise TwisterFlashException('Could not run simulator')
 
     def _collect_process_output(self, process: subprocess.Popen) -> threading.Thread:
@@ -76,8 +76,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 for line in iter(process.stdout.readline, b''):
                     self.queue.put(line.decode().strip())
 
-        thread = threading.Thread(target=read)
-        thread.setDaemon(True)
+        thread = threading.Thread(target=read, daemon=True)
         return thread
 
     @staticmethod
@@ -89,10 +88,9 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 time.sleep(0.1)
             if process.poll() is None:
                 process.kill()
-                logger.debug('Process terminated: %s', process.pid)
-
-        thread = threading.Thread(target=waiting)
-        thread.setDaemon(True)
+                logger.error('Process %s terminated after %s seconds', process.pid, timeout)
+                raise subprocess.TimeoutExpired
+        thread = threading.Thread(target=waiting, daemon=True)
         return thread
 
     @property
