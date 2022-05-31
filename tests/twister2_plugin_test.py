@@ -4,19 +4,9 @@ import pytest
 
 TEST_DIR = Path(__file__).parent
 
-pytest_plugins = ['pytester']
 
-
-@pytest.fixture()
-def yaml_test(testdir):
-    testdir.copy_example(TEST_DIR / 'data/testcase.yaml')
-    testdir.copy_example(TEST_DIR / 'data/device.log')
-    return testdir
-
-
-def test_twister_help(yaml_test):
-    result = yaml_test.runpytest('--help')
-    print(result.stdout)
+def test_twister_help(pytester):
+    result = pytester.runpytest('--help')
     result.stdout.fnmatch_lines_random([
         '*Twister reports:*',
         '*--testplan-csv=PATH*generate test plan in CSV format*',
@@ -31,14 +21,15 @@ def test_twister_help(yaml_test):
 
 
 @pytest.mark.skip('WIP')
-def test_twister(yaml_test):
-    testplan_file = TEST_DIR / 'twister.csv'
-    result = yaml_test.runpytest(
+def test_twister(pytester):
+    pytester.copy_example(str(TEST_DIR.joinpath('data/testcase.yaml')))
+    pytester.copy_example(str(TEST_DIR.joinpath('data/device.log')))
+    testplan_file = TEST_DIR.joinpath('twister.csv')
+    result = pytester.runpytest(
         '-v',
         f'--testplan-csv={str(testplan_file.resolve())}',
         '--zephyr-base=.'
     )
-    print(result.stdout)
     result.assert_outcomes(passed=3)
     result.stdout.fnmatch_lines_random([
         '*testcase.yaml::bluetooth.mesh.mesh_shell*qemu_cortex_m3*PASSED*',

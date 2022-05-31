@@ -1,10 +1,8 @@
 import textwrap
 
-pytest_plugins = ['pytester']
 
-
-def test_filter_plugin(testdir):
-    testdir.makepyfile(
+def test_filter_plugin(pytester):
+    pytester.makepyfile(
         textwrap.dedent(
             """\
             import pytest
@@ -30,7 +28,7 @@ def test_filter_plugin(testdir):
                 assert True
             """)
     )
-    result = testdir.runpytest(
+    result = pytester.runpytest(
         '--tags=@tag1',
         '--tags=~@tag3',
         '-v',

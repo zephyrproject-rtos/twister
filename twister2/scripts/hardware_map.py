@@ -76,7 +76,7 @@ def scan(persistent: bool = False) -> list[HardwareMap]:
             # assume endpoint 0 is the serial, skip all others
             if device.manufacturer == 'Texas Instruments' and not device.location.endswith('0'):
                 continue
-            hardware_map = HardwareMap(
+            hardware_map: HardwareMap = HardwareMap(
                 platform='unknown',
                 id=device.serial_number,
                 serial=persistent_map.get(device.device, device.device),
