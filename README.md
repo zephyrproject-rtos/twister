@@ -1,14 +1,19 @@
-# twister v2
+# Twister v2
 
 [![Run tests](https://github.com/PerMac/TwisterV2/actions/workflows/main.yaml/badge.svg?branch=poc)](https://github.com/PerMac/TwisterV2/actions/workflows/main.yaml)
 
 Pytest plugin to run Zephyr tests and collect results.
 
+## CAUTION
+
+This repository is not used in production and is still under development.
+The code for Twister which is used in Zephyr's CIs can be found [here](https://github.com/zephyrproject-rtos/zephyr/blob/main/scripts/twister).
+
 ## Installation
 
 Installation from github:
 ```
-pip install git+https://github.com/PerMac/TwisterV2.git
+pip install git+https://github.com/zephyrproject-rtos/twister.git
 ```
 
 Installation from the source:
