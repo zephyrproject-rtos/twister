@@ -28,3 +28,7 @@ class TwisterFlashException(TwisterException):
 
 class TwisterRunException(TwisterException):
     """Any exception during executing."""
+
+
+class TwisterTimeoutExpired(TwisterException):
+    """Subprocess ended due to timeout."""
