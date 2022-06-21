@@ -81,7 +81,6 @@ class NativeSimulatorAdapter(DeviceAbstract):
 
         return threading.Thread(target=_read, daemon=True)
 
-    # @staticmethod
     def _wait_and_terminate_process(self, process: subprocess.Popen, timeout: float) -> threading.Thread:
         """Create Thread which kills a process after given time."""
         def _waiting():
