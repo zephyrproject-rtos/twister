@@ -10,8 +10,7 @@ from typing import Generator
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
-from twister2.exceptions import TwisterFlashException
-
+from twister2.exceptions import TwisterFlashException, TwisterTimeoutExpired
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,8 @@ class NativeSimulatorAdapter(DeviceAbstract):
 
     def __init__(self, twister_config, hardware_map: HardwareMap | None = None, **kwargs):
         super().__init__(twister_config, hardware_map, **kwargs)
-        self._process = None
+        self._process: subprocess.Popen | None = None
+        self._process_ended_with_timeout: bool = False
         self.queue: Queue = Queue()
 
     @staticmethod
@@ -65,33 +65,34 @@ class NativeSimulatorAdapter(DeviceAbstract):
         else:
             if self._process.returncode == 0:
                 logger.info('Finished flashing %s', build_dir)
+            elif self._process_ended_with_timeout:
+                raise TwisterTimeoutExpired(f'Process {self._process.pid} terminated after {timeout} seconds')
             else:
-                logger.error(self._process.stderr.read())
-                raise TwisterFlashException('Could not run simulator')
+                if stderr := self._process.stderr.read():
+                    logger.error(stderr.decode())
+                raise TwisterFlashException(f'Could not run simulator with PID {self._process.pid}')
 
     def _collect_process_output(self, process: subprocess.Popen) -> threading.Thread:
         """Create Thread which saves a process output to a file."""
-        def read():
+        def _read():
             with process.stdout:
                 for line in iter(process.stdout.readline, b''):
                     self.queue.put(line.decode().strip())
 
-        thread = threading.Thread(target=read, daemon=True)
-        return thread
+        return threading.Thread(target=_read, daemon=True)
 
-    @staticmethod
-    def _wait_and_terminate_process(process: subprocess.Popen, timeout: float) -> threading.Thread:
+    # @staticmethod
+    def _wait_and_terminate_process(self, process: subprocess.Popen, timeout: float) -> threading.Thread:
         """Create Thread which kills a process after given time."""
-        def waiting():
+        def _waiting():
             end_time = time.time() + timeout
             while process.poll() is None and time.time() < end_time:
                 time.sleep(0.1)
             if process.poll() is None:
                 process.kill()
                 logger.error('Process %s terminated after %s seconds', process.pid, timeout)
-                raise subprocess.TimeoutExpired
-        thread = threading.Thread(target=waiting, daemon=True)
-        return thread
+                self._process_ended_with_timeout = True
+        return threading.Thread(target=_waiting, daemon=True)
 
     @property
     def out(self) -> Generator[str, None, None]:
