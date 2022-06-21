@@ -46,7 +46,6 @@ class TestResult:
         self.report = report
         self.config = config
         self.duration: float = getattr(report, 'duration', 0.0)
-        # self.message: str = report.longrepr
         self.message: str = report.longreprtext
         self.subtests: list = []
 
@@ -122,9 +121,7 @@ class TestResultsPlugin:
 
     def pytest_terminal_summary(self, terminalreporter):
         for writer in self.writers:
-            terminalreporter.write_sep(
-                '-', f'generated results report file: {writer.filename}', green=True
-            )
+            terminalreporter.write_sep('-', f'generated results report file: {writer.filename}')
 
     def _get_outcome(self, report: pytest.TestReport) -> str | None:
         if report.failed:

@@ -67,7 +67,7 @@ class TestPlanPlugin:
         # print summary to terminal
         terminalreporter.ensure_newline()
         for writer in self.writers:
-            terminalreporter.write_sep('-', f'generated testplan file: {writer.filename}', green=True)
+            terminalreporter.write_sep('-', f'generated testplan file: {writer.filename}')
 
     def _save_report(self, data: dict) -> None:
         """Loop over all writers and save report."""
