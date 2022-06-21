@@ -18,8 +18,9 @@ def configure_logging(config: pytest.Config) -> None:
         log_file = os.path.join(output_dir, f'twister2_{worker_id}.log')
 
     log_format = '%(asctime)s:%(levelname)s:%(name)s: %(message)s'
-    log_level = config.getoption('--log-level') or logging.INFO
-    log_file = config.getoption('--log-file') or log_file
+    log_level = config.getoption('--log-level') or config.getini('log_level') or logging.INFO
+    log_file = config.getoption('--log-file') or config.getini('log_file') or log_file
+    log_format = config.getini('log_cli_format') or log_format
 
     default_config = {
         'version': 1,
