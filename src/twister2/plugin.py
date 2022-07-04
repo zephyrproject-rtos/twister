@@ -134,7 +134,9 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('help'):
         return
 
-    zephyr_base = config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE')
+    zephyr_base = os.path.expanduser(
+        config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE')
+    )
     if not zephyr_base:
         pytest.exit(
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
