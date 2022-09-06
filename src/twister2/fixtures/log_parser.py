@@ -15,7 +15,7 @@ def log_parser(request: pytest.FixtureRequest, dut) -> HarnessLogParser | None:
     """Return log parser."""
     parser_name = request.function.spec.harness or 'harness'  # make harness default parser
     harness_config = request.function.spec.harness_config
-    fail_on_fault = True if 'ignore_faults' in request.function.spec.tags else False
+    fail_on_fault = False if 'ignore_faults' in request.function.spec.tags else True
 
     parser_class = LogParserFactory.get_parser(parser_name)
     yield parser_class(dut.out, harness_config=harness_config, fail_on_fault=fail_on_fault)

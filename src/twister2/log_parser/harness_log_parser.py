@@ -62,11 +62,10 @@ class HarnessLogParser(LogParserAbstract):
                 logger.info('PROJECT EXECUTION SUCCESSFUL')
                 return  # exit: tests finished
 
-            if ZEPHYR_FATAL_ERROR in line:
+            if ZEPHYR_FATAL_ERROR in line and self.fail_on_fault:
                 logger.error('ZEPHYR FATAL ERROR')
                 self.state = FAILED
-                if self.fail_on_fault:
-                    raise TwisterFatalError('Zephyr fatal error')
+                raise TwisterFatalError('Zephyr fatal error')
 
             if match := testsuite_name_re_pattern.match(line):
                 test_suite_name = match.group(1)
