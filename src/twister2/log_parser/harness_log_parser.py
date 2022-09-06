@@ -18,7 +18,7 @@ ZEPHYR_FATAL_ERROR: str = 'ZEPHYR FATAL ERROR'
 result_re_pattern: re.Pattern = re.compile(
     r'^.*(?P<result>PASS|FAIL|SKIP) - (test_)?(?P<testname>.*) in (?P<duration>[\d\.]+) seconds$'
 )
-testsuite_name_re_pattern: re.Pattern = re.compile(r'^.*Running test suite\s(?P<testsuite>.*)$')
+testsuite_name_re_pattern: re.Pattern = re.compile(r'^.*Running TESTSUITE\s(?P<testsuite>.*)$')
 
 logger = logging.getLogger(__name__)
 

@@ -28,12 +28,11 @@ def test_if_harness_log_parser_fails_on_fault():
 
 
 def test_if_harness_log_parser_not_fails_on_fault():
-    with open(DATA_DIR / 'device_log_with_fail.txt', 'r', encoding='UTF-8') as file:
+    with open(DATA_DIR / 'device_log_with_fail_dynamic_thread.txt', 'r', encoding='UTF-8') as file:
         stream = (line for line in file)
         parser = HarnessLogParser(stream=stream, fail_on_fault=False)
         sub_tests = list(parser.parse())
-        assert len(sub_tests) == 41
-        assert parser.state == 'FAILED'
-        assert parser.detected_suite_names == ['common']
-        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.SKIP]) == 2
-        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.FAIL]) == 1
+        assert len(sub_tests) == 4
+        assert parser.state == 'PASSED'
+        assert parser.detected_suite_names == ['thread_dynamic']
+        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.PASS]) == 4

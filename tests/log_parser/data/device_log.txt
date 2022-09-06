@@ -1,6 +1,6 @@
 ***** delaying boot 500ms (per build configuration) *****
 *** Booting Zephyr OS build zephyr-v3.0.0-2155-g4e9d9f2ef7a1  (delayed boot 500ms) ***
-Running test suite common
+Running TESTSUITE common
 ===================================================================
 START - test_bootdelay
  PASS - test_bootdelay in 0.0 seconds

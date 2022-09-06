@@ -1,0 +1,42 @@
+*** Booting Zephyr OS build zephyr-v3.1.0-4682-g8563744997a0  ***
+Running TESTSUITE thread_dynamic
+===================================================================
+START - test_dyn_thread_perms
+E: thread 0x20001664 (3) does not have permission on k_sem 0x20007edc
+E: permission bitmap
+E: 03 00                   |..
+E: syscall z_vrfy_k_sem_give failed check: access denied
+E: r0/a1:  0x00000000  r1/a2:  0x00000000  r2/a3:  0x00000000
+E: r3/a4:  0x00000000 r12/ip:  0x00000000 r14/lr:  0x00000000
+E:  xpsr:  0x00000000
+E: Faulting instruction address (r15/pc): 0xffffffff
+E: >>> ZEPHYR FATAL ERROR 3: Kernel oops on CPU 0
+E: Current thread: 0x20001664 (unknown)
+===== must have access denied on k_sem 0x20007edc
+ PASS - test_dyn_thread_perms in 1.005 seconds
+===================================================================
+START - test_kernel_create_dyn_user_thread
+ PASS - test_kernel_create_dyn_user_thread in 0.001 seconds
+===================================================================
+START - test_thread_index_management
+E: out of free thread indexes
+created 11 thread objects
+ PASS - test_thread_index_management in 0.007 seconds
+===================================================================
+START - test_user_create_dyn_user_thread
+ PASS - test_user_create_dyn_user_thread in 0.001 seconds
+===================================================================
+TESTSUITE thread_dynamic succeeded
+
+------ TESTSUITE SUMMARY START ------
+
+SUITE PASS - 100.00% [thread_dynamic]: pass = 4, fail = 0, skip = 0, total = 4 duration = 1.014 seconds
+ - PASS - [thread_dynamic.test_dyn_thread_perms] duration = 1.005 seconds
+ - PASS - [thread_dynamic.test_kernel_create_dyn_user_thread] duration = 0.001 seconds
+ - PASS - [thread_dynamic.test_thread_index_management] duration = 0.007 seconds
+ - PASS - [thread_dynamic.test_user_create_dyn_user_thread] duration = 0.001 seconds
+
+------ TESTSUITE SUMMARY END ------
+
+===================================================================
+PROJECT EXECUTION SUCCESSFUL
