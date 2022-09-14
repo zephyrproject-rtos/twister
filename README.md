@@ -28,7 +28,7 @@ pip install build
 python -m build --wheel
 ```
 
-## Requirements:
+## Requirements
 
 - Python >= 3.8
 - pytest >= 7.0.0
