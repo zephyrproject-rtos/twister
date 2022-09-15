@@ -5,15 +5,15 @@ import logging
 import pytest
 
 from twister2.log_parser.factory import LogParserFactory
-from twister2.log_parser.harness_log_parser import HarnessLogParser
+from twister2.log_parser.ztest_log_parser import ZtestLogParser
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
-def log_parser(request: pytest.FixtureRequest, dut) -> HarnessLogParser | None:
+def log_parser(request: pytest.FixtureRequest, dut) -> ZtestLogParser | None:
     """Return log parser."""
-    parser_name = request.function.spec.harness or 'harness'  # make harness default parser
+    parser_name = request.function.spec.harness or 'ztest'  # make ztest default parser
     harness_config = request.function.spec.harness_config
     fail_on_fault = False if 'ignore_faults' in request.function.spec.tags else True
 

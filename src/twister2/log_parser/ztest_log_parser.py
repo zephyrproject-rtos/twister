@@ -1,5 +1,5 @@
 """
-Log parser.
+Ztest log parser.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ FAILED: str = 'FAILED'
 PASSED: str = 'PASSED'
 
 
-class HarnessLogParser(LogParserAbstract):
+class ZtestLogParser(LogParserAbstract):
     """Parse Ztest output from log stream."""
 
     def __init__(self, stream: Iterator[str], *, fail_on_fault: bool = False, **kwargs):
@@ -50,7 +50,7 @@ class HarnessLogParser(LogParserAbstract):
             if not line:
                 continue
 
-            logger.debug(line)
+            logger.debug(line.rstrip())
             if PROJECT_EXECUTION_FAILED in line:
                 logger.error('PROJECT EXECUTION FAILED')
                 self.state = FAILED
