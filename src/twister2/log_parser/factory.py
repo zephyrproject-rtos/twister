@@ -4,7 +4,7 @@ import logging
 from typing import Type
 
 from twister2.log_parser.console_log_parser import ConsoleLogParser
-from twister2.log_parser.harness_log_parser import HarnessLogParser
+from twister2.log_parser.ztest_log_parser import ZtestLogParser
 from twister2.log_parser.log_parser_abstract import LogParserAbstract
 
 logger = logging.getLogger(__name__)
@@ -28,5 +28,5 @@ class LogParserFactory:
             raise KeyError(f'Parser "{name}" does not exist') from e
 
 
-LogParserFactory.register_device_class('harness', HarnessLogParser)
+LogParserFactory.register_device_class('ztest', ZtestLogParser)
 LogParserFactory.register_device_class('console', ConsoleLogParser)
