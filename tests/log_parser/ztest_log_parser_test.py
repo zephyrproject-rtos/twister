@@ -7,7 +7,7 @@ from twister2.log_parser.ztest_log_parser import ZtestLogParser
 
 
 def test_if_ztest_log_parser_returns_correct_status(resources: Path):
-    with open(resources / 'device_log.txt', encoding='UTF-8') as file:
+    with open(resources / 'ztest_log.txt', encoding='UTF-8') as file:
         parser = ZtestLogParser(stream=file, fail_on_fault=False)
         sub_tests = list(parser.parse())
         assert len(sub_tests) == 45
@@ -18,14 +18,14 @@ def test_if_ztest_log_parser_returns_correct_status(resources: Path):
 
 
 def test_if_ztest_log_parser_fails_on_fault(resources: Path):
-    with open(resources / 'device_log_with_fail.txt', 'r', encoding='UTF-8') as file:
+    with open(resources / 'ztest_log_with_fail.txt', 'r', encoding='UTF-8') as file:
         parser = ZtestLogParser(stream=file, fail_on_fault=True)
         with pytest.raises(TwisterFatalError, match='Zephyr fatal error'):
             list(parser.parse())
 
 
-def test_if_harness_log_parser_not_fails_on_fault(resources: Path):
-    with open(resources / 'device_log_with_fail_dynamic_thread.txt', 'r', encoding='UTF-8') as file:
+def test_if_ztest_log_parser_not_fails_on_fault(resources: Path):
+    with open(resources / 'ztest_log_with_fail_dynamic_thread.txt', 'r', encoding='UTF-8') as file:
         stream = (line for line in file)
         parser = ZtestLogParser(stream=stream, fail_on_fault=False)
         sub_tests = list(parser.parse())
