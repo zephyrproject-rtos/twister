@@ -76,6 +76,10 @@ class YamlTestCase:
                 if test.result == SubTestStatus.SKIP:
                     pytest.skip('Skipped on runtime')
                     continue
+                if test.result == SubTestStatus.BLOCK:
+                    pytest.skip('Blocked')
+                    continue
+
                 assert test.result == SubTestStatus.PASS, f'Subtest {test.testname} failed'
 
         assert log_parser.state == 'PASSED', 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
