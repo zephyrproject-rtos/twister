@@ -21,10 +21,12 @@ class LogParserAbstract(abc.ABC):
         """Return results of subtests."""
 
 
+# TODO: it is ztest related, should be moved to ztest parser
 class SubTestStatus(str, enum.Enum):
     PASS = 'PASS'
     FAIL = 'FAIL'
     SKIP = 'SKIP'
+    BLOCK = 'BLOCK'  # there is no `block` status in pytest, should be handled as skip
 
     def __str__(self):
         return self.name

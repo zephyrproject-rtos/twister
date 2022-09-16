@@ -16,7 +16,7 @@ PROJECT_EXECUTION_FAILED: str = 'PROJECT EXECUTION FAILED'
 ZEPHYR_FATAL_ERROR: str = 'ZEPHYR FATAL ERROR'
 
 result_re_pattern: re.Pattern = re.compile(
-    r'^.*(?P<result>PASS|FAIL|SKIP) - (test_)?(?P<testname>.*) in (?P<duration>[\d\.]+) seconds$'
+    r'^.*(?P<result>PASS|FAIL|SKIP|BLOCK) - (test_)?(?P<testname>.*) in (?P<duration>[\d\.]+) seconds$'
 )
 testsuite_name_re_pattern: re.Pattern = re.compile(r'^.*Running TESTSUITE\s(?P<testsuite>.*)$')
 
