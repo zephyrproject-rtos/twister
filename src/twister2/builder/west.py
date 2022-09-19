@@ -23,6 +23,9 @@ class WestBuilder(BuilderAbstract):
         :keyword cmake_args: list of extra cmake arguments
         """
         west = shutil.which('west')
+        if west is None:
+            raise TwisterBuildException('west not found')
+
         command = [
             west,
             'build',
