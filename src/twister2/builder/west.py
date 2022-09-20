@@ -58,4 +58,6 @@ class WestBuilder(BuilderAbstract):
     @staticmethod
     def _prepare_cmake_args(cmake_args: list[str]) -> str:
         args_joined = ' '.join([f'-D{arg}' for arg in cmake_args])
-        return f'"{args_joined}"'
+        if ' ' in args_joined:
+            return f'"{args_joined}"'
+        return f'{args_joined}'
