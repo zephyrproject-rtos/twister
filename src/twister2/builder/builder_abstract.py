@@ -13,6 +13,10 @@ class BuilderAbstract(abc.ABC):
     """Base class for builders."""
 
     def __init__(self, zephyr_base: str | Path, source_dir: str | Path):
+        """
+        :param zephyr_base: path to zephyr directory
+        :param source_dir: path to test source directory
+        """
         self.zephyr_base: Path = Path(zephyr_base)
         self.source_dir: Path = Path(source_dir)
 
