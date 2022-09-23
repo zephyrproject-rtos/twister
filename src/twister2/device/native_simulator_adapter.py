@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import asyncio.subprocess
 import logging
 import subprocess
-import threading
 import time
 from pathlib import Path
 from queue import Queue
@@ -10,9 +10,11 @@ from typing import Generator
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
-from twister2.exceptions import TwisterFlashException, TwisterTimeoutExpired
+from twister2.exceptions import TwisterFlashException
 
 logger = logging.getLogger(__name__)
+
+END_DATA = object()
 
 
 class NativeSimulatorAdapter(DeviceAbstract):
@@ -23,78 +25,86 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self._process: subprocess.Popen | None = None
         self._process_ended_with_timeout: bool = False
         self.queue: Queue = Queue()
+        self._stop_job: bool = False
 
     @staticmethod
-    def get_command(build_dir: Path | str) -> str:
-        return str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())
+    def _get_command(build_dir: Path | str) -> list[str]:
+        """
+        Return command to run.
+
+        :param build_dir: build directory
+        :return: command to run
+        """
+        return [str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())]
 
     def connect(self, timeout: float = 60):
         pass
 
+    async def _run_command(self, command: list[str], timeout: float = 60):
+        assert isinstance(command, (list, tuple, set))  # to avoid stupid and  difficult to debug mistakes
+        self._process = await asyncio.create_subprocess_exec(
+            *command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=self.env
+        )
+        logger.debug('Started subprocess with PID %s', self._process.pid)
+        end_time = time.time() + timeout
+        while not self._stop_job:
+            try:
+                line = await asyncio.wait_for(self._process.stdout.readline(), 0.1)
+            except asyncio.TimeoutError:
+                pass
+            else:
+                if line:
+                    self.queue.put(line.decode('utf-8').strip())
+                    logger.debug(line.decode('utf-8').strip())
+            if time.time() > end_time:
+                self._process_ended_with_timeout = True
+                logger.debug(f'Finished process with PID {self._process.pid} with timeout')
+                break
+
+        return await self._process.wait()
+
+    def run(self) -> None:
+        command: list[str] = self._get_command(self.build_dir)
+        logger.info('Running command: %s', command)
+        try:
+            self._loop = asyncio.new_event_loop()
+            return_code = self._loop.run_until_complete(
+                self._run_command(command, timeout=self.timeout)
+            )
+        except subprocess.SubprocessError as e:
+            logger.error('Flashing failed due to subprocess error %s', e)
+            self._exc = TwisterFlashException(e.args)
+        except FileNotFoundError as e:
+            logger.error(f'Flashing failed due to file not found: {e.filename}')
+            self._exc = TwisterFlashException(f'File not found: {e.filename}')
+        except Exception as e:
+            logger.error('Flashing failed: %s', e)
+            self._exc = TwisterFlashException(e.args)
+        else:
+            if return_code == 0:
+                logger.info('Flashing finished with success')
+            elif return_code > 0:
+                self._exc = TwisterFlashException(f'Flashing finished with errors for PID {self._process.pid}')
+        finally:
+            self.queue.put(END_DATA)
+            self.queue.task_done()
+            self._process = None
+
     def disconnect(self):
         """End subprocess."""
-        if self._process:
-            if self._process.poll() is None:
-                self._process.kill()
-                logger.debug('Process terminated: %s', self._process.pid)
-                self._process = None
-
-    def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        """Run simulation."""
-        command: str = self.get_command(build_dir)
-        logger.info('Flashing device')
-        logger.info('Flashing command: %s', command)
-        try:
-            self._process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=self.env,
-            )
-
-            t1 = self._collect_process_output(self._process)
-            t2 = self._wait_and_terminate_process(self._process, timeout=timeout)
-            logger.info('Started process %s', self._process.pid)
-            t1.start()
-            t2.start()
-            t1.join()
-            t2.join()
-        except subprocess.CalledProcessError as e:
-            logger.exception('Flashing failed due to error %s', e)
-            raise
-        else:
-            if self._process.returncode == 0:
-                logger.info('Finished flashing %s', build_dir)
-            elif self._process_ended_with_timeout:
-                raise TwisterTimeoutExpired(f'Process {self._process.pid} terminated after {timeout} seconds')
-            else:
-                if stderr := self._process.stderr.read():
-                    logger.error(stderr.decode())
-                raise TwisterFlashException(f'Could not run simulator with PID {self._process.pid}')
-
-    def _collect_process_output(self, process: subprocess.Popen) -> threading.Thread:
-        """Create Thread which saves a process output to a file."""
-        def _read():
-            with process.stdout:
-                for line in iter(process.stdout.readline, b''):
-                    self.queue.put(line.decode().strip())
-
-        return threading.Thread(target=_read, daemon=True)
-
-    def _wait_and_terminate_process(self, process: subprocess.Popen, timeout: float) -> threading.Thread:
-        """Create Thread which kills a process after given time."""
-        def _waiting():
-            end_time = time.time() + timeout
-            while process.poll() is None and time.time() < end_time:
-                time.sleep(0.1)
-            if process.poll() is None:
-                process.kill()
-                logger.error('Process %s terminated after %s seconds', process.pid, timeout)
-                self._process_ended_with_timeout = True
-        return threading.Thread(target=_waiting, daemon=True)
+        self.stop()
 
     @property
     def out(self) -> Generator[str, None, None]:
         """Return output from serial."""
-        while not self.queue.empty():
-            yield self.queue.get()
+        end_time = time.time() + self.timeout
+        while True:
+            line = self.queue.get()
+            if line == END_DATA:
+                break
+            yield line
+            if time.time() > end_time:
+                break
