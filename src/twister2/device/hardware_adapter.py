@@ -17,13 +17,12 @@ logger = logging.getLogger(__name__)
 
 class HardwareAdapter(DeviceAbstract):
 
-    def __init__(self, twister_config, hardware_map: HardwareMap | None = None):
+    def __init__(self, twister_config, hardware_map: HardwareMap | None = None) -> None:
         if hardware_map is None:
             raise TwisterException('Hardware map must be provided for hardware adapter')
         super().__init__(twister_config, hardware_map=hardware_map)
         self.board_id: str = self.hardware_map.probe_id or self.hardware_map.id
         self.connection: Optional[serial.Serial] = None
-        self.timeout = 1  # serial timeout
 
     def connect(self):
         """Open connection."""
@@ -54,17 +53,19 @@ class HardwareAdapter(DeviceAbstract):
             self.connection.close()
             self.connection = None
             logger.info('Closed serial connection for %s', self.hardware_map.serial)
+        self.stop()
 
-    def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
+    def run(self):
         if not self.connection:
-            raise TwisterException(f'Device not connected {self.hardware_map.id}')
+            self.exc = TwisterException(f'Device not connected {self.hardware_map.id}')
+            raise self.exc
 
         west = shutil.which('west')
         command = [
             west,
             'flash',
             '--skip-rebuild',
-            '--build-dir', str(build_dir),
+            '--build-dir', str(self.build_dir),
         ]
 
         if self.hardware_map.runner and self.board_id:
@@ -104,15 +105,17 @@ class HardwareAdapter(DeviceAbstract):
                 cwd=self.twister_config.zephyr_base,
                 env=self.env,
             )
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             logger.error('Error while flashing device %s', self.hardware_map.id)
-            raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}') from e
+            self.exc = TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
+            raise self.exc
         else:
             if process.returncode == 0:
-                logger.info('Finished flashing %s', build_dir)
+                logger.info('Finished flashing %s', self.build_dir)
             else:
                 logger.error(process.stderr.decode())
-                raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
+                self.exc = TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
+                raise self.exc
 
     def save_serial_output_to_file(self, filename: str | Path) -> None:
         """Dump serial output to file."""
