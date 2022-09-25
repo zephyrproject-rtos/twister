@@ -4,19 +4,31 @@ on:
   push:
     branches:
       - main
-      - poc
+      - "testing*"
   pull_request:
     branches:
       - main
-      - poc
 
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     name: Tests
+    needs: lint
     strategy:
       matrix:
-        python: [ "3.8", "3.9", "3.10" ]
+        name: [ "3.8", "3.9", "3.10" ]
+        include:
+        - name: "3.8"
+          python: "3.8"
+          tox_env: "py38"
+        - name: "3.9"
+          python: "3.9"
+          tox_env: "py39"
+        - name: "3.10"
+          python: "3.10"
+          tox_env: "py310"
+          use_coverage: true
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -24,13 +36,28 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Install packages
-        run: pip install -U tox
-      - name: Run tests
-        run: python -m tox -e py
+        run: pip install tox coverage
+      - name: Run tests without coverage
+        if: "! matrix.use_coverage"
+        run: "python -m tox -e ${{ matrix.tox_env }}"
+      - name: Run tests with coverage
+        if: "matrix.use_coverage"
+        run: "python -m tox -e ${{ matrix.tox_env }}-coverage"
+      # TODO: uncomment when Codecov is enabled for the project
+      # - name: Generate coverage report
+      #   if: "matrix.use_coverage"
+      #   run: python -m coverage xml
+      # - name: Upload coverage to Codecov
+      #   if: "matrix.use_coverage"
+      #   uses: codecov/codecov-action@v2
+      #   with:
+      #     fail_ci_if_error: true
+      #     files: ./coverage.xml
+      #     verbose: true
 
   lint:
     runs-on: ubuntu-latest
-    name: flake8
+    name: linter
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python

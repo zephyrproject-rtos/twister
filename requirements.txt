@@ -1,5 +1,6 @@
 marshmallow
 pytest>=7.0.0
+pytest-cov
 pytest-subtests
 pyyaml
 pyserial
