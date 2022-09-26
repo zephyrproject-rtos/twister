@@ -148,6 +148,7 @@ def search_platforms(zephyr_base: str, board_root: str = None) -> list[PlatformS
     for directory in board_root_list:
         logger.info('Reading platform configuration files under %s', directory)
         for platform_config in discover_platforms(Path(directory)):
+            logger.debug('Found platform: %s', platform_config.identifier)
             platforms.append(platform_config)
     validate_platforms_list(platforms)
     return platforms
