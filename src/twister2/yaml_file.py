@@ -28,7 +28,7 @@ class YamlFile(pytest.File):
         """Return a list of yaml tests."""
         twister_config = self.config.twister_config
         # read all tests from yaml file and generate pytest test functions
-        for spec in _read_test_specifications_from_yaml(self.fspath, twister_config):
+        for spec in _read_test_specifications_from_yaml(self.path, twister_config):
             test_function: YamlTestFunction = yaml_test_function_factory(spec=spec, parent=self)
             # extend xml report
             test_function.user_properties.append(('type', spec.type))
