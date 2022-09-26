@@ -1,10 +1,3 @@
-from pathlib import Path
-
-import pytest
-
-TEST_DIR = Path(__file__).parent
-
-
 def test_twister_help(pytester):
     result = pytester.runpytest('--help')
     result.stdout.fnmatch_lines_random([
@@ -20,20 +13,24 @@ def test_twister_help(pytester):
     ])
 
 
-@pytest.mark.skip('WIP')
-def test_twister(pytester):
-    pytester.copy_example(str(TEST_DIR.joinpath('data/testcase.yaml')))
-    pytester.copy_example(str(TEST_DIR.joinpath('data/device.log')))
-    testplan_file = TEST_DIR.joinpath('twister.csv')
+def test_if_pytest_discovers_twister_tests_with_default_platform(pytester, resources) -> None:
+    pytester.copy_example(str(resources))
     result = pytester.runpytest(
-        '-v',
-        f'--testplan-csv={str(testplan_file.resolve())}',
-        '--zephyr-base=.'
+        f'--zephyr-base={str(pytester.path)}',
+        '--co',
     )
-    result.assert_outcomes(passed=3)
-    result.stdout.fnmatch_lines_random([
-        '*testcase.yaml::bluetooth.mesh.mesh_shell*qemu_cortex_m3*PASSED*',
-        '*testcase.yaml::bluetooth.mesh.mesh_shell*qemu_x86*PASSED*',
-        '*testcase.yaml::bluetooth.mesh.mesh_shell*nrf51dk_nrf51422*PASSED*',
-        '*generated testplan file:*twister.csv*',
+    result.stdout.re_match_lines_random([
+        r'.*sample.basic.helloworld\[native_posix\].*',
+    ])
+
+
+def test_if_pytest_discovers_twister_tests_with_provided_platform(pytester, resources) -> None:
+    pytester.copy_example(str(resources))
+    result = pytester.runpytest(
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=qemu_cortex_m3',
+        '--co',
+    )
+    result.stdout.re_match_lines_random([
+        r'.*bluetooth.mesh.mesh_shell\[qemu_cortex_m3\].*',
     ])
