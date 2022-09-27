@@ -13,10 +13,10 @@ from typing import Generator
 import pytest
 import yaml
 
+from twister2.platform_specification import PlatformSpecification
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import YamlTestFunction, yaml_test_function_factory
 from twister2.yaml_test_specification import YamlTestSpecification
-from twister2.platform_specification import PlatformSpecification
 
 logger = logging.getLogger(__name__)
 
@@ -127,14 +127,14 @@ def _join_filters(args: list[str]) -> str:
     assert all(isinstance(arg, str) for arg in args)
     if len(args) == 1:
         return args[0]
-    args = [f'({arg})' for arg in args if args]
+    args = [f'({arg})' for arg in args if arg]
     return ' and '.join(args)
 
 
 def _join_strings(args: list[str]) -> str:
     assert all(isinstance(arg, str) for arg in args)
     # remove empty strings
-    args = [arg for arg in args if args]
+    args = [arg for arg in args if arg]
     return ' '.join(args)
 
 

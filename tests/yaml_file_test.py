@@ -1,17 +1,18 @@
 from pathlib import Path
 
 import pytest
-
-from twister2.yaml_test_specification import YamlTestSpecification
 from twister2.platform_specification import PlatformSpecification
 from twister2.yaml_file import (
+    _join_filters,
+    _join_strings,
     should_skip_for_arch,
-    should_skip_for_tag,
-    should_skip_for_platform,
-    should_skip_for_toolchain,
-    should_skip_for_min_ram,
     should_skip_for_min_flash,
+    should_skip_for_min_ram,
+    should_skip_for_platform,
+    should_skip_for_tag,
+    should_skip_for_toolchain,
 )
+from twister2.yaml_test_specification import YamlTestSpecification
 
 
 @pytest.fixture(scope='function')
@@ -19,7 +20,7 @@ def testcase() -> YamlTestSpecification:
     return YamlTestSpecification(
         name='dummy_test',
         original_name='dummy_test',
-        rel_to_base_path='out_of_tree',
+        rel_to_base_path=Path('out_of_tree'),
         platform='platform',
         path=Path('dummy_path')
     )
@@ -148,3 +149,19 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
     testcase.min_flash = 200
     platform.flash = 300
     assert should_skip_for_min_flash(testcase, platform) is False
+
+
+def test_if_join_stringas_returns_joined_strings():
+    assert _join_strings(['aaa', 'bbb']) == 'aaa bbb'
+
+
+def test_if_join_stringas_returns_joined_strings_without_empty_strings():
+    assert _join_strings(['aaa', '', 'bbb', '']) == 'aaa bbb'
+
+
+def test_if_join_filters_returns_joined_flters():
+    assert _join_filters(['aaa', 'bbb']) == '(aaa) and (bbb)'
+
+
+def test_if_join_filters_returns_joined_filters_without_empty_strings():
+    assert _join_filters(['aaa', '', '', 'bbb']) == '(aaa) and (bbb)'
