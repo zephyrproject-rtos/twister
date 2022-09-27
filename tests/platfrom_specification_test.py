@@ -1,12 +1,8 @@
-from pathlib import Path
-
 from twister2.platform_specification import PlatformSpecification
 
-DATA_DIR: Path = Path(__file__).parent / 'data'
 
-
-def test_load_platform_specification_from_yaml():
-    board_file = DATA_DIR / 'boards' / 'mps2_an521_remote.yaml'
+def test_load_platform_specification_from_yaml(resources):
+    board_file = resources.joinpath('boards', 'arm', 'mps2_an521', 'mps2_an521_remote.yaml')
     platform = PlatformSpecification.load_from_yaml(board_file)
     assert isinstance(platform, PlatformSpecification)
     assert isinstance(platform.default, bool)
