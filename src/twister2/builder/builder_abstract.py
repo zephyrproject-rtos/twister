@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-import contextlib
 import logging
 import os
 from pathlib import Path
@@ -32,13 +31,3 @@ class BuilderAbstract(abc.ABC):
     @abc.abstractmethod
     def build(self, platform: str, scenario: str, build_dir: str | Path | None = None, **kwargs) -> None:
         """Build Zephyr application."""
-
-    @contextlib.contextmanager
-    def set_directory(self, path: Path) -> None:
-        origin = Path().absolute()
-        try:
-            logger.debug('Changing directory to "%s"', path)
-            os.chdir(path)
-            yield
-        finally:
-            os.chdir(origin)
