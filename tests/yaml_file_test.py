@@ -151,11 +151,11 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
     assert should_skip_for_min_flash(testcase, platform) is False
 
 
-def test_if_join_stringas_returns_joined_strings():
+def test_if_join_strings_returns_joined_strings():
     assert _join_strings(['aaa', 'bbb']) == 'aaa bbb'
 
 
-def test_if_join_stringas_returns_joined_strings_without_empty_strings():
+def test_if_join_strings_returns_joined_strings_without_empty_strings():
     assert _join_strings(['aaa', '', 'bbb', '']) == 'aaa bbb'
 
 
