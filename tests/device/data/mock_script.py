@@ -55,6 +55,7 @@ def main() -> int:
             print(line, flush=True)
             time.sleep(args.sleep)
 
+    print('End of script', flush=True)
     print('Returns with code', args.return_code, flush=True)
     return args.return_code
 
