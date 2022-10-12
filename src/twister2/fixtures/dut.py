@@ -40,3 +40,4 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstr
     yield device
     if not twister_config.build_only:
         device.disconnect()
+        device.stop()
