@@ -1,4 +1,3 @@
-import sys
 from unittest import mock
 
 import pytest
@@ -38,7 +37,7 @@ def test_if_get_command_returns_proper_string_2(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'pyocd', '--', '--board-id', 'p_id'
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'pyocd', '--', '--board-id', 'p_id'
     ]
 
 
@@ -50,7 +49,7 @@ def test_if_get_command_returns_proper_string_3(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'nrfjprog', '--', '--dev-id', 'p_id'
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'nrfjprog', '--', '--dev-id', 'p_id'
     ]
 
 
@@ -63,7 +62,7 @@ def test_if_get_command_returns_proper_string_4(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'openocd',
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'openocd',
         '--', '--cmd-pre-init', 'hla_serial p_id'
     ]
 
@@ -77,7 +76,7 @@ def test_if_get_command_returns_proper_string_5(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'openocd',
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'openocd',
         '--', '--cmd-pre-init', 'cmsis_dap_serial p_id'
     ]
 
@@ -90,7 +89,7 @@ def test_if_get_command_returns_proper_string_6(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'jlink',
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'jlink',
         '--tool-opt=-SelectEmuBySN p_id'
     ]
 
@@ -103,6 +102,6 @@ def test_if_get_command_returns_proper_string_7(patched_which, device) -> None:
     command = device._get_command('src')
     assert isinstance(command, list)
     assert command == [
-        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner',  'stm32cubeprogrammer',
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'stm32cubeprogrammer',
         '--tool-opt=sn=p_id'
     ]
