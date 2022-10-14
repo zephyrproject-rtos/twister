@@ -18,4 +18,4 @@ def log_parser(request: pytest.FixtureRequest, dut) -> ZtestLogParser | None:
     fail_on_fault = False if 'ignore_faults' in request.function.spec.tags else True
 
     parser_class = LogParserFactory.get_parser(parser_name)
-    yield parser_class(dut.out, harness_config=harness_config, fail_on_fault=fail_on_fault)
+    yield parser_class(stream=dut.iter_stdout, harness_config=harness_config, fail_on_fault=fail_on_fault)
