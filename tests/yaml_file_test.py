@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pytest
 from twister2.platform_specification import PlatformSpecification
+from twister2.twister_config import TwisterConfig
 from twister2.yaml_file import (
+    _read_test_specifications_from_yaml,
     _join_filters,
     _join_strings,
     should_skip_for_arch,
@@ -13,6 +15,9 @@ from twister2.yaml_file import (
     should_skip_for_toolchain,
 )
 from twister2.yaml_test_specification import YamlTestSpecification
+
+
+DATA_DIR: Path = Path(__file__).parent / 'data'
 
 
 @pytest.fixture(scope='function')
@@ -29,6 +34,15 @@ def testcase() -> YamlTestSpecification:
 @pytest.fixture(scope='function')
 def platform() -> PlatformSpecification:
     return PlatformSpecification(identifier='platform_xyz')
+
+
+@pytest.fixture(scope='function')
+def twister_config(platform) -> TwisterConfig:
+    return TwisterConfig(
+        zephyr_base="dummy_path",
+        default_platforms=[platform.identifier],
+        platforms=[platform]
+    )
 
 
 def test_should_skip_for_tag_for_only_tags_positive(testcase, platform):
@@ -165,3 +179,18 @@ def test_if_join_filters_returns_joined_flters():
 
 def test_if_join_filters_returns_joined_filters_without_empty_strings():
     assert _join_filters(['aaa', '', '', 'bbb']) == '(aaa) and (bbb)'
+
+
+def test_read_test_specifications_from_yaml_common(twister_config):
+    yaml_file_path = DATA_DIR / "common" / "testcase.yaml"
+    for spec in _read_test_specifications_from_yaml(yaml_file_path, twister_config):
+        if spec.original_name == "xyz.common_merge_1":
+            assert spec.tags == {"kernel", "posix", "picolibc"}
+            assert spec.extra_configs == ["CONFIG_NEWLIB_LIBC=y", "CONFIG_POSIX_API=y"]
+            assert spec.filter == "(CONFIG_PICOLIBC_SUPPORTED) and (TOOLCHAIN_HAS_NEWLIB == 1)"
+            assert spec.min_ram == 64
+        elif spec.original_name == "xyz.common_merge_2":
+            assert spec.tags == {"kernel", "posix", "arm"}
+            assert spec.extra_configs == ["CONFIG_POSIX_API=y"]
+            assert spec.filter == "TOOLCHAIN_HAS_NEWLIB == 1"
+            assert spec.min_ram == 32

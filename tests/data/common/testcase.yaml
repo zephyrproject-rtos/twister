@@ -1,0 +1,15 @@
+common:
+  tags: kernel posix
+  extra_configs:
+      - CONFIG_POSIX_API=y
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  min_ram: 32
+tests:
+  xyz.common_merge_1:
+    tags: picolibc
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    min_ram: 64
+  xyz.common_merge_2:
+    tags: arm
