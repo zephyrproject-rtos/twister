@@ -96,21 +96,21 @@ def _read_test_specifications_from_yaml(
         test_name: str  # type: ignore
         spec: dict  # type: ignore
 
-        for key, value in spec.items():
-            common_value = common.pop(key, None)
-            if not common_value:
-                continue
-            if key == 'filter':
-                spec[key] = _join_filters([spec[key], common_value])
-                continue
-            if isinstance(value, str):
-                spec[key] = _join_strings([spec[key], common_value])
-                continue
-            if isinstance(value, list):
-                spec[key] = spec[key] + common_value
-                continue
+        for key, common_value in common.items():
+            if key in spec:
+                if key == 'filter':
+                    spec[key] = _join_filters([spec[key], common_value])
+                elif isinstance(common_value, str):
+                    spec[key] = _join_strings([spec[key], common_value])
+                elif isinstance(common_value, list):
+                    spec[key] = spec[key] + common_value
+                else:
+                    # if option in spec already exists and does not cover above
+                    # mentioned cases - leave it as is
+                    pass
+            else:
+                spec[key] = common_value
 
-        spec.update(common)
         spec['name'] = test_name
         spec['path'] = Path(filepath).parent
         try:
