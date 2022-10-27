@@ -78,7 +78,6 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 break
 
         self.queue.put(END_DATA)
-        self.queue.task_done()
         return await self._process.wait()
 
     def _task(self) -> None:
@@ -102,6 +101,8 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 logger.info('Flashing finished with success')
             elif return_code > 0:
                 self._exc = TwisterFlashException(f'Flashing finished with errors for PID {self._process.pid}')
+        finally:
+            self.queue.put(END_DATA)  # indicate to the other processes that there will be no more data in queue
 
     def disconnect(self):
         pass
@@ -129,3 +130,4 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 logger.debug('No more data from running process')
                 break
             yield line
+            self.queue.task_done()
