@@ -52,7 +52,6 @@ class HardwareAdapter(DeviceAbstract):
             self.connection.close()
             self.connection = None
             logger.info('Closed serial connection for %s', self.hardware_map.serial)
-        self.stop()
 
     def _get_command(self, build_dir: str) -> list[str]:
         west = shutil.which('west')
