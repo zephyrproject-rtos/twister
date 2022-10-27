@@ -57,6 +57,9 @@ class HardwareAdapter(DeviceAbstract):
 
     def _get_command(self, build_dir: str) -> list[str]:
         west = shutil.which('west')
+        if west is None:
+            raise TwisterFlashException('west not found')
+
         command = [
             west,
             'flash',
