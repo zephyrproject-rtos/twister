@@ -22,7 +22,6 @@ class HardwareAdapter(DeviceAbstract):
             raise TwisterException('Hardware map must be provided for hardware adapter')
         super().__init__(twister_config, hardware_map=hardware_map)
         self.connection: serial.Serial | None = None
-        self._exc: Exception | None = None
 
     def connect(self) -> serial.Serial:
         """Open serial connection."""
@@ -98,7 +97,7 @@ class HardwareAdapter(DeviceAbstract):
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         self.build_dir = build_dir
-        self.timeout = self.timeout
+        self.timeout = timeout
 
         command = self._get_command(str(self.build_dir))
 
@@ -114,7 +113,7 @@ class HardwareAdapter(DeviceAbstract):
             )
         except subprocess.CalledProcessError:
             logger.error('Error while flashing device %s', self.hardware_map.id)
-            self._exc = TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
+            raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
         else:
             try:
                 stdout, stderr = process.communicate(timeout=self.timeout)
@@ -128,8 +127,7 @@ class HardwareAdapter(DeviceAbstract):
             if process.returncode == 0:
                 logger.info('Finished flashing %s', self.build_dir)
             else:
-                # logger.error(process.stderr.decode())
-                self._exc = TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
+                raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
 
     def save_serial_output_to_file(self, filename: str | Path) -> None:
         """Dump serial output to file."""
