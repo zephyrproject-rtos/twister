@@ -82,4 +82,5 @@ class YamlTestCase:
 
                 assert test.result == SubTestStatus.PASS, f'Subtest {test.testname} failed'
 
-        assert log_parser.state == 'PASSED', 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
+        failed_msg: str = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
+        assert log_parser.state == log_parser.STATE.PASSED, failed_msg

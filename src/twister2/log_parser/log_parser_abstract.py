@@ -6,11 +6,18 @@ from dataclasses import dataclass
 from typing import Generator, Iterator
 
 
+class LogParserState(str, enum.Enum):
+    UNKNOWN = "UNKNOWN"
+    FAILED = "FAILED"
+    PASSED = "PASSED"
+
+
 class LogParserAbstract(abc.ABC):
+    STATE = LogParserState
 
     def __init__(self, stream: Iterator[str], **kwargs):
         self.stream = stream
-        self.state: str = 'PASSED'  #: overall status for execution suite
+        self.state: self.STATE = self.STATE.UNKNOWN  #: overall state for execution test suite
         self.messages: list[str] = []  #: keeps errors from execution
 
     def __repr__(self):

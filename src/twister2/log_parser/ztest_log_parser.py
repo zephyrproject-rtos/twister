@@ -22,9 +22,6 @@ testsuite_name_re_pattern: re.Pattern = re.compile(r'^.*Running TESTSUITE\s(?P<t
 
 logger = logging.getLogger(__name__)
 
-FAILED: str = 'FAILED'
-PASSED: str = 'PASSED'
-
 
 class ZtestLogParser(LogParserAbstract):
     """Parse Ztest output from log stream."""
@@ -53,18 +50,18 @@ class ZtestLogParser(LogParserAbstract):
             logger.debug(line.rstrip())
             if PROJECT_EXECUTION_FAILED in line:
                 logger.error('PROJECT EXECUTION FAILED')
-                self.state = FAILED
+                self.state = self.STATE.FAILED
                 self.messages.append('Project execution failed')
                 return  # exit: tests finished
 
             if PROJECT_EXECUTION_SUCCESSFUL in line:
-                self.state = FAILED if self.state == FAILED else PASSED
+                self.state = self.STATE.FAILED if self.state == self.STATE.FAILED else self.STATE.PASSED
                 logger.info('PROJECT EXECUTION SUCCESSFUL')
                 return  # exit: tests finished
 
             if ZEPHYR_FATAL_ERROR in line and self.fail_on_fault:
                 logger.error('ZEPHYR FATAL ERROR')
-                self.state = FAILED
+                self.state = self.STATE.FAILED
                 raise TwisterFatalError('Zephyr fatal error')
 
             if match := testsuite_name_re_pattern.match(line):

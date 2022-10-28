@@ -11,7 +11,7 @@ def test_if_ztest_log_parser_returns_correct_status(resources: Path):
         parser = ZtestLogParser(stream=file, fail_on_fault=False)
         sub_tests = list(parser.parse())
         assert len(sub_tests) == 45
-        assert parser.state == 'PASSED'
+        assert parser.state == parser.STATE.PASSED
         assert parser.detected_suite_names == ['common']
         assert len([tc for tc in sub_tests if tc.result == SubTestStatus.SKIP]) == 3
         assert len([tc for tc in sub_tests if tc.result == SubTestStatus.FAIL]) == 0
@@ -27,7 +27,7 @@ def test_if_ztest_log_parser_returns_correct_status_with_no_subtests():
     parser = ZtestLogParser(stream=iter(log), fail_on_fault=False)
     sub_tests = list(parser.parse())
     assert len(sub_tests) == 0
-    assert parser.state == 'PASSED'
+    assert parser.state == parser.STATE.PASSED
 
 
 def test_if_ztest_log_parser_returns_correct_status_for_all_tests_skipped():
@@ -44,7 +44,7 @@ def test_if_ztest_log_parser_returns_correct_status_for_all_tests_skipped():
     parser = ZtestLogParser(stream=iter(log), fail_on_fault=False)
     sub_tests = list(parser.parse())
     assert len(sub_tests) == 1
-    assert parser.state == 'PASSED'
+    assert parser.state == parser.STATE.PASSED
     assert len([tc for tc in sub_tests if tc.result == SubTestStatus.SKIP]) == 1
 
 
@@ -58,9 +58,17 @@ def test_if_ztest_log_parser_returns_correct_status_when_subtest_failed():
     """.split('\n')
     parser = ZtestLogParser(stream=iter(log), fail_on_fault=False)
     sub_tests = list(parser.parse())
-    assert parser.state == 'FAILED'
+    assert parser.state == parser.STATE.FAILED
     assert len(sub_tests) == 1
     assert len([tc for tc in sub_tests if tc.result == SubTestStatus.FAIL]) == 1
+
+
+def test_if_ztest_log_parser_returns_correct_status_with_no_input():
+    log = []
+    parser = ZtestLogParser(stream=iter(log), fail_on_fault=False)
+    sub_tests = list(parser.parse())
+    assert len(sub_tests) == 0
+    assert parser.state == parser.STATE.UNKNOWN
 
 
 def test_if_ztest_log_parser_fails_on_fault(resources: Path):
@@ -76,7 +84,7 @@ def test_if_ztest_log_parser_not_fails_on_fault(resources: Path):
         parser = ZtestLogParser(stream=stream, fail_on_fault=False)
         sub_tests = list(parser.parse())
         assert len(sub_tests) == 4
-        assert parser.state == 'PASSED'
+        assert parser.state == parser.STATE.PASSED
         assert parser.detected_suite_names == ['thread_dynamic']
         assert len([tc for tc in sub_tests if tc.result == SubTestStatus.PASS]) == 4
 
