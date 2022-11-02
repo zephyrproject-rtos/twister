@@ -94,10 +94,7 @@ class HardwareAdapter(DeviceAbstract):
         return command
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        self.build_dir = build_dir
-        self.timeout = timeout
-
-        command = self._get_command(str(self.build_dir))
+        command = self._get_command(str(build_dir))
 
         logger.info('Flashing device %s', self.hardware_map.id)
         logger.info('Flashing command: %s', ' '.join(command))
@@ -114,7 +111,7 @@ class HardwareAdapter(DeviceAbstract):
             raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
         else:
             try:
-                stdout, stderr = process.communicate(timeout=self.timeout)
+                stdout, stderr = process.communicate(timeout=timeout)
             except subprocess.TimeoutExpired:
                 process.kill()
             else:
@@ -123,7 +120,7 @@ class HardwareAdapter(DeviceAbstract):
                         logger.info(stdout)
 
             if process.returncode == 0:
-                logger.info('Finished flashing %s', self.build_dir)
+                logger.info('Finished flashing %s', build_dir)
             else:
                 raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
 

@@ -46,10 +46,8 @@ class NativeSimulatorAdapter(DeviceAbstract):
     def connect(self, timeout: float = 1) -> None:
         pass
 
-    def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        self.build_dir = build_dir
-        self.timeout = timeout
-        self._thread = threading.Thread(target=self._task, daemon=True)
+    def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
+        self._thread = threading.Thread(target=self._task, args=(build_dir, timeout), daemon=True)
         self._thread.start()
 
     async def _run_command(self, command: list[str], timeout: float = 60.):
@@ -80,12 +78,12 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self.queue.put(END_DATA)
         return await self._process.wait()
 
-    def _task(self) -> None:
-        command: list[str] = self._get_command(self.build_dir)
+    def _task(self, build_dir: str | Path, timeout: float) -> None:
+        command: list[str] = self._get_command(build_dir)
         logger.info('Running command: %s', command)
         try:
             return_code: int = asyncio.run(
-                self._run_command(command, timeout=self.timeout)
+                self._run_command(command, timeout=timeout)
             )
         except subprocess.SubprocessError as e:
             logger.error('Flashing failed due to subprocess error %s', e)
