@@ -23,7 +23,7 @@ class HardwareAdapter(DeviceAbstract):
         super().__init__(twister_config, hardware_map=hardware_map)
         self.connection: serial.Serial | None = None
 
-    def connect(self) -> serial.Serial:
+    def connect(self, timeout: float = 1) -> None:
         """Open serial connection."""
         if self.connection:
             # already opened
@@ -37,14 +37,13 @@ class HardwareAdapter(DeviceAbstract):
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
-                timeout=self.timeout
+                timeout=timeout
             )
         except serial.SerialException as e:
             logger.exception('Cannot open connection: %s', e)
             raise
 
         self.connection.flush()
-        return self.connection
 
     def disconnect(self) -> None:
         """Close serial connection."""

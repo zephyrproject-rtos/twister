@@ -43,7 +43,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
         """
         return [str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())]
 
-    def connect(self, timeout: float = 60):
+    def connect(self, timeout: float = 1) -> None:
         pass
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:

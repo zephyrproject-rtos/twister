@@ -35,7 +35,7 @@ class DeviceAbstract(abc.ABC):
         return env
 
     @abc.abstractmethod
-    def connect(self) -> None:
+    def connect(self, timeout: float = 1) -> None:
         pass
 
     @abc.abstractmethod
