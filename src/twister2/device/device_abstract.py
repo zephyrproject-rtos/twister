@@ -22,8 +22,6 @@ class DeviceAbstract(abc.ABC):
         """
         self.twister_config: TwisterConfig = twister_config
         self.hardware_map: HardwareMap | None = hardware_map
-        self.build_dir: Path | str = Path()
-        self.timeout: float = 60.  # seconds
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -44,7 +42,15 @@ class DeviceAbstract(abc.ABC):
 
     def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         """
-        Flash and run code on a device.
+        Flash a device.
+
+        :param build_dir: build directory
+        :param timeout: time out in seconds
+        """
+
+    def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
+        """
+        Run code on a device.
 
         :param build_dir: build directory
         :param timeout: time out in seconds
