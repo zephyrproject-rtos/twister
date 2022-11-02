@@ -53,7 +53,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self._thread.start()
 
     async def _run_command(self, command: list[str], timeout: float = 60.):
-        assert isinstance(command, (list, tuple, set))  # to avoid stupid and  difficult to debug mistakes
+        assert isinstance(command, (list, tuple, set))  # to avoid stupid and difficult to debug mistakes
         # we are using asyncio to run subprocess to be able to read from stdout
         # without blocking while loop (readline with timeout)
         self._process = await asyncio.create_subprocess_exec(
@@ -102,7 +102,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
             elif return_code > 0:
                 self._exc = TwisterFlashException(f'Flashing finished with errors for PID {self._process.pid}')
         finally:
-            self.queue.put(END_DATA)  # indicate to the other processes that there will be no more data in queue
+            self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
 
     def disconnect(self):
         pass
