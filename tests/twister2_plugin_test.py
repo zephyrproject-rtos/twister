@@ -10,6 +10,8 @@ def test_twister_help(pytester):
         '*--platform=PLATFORM*build tests for specific platforms*',
         '*--board-root=PATH*directory to search for board configuration files*',
         '*--zephyr-base=path*base directory for Zephyr*',
+        '*--quarantine-list=*',
+        '*--quarantine-verify*Use the list of test scenarios*'
     ])
 
 
