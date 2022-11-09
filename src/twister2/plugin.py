@@ -6,6 +6,7 @@ import pytest
 
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
+from twister2.filter.quarantine_filter import QuarantineFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.report.test_plan_csv import CsvTestPlan
@@ -128,6 +129,21 @@ def pytest_addoption(parser: pytest.Parser):
         action='store_true',
         help='include slow tests',
     )
+    twister_group.addoption(
+        '--quarantine-list',
+        dest='quarantine_list_path',
+        metavar='FILENAME',
+        action='append',
+        help='Load list of test scenarios under quarantine. These scenarios '
+             'will be skipped with quarantine as the reason.'
+    )
+    twister_group.addoption(
+        '--quarantine-verify',
+        dest='quarantine_verify',
+        action='store_true',
+        help='Use the list of test scenarios under quarantine and run them'
+             'to verify their current status.'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -202,3 +218,6 @@ def pytest_configure(config: pytest.Config):
     config.addinivalue_line(
         'markers', 'slow: mark test as slow'
     )
+
+    if config.getoption('quarantine_list_path'):
+        filter_plugin.add_filter(QuarantineFilter(config))

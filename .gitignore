@@ -67,3 +67,6 @@ dmypy.json
 .idea/
 # VSCode
 .vscode/
+
+# test outputs
+twister-out*
