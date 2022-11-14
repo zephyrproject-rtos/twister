@@ -33,6 +33,13 @@ def get_item_type(item: pytest.Item) -> str:
     return ''
 
 
+def get_item_skip(item: pytest.Item) -> str:
+    """Return skip reason if test should be skipped."""
+    if marker := item.get_closest_marker('skip'):
+        return marker.args[0]
+    return None
+
+
 def get_item_platform(item: pytest.Item) -> str:
     """Return test platform."""
     if marker := item.get_closest_marker('platform'):
