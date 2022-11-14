@@ -42,7 +42,9 @@ class QuarantineFilter(FilterInterface):
             if test_configuration in self.quarantine:
                 logger.debug(f"Skipped test {test_configuration} - quarantine reason: "
                              f"{self.quarantine[test_configuration]}")
-                return True
+                # only mark test to be skipped, this test still will be listed in test plan,
+                # but will not be executed
+                item.add_marker(pytest.mark.skip(f'Quarantine: {self.quarantine[test_configuration]}'))
         return False
 
     def _load_quarantine(self, filepath: Path, twister_config: TwisterConfig):
