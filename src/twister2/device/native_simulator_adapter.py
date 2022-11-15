@@ -14,7 +14,7 @@ from typing import Generator
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
-from twister2.exceptions import TwisterFlashException
+from twister2.exceptions import TwisterRunException
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
         pass
 
     def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        self._thread = threading.Thread(target=self._task, args=(build_dir, timeout), daemon=True)
+        self._thread = threading.Thread(target=self._run_simulation, args=(build_dir, timeout), daemon=True)
         self._thread.start()
 
     async def _run_command(self, command: list[str], timeout: float = 60.):
@@ -75,10 +75,10 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 logger.debug(f'Finished process with PID {self._process.pid} after {timeout} seconds timeout')
                 break
 
-        self.queue.put(END_DATA)
+        self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
         return await self._process.wait()
 
-    def _task(self, build_dir: str | Path, timeout: float) -> None:
+    def _run_simulation(self, build_dir: str | Path, timeout: float) -> None:
         command: list[str] = self._get_command(build_dir)
         logger.info('Running command: %s', command)
         try:
@@ -86,19 +86,19 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 self._run_command(command, timeout=timeout)
             )
         except subprocess.SubprocessError as e:
-            logger.error('Flashing failed due to subprocess error %s', e)
-            self._exc = TwisterFlashException(e.args)
+            logger.error('Running simulation failed due to subprocess error %s', e)
+            self._exc = TwisterRunException(e.args)
         except FileNotFoundError as e:
-            logger.error(f'Flashing failed due to file not found: {e.filename}')
-            self._exc = TwisterFlashException(f'File not found: {e.filename}')
+            logger.error(f'Running simulation failed due to file not found: {e.filename}')
+            self._exc = TwisterRunException(f'File not found: {e.filename}')
         except Exception as e:
-            logger.error('Flashing failed: %s', e)
-            self._exc = TwisterFlashException(e.args)
+            logger.error('Running simulation failed: %s', e)
+            self._exc = TwisterRunException(e.args)
         else:
             if return_code == 0:
-                logger.info('Flashing finished with success')
-            elif return_code > 0:
-                self._exc = TwisterFlashException(f'Flashing finished with errors for PID {self._process.pid}')
+                logger.info('Running simulation finished with return code %s', return_code)
+            else:
+                logger.warning('Running simulation finished with return code %s', return_code)
         finally:
             self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
 
@@ -108,6 +108,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
     def stop(self) -> None:
         """Stop device."""
         self._stop_job = True
+        time.sleep(0.1)  # give a time to end while loop in running simulation
         if self._process is not None:
             # kill subprocess if it is still running
             try:
