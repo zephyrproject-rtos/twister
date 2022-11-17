@@ -54,6 +54,10 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self._thread.start()
         # Give a time to start subprocess before test is executed
         time.sleep(0.1)
+        # Check if subprocess (simulation) has started without errors
+        if self._exc is not None:
+            logger.error('Simulation failed due to an exception: %s', self._exc)
+            raise self._exc
 
     async def _run_command(self, command: list[str], timeout: float = 60.):
         assert isinstance(command, (list, tuple, set))  # to avoid stupid and difficult to debug mistakes
@@ -73,8 +77,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
             except asyncio.TimeoutError:
                 pass
             else:
-                if line:
-                    self.queue.put(line.decode('utf-8').strip())
+                self.queue.put(line.decode('utf-8').strip())
             if time.time() > end_time:
                 self._process_ended_with_timeout = True
                 logger.debug(f'Finished process with PID {self._process.pid} after {timeout} seconds timeout')
