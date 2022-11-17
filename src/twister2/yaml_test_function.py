@@ -66,6 +66,10 @@ class YamlTestCase:
         if self.spec.build_only or request.config.twister_config.build_only:
             # do not run test for build only
             return
+        # Check if subprocess (simulation) has started without errors
+        if (exc := getattr(dut, '_exc', None)) is not None:
+            logger.error('Test failed due to an exception: %s', exc)
+            raise exc
 
         logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
 
@@ -82,5 +86,8 @@ class YamlTestCase:
 
                 assert test.result == SubTestStatus.PASS, f'Subtest {test.testname} failed'
 
-        failed_msg: str = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
+        if log_parser.state == log_parser.STATE.UNKNOWN:
+            failed_msg: str = f'Test state is {log_parser.state.value}'
+        else:
+            failed_msg: str = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
         assert log_parser.state == log_parser.STATE.PASSED, failed_msg

@@ -1,3 +1,6 @@
+"""
+This module implements adapter class for a device simulator.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -22,7 +25,7 @@ END_DATA = object()
 
 
 class NativeSimulatorAdapter(DeviceAbstract):
-    """Run tests with zephyr.exe."""
+    """Adapter class for a device simulator."""
 
     def __init__(self, twister_config, hardware_map: HardwareMap | None = None, **kwargs):
         super().__init__(twister_config, hardware_map, **kwargs)
@@ -49,6 +52,8 @@ class NativeSimulatorAdapter(DeviceAbstract):
     def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
         self._thread = threading.Thread(target=self._run_simulation, args=(build_dir, timeout), daemon=True)
         self._thread.start()
+        # Give a time to start subprocess before test is executed
+        time.sleep(0.1)
 
     async def _run_command(self, command: list[str], timeout: float = 60.):
         assert isinstance(command, (list, tuple, set))  # to avoid stupid and difficult to debug mistakes
