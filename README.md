@@ -1,6 +1,7 @@
 # Twister v2
 
 [![Run tests](https://github.com/PerMac/TwisterV2/actions/workflows/main.yaml/badge.svg?branch=poc)](https://github.com/PerMac/TwisterV2/actions/workflows/main.yaml)
+[![codecov](https://codecov.io/gh/zephyrproject-rtos/twister/branch/main/graph/badge.svg?token=F8DSSX20B5)](https://codecov.io/gh/zephyrproject-rtos/twister)
 
 Pytest plugin to run Zephyr tests and collect results.
 
