@@ -42,6 +42,12 @@ def yaml_test_function_factory(spec: YamlTestSpecification, parent: Any) -> Yaml
 class YamlTestFunction(pytest.Function):
     """Wrapper for pytest.Function to extend functionality."""
 
+    def __repr__(self) -> str:
+        extra_info = ''
+        if self.get_closest_marker('skip'):
+            extra_info += ' skip'
+        return "{}{}".format(super().__repr__(), extra_info)
+
 
 class YamlTestCase:
     """Callable class representing yaml test."""
