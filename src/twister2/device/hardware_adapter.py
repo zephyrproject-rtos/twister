@@ -1,3 +1,6 @@
+"""
+This module implements adapter class for real device (DK board).
+"""
 from __future__ import annotations
 
 import logging
@@ -16,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class HardwareAdapter(DeviceAbstract):
+    """Adapter class for real device."""
 
     def __init__(self, twister_config, hardware_map: HardwareMap | None = None) -> None:
         if hardware_map is None:
@@ -24,10 +28,14 @@ class HardwareAdapter(DeviceAbstract):
         self.connection: serial.Serial | None = None
 
     def connect(self, timeout: float = 1) -> None:
-        """Open serial connection."""
+        """
+        Open serial connection.
+
+        :param timeout: Read timeout value in seconds
+        """
         if self.connection:
             # already opened
-            return self.connection
+            return
 
         logger.info('Opening serial connection for %s', self.hardware_map.serial)
         try:
