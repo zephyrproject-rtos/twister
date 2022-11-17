@@ -6,7 +6,6 @@ import pytest
 from twister2.builder.builder_abstract import BuilderAbstract
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.factory import DeviceFactory
-from twister2.exceptions import TwisterException
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
