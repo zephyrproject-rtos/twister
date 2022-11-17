@@ -42,9 +42,4 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstr
     yield device
     if not twister_config.build_only:
         device.disconnect()
-        try:
-            device.stop()
-        except TwisterException:
-            # Twister exceptions are handled inside a test,
-            # so we don't want to raise another error here
-            pass
+        device.stop()

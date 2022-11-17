@@ -66,10 +66,6 @@ class YamlTestCase:
         if self.spec.build_only or request.config.twister_config.build_only:
             # do not run test for build only
             return
-        # Check if subprocess (simulation) has started without errors
-        if (exc := getattr(dut, '_exc', None)) is not None:
-            logger.error('Test failed due to an exception: %s', exc)
-            raise exc
 
         logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
 
