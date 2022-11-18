@@ -2,10 +2,9 @@ import textwrap
 from pathlib import Path
 
 from twister2.log_parser.console_log_parser import ConsoleLogParser
-from twister2.log_parser.log_parser_abstract import LogParserState
 
 
-def test_console_log_parser_one_line_should_pass():
+def test_if_console_log_parser_passes_for_one_line_type():
     harness_config = {
         'type': 'one_line',
         'regex': [
@@ -19,11 +18,11 @@ def test_console_log_parser_one_line_should_pass():
     """).split('\n')
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
     list(parser.parse())
-    assert parser.state == 'PASSED'
+    assert parser.state == parser.STATE.PASSED
     assert parser.matched_lines == ['Hello World!']
 
 
-def test_console_log_parser_one_line_should_fail():
+def test_if_console_log_parser_fails_for_one_line_type():
     harness_config = {
         'type': 'one_line',
         'regex': [
@@ -38,10 +37,10 @@ def test_console_log_parser_one_line_should_fail():
     """).split('\n')
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
     list(parser.parse())
-    assert parser.state == 'FAILED'
+    assert parser.state == parser.STATE.FAILED
 
 
-def test_console_log_parser_multi_line_should_pass(resources: Path):
+def test_if_console_log_parser_passes_for_not_ordered_multi_line(resources: Path):
     log_file = resources.joinpath('console_log_pass.txt')
     harness_config = {
         'type': 'multi_line',
@@ -56,7 +55,7 @@ def test_console_log_parser_multi_line_should_pass(resources: Path):
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
         list(parser.parse())
-        assert parser.state == 'PASSED'
+        assert parser.state == parser.STATE.PASSED
         assert parser.matched_lines == [
             'Philosopher 4 [C:-1]        STARVING\n',
             'Philosopher 4 [C:-1]   EATING  [  25 ms ]\n',
@@ -65,7 +64,7 @@ def test_console_log_parser_multi_line_should_pass(resources: Path):
         ]
 
 
-def test_console_log_parser_multi_line_should_fail(resources: Path):
+def test_if_console_log_parser_fails_for_not_ordered_multi_line(resources: Path):
     log_file = resources.joinpath('console_log_pass.txt')
     harness_config = {
         'type': 'multi_line',
@@ -80,10 +79,10 @@ def test_console_log_parser_multi_line_should_fail(resources: Path):
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
         list(parser.parse())
-        assert parser.state == LogParserState.FAILED
+        assert parser.state == parser.STATE.FAILED
 
 
-def test_console_log_parser_ordered_multi_line_should_pass(resources: Path):
+def test_if_console_log_parser_passes_for_ordered_multi_line(resources: Path):
     log_file = resources.joinpath('console_log_pass.txt')
     harness_config = {
         'type': 'multi_line',
@@ -98,10 +97,10 @@ def test_console_log_parser_ordered_multi_line_should_pass(resources: Path):
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
         list(parser.parse())
-        assert parser.state == LogParserState.PASSED
+        assert parser.state == parser.STATE.PASSED
 
 
-def test_console_log_parser_ordered_multi_line_should_fail(resources: Path):
+def test_if_console_log_parser_fails_for_ordered_multi_line():
     log = textwrap.dedent("""\
         The Zen of Python, by Tim Peters
         Beautiful is better than ugly.
@@ -122,4 +121,4 @@ def test_console_log_parser_ordered_multi_line_should_fail(resources: Path):
     }
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
     list(parser.parse())
-    assert parser.state == LogParserState.FAILED
+    assert parser.state == parser.STATE.FAILED
