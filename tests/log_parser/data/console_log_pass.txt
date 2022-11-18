@@ -1,0 +1,92 @@
+*** Booting Zephyr OS build zephyr-v3.0.0-2567-g70c48417c7a0  ***
+Philosopher 4 [C:-1]        STARVING
+Philosopher 4 [C:-1]    HOLDING ONE FORK
+Philosopher 4 [C:-1]   EATING  [  25 ms ]
+Philosopher 5 [C:-2]        STARVING
+Philosopher 5 [C:-2]    HOLDING ONE FORK
+Philosopher 3 [P: 0]        STARVING
+Philosopher 3 [P: 0]    HOLDING ONE FORK
+Philosopher 2 [P: 1]        STARVING
+Philosopher 2 [P: 1]    HOLDING ONE FORK
+Philosopher 1 [P: 2]        STARVING
+Philosopher 1 [P: 2]    HOLDING ONE FORK
+Philosopher 0 [P: 3]        STARVING
+Philosopher 4 [C:-1]    DROPPED ONE FORK
+Philosopher 4 [C:-1]  THINKING [  25 ms ]
+Philosopher 5 [C:-2]   EATING  [  25 ms ]
+Philosopher 3 [P: 0]   EATING  [  25 ms ]
+Philosopher 5 [C:-2]    DROPPED ONE FORK
+Philosopher 5 [C:-2]  THINKING [  25 ms ]
+Philosopher 4 [C:-1]        STARVING
+Philosopher 4 [C:-1]    HOLDING ONE FORK
+Philosopher 4 [C:-1]   EATING  [  25 ms ]
+Philosopher 3 [P: 0]    DROPPED ONE FORK
+Philosopher 3 [P: 0]  THINKING [  25 ms ]
+Philosopher 2 [P: 1]   EATING  [  25 ms ]
+Philosopher 0 [P: 3]    HOLDING ONE FORK
+Philosopher 5 [C:-2]        STARVING
+Philosopher 4 [C:-1]    DROPPED ONE FORK
+Philosopher 4 [C:-1]  THINKING [  150 ms ]
+Philosopher 3 [P: 0]        STARVING
+Philosopher 3 [P: 0]    HOLDING ONE FORK
+Philosopher 3 [P: 0]   EATING  [  125 ms ]
+Philosopher 2 [P: 1]    DROPPED ONE FORK
+Philosopher 2 [P: 1]  THINKING [  100 ms ]
+Philosopher 1 [P: 2]   EATING  [  75 ms ]
+Philosopher 1 [P: 2]    DROPPED ONE FORK
+Philosopher 0 [C:-2]   EATING  [  75 ms ]
+Philosopher 1 [P: 2]  THINKING [  125 ms ]
+Philosopher 2 [P: 1]        STARVING
+Philosopher 2 [P: 1]    HOLDING ONE FORK
+Philosopher 3 [P: 0]    DROPPED ONE FORK
+Philosopher 3 [P: 0]  THINKING [  225 ms ]
+Philosopher 2 [P: 1]   EATING  [  175 ms ]
+Philosopher 4 [C:-1]        STARVING
+Philosopher 4 [C:-1]    HOLDING ONE FORK
+Philosopher 4 [C:-1]   EATING  [  275 ms ]
+Philosopher 0 [C:-2]    DROPPED ONE FORK
+Philosopher 5 [C:-2]    HOLDING ONE FORK
+Philosopher 0 [P: 3]  THINKING [  100 ms ]
+Philosopher 1 [P: 2]        STARVING
+Philosopher 1 [P: 2]    HOLDING ONE FORK
+Philosopher 0 [P: 3]        STARVING
+Philosopher 2 [P: 1]    DROPPED ONE FORK
+Philosopher 2 [P: 1]  THINKING [  325 ms ]
+Philosopher 1 [P: 2]   EATING  [  225 ms ]
+Philosopher 3 [P: 0]        STARVING
+Philosopher 3 [P: 0]    HOLDING ONE FORK
+Philosopher 4 [C:-1]    DROPPED ONE FORK
+Philosopher 4 [C:-1]  THINKING [  650 ms ]
+Philosopher 5 [C:-2]   EATING  [  775 ms ]
+Philosopher 3 [P: 0]   EATING  [  525 ms ]
+Philosopher 1 [P: 2]    DROPPED ONE FORK
+Philosopher 1 [P: 2]  THINKING [  325 ms ]
+Philosopher 2 [P: 1]        STARVING
+Philosopher 2 [P: 1]    HOLDING ONE FORK
+Philosopher 1 [P: 2]        STARVING
+Philosopher 1 [P: 2]    HOLDING ONE FORK
+Philosopher 3 [P: 0]    DROPPED ONE FORK
+Philosopher 3 [P: 0]  THINKING [  325 ms ]
+Philosopher 2 [P: 1]   EATING  [  50 ms ]
+Philosopher 2 [P: 1]    DROPPED ONE FORK
+Philosopher 2 [P: 1]  THINKING [  50 ms ]
+Philosopher 1 [P: 2]   EATING  [  575 ms ]
+Philosopher 4 [C:-1]        STARVING
+Philosopher 4 [C:-1]    HOLDING ONE FORK
+Philosopher 2 [P: 1]        STARVING
+Philosopher 5 [C:-2]    DROPPED ONE FORK
+Philosopher 5 [C:-2]  THINKING [  375 ms ]
+Philosopher 4 [C:-1]   EATING  [  50 ms ]
+Philosopher 0 [P: 3]    HOLDING ONE FORK
+Philosopher 4 [C:-1]    DROPPED ONE FORK
+Philosopher 4 [C:-1]  THINKING [  175 ms ]
+Philosopher 3 [P: 0]        STARVING
+Philosopher 3 [P: 0]    HOLDING ONE FORK
+Philosopher 3 [P: 0]   EATING  [  625 ms ]
+Philosopher 4 [C:-1]        STARVING
+Philosopher 5 [C:-2]        STARVING
+Philosopher 2 [P: 1]    HOLDING ONE FORK
+Philosopher 1 [P: 2]    DROPPED ONE FORK
+Philosopher 0 [C:-2]   EATING  [  450 ms ]
+Philosopher 1 [P: 2]  THINKING [  75 ms ]
+Philosopher 1 [P: 2]        STARVING
