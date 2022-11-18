@@ -18,7 +18,8 @@ from twister2.report.helper import (
     get_item_type,
     get_suite_name,
     get_test_name,
-    get_item_platform
+    get_item_platform,
+    get_item_quarantine
 )
 
 
@@ -170,6 +171,7 @@ class TestResultsPlugin:
                 platform_allow=get_item_platform_allow(item),
                 status=result.status,
                 message=result.message,
+                quarantine=get_item_quarantine(item),
                 duration=result.duration,
                 subtests=result.subtests,
             )

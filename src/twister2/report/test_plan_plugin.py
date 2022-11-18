@@ -18,7 +18,7 @@ from twister2.report.helper import (
     get_test_name,
     get_test_path,
     get_item_platform,
-    get_item_skip,
+    get_item_quarantine
 )
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class TestPlanPlugin:
 
     def _item_as_dict(self, item: pytest.Item) -> dict:
         """Return test metadata as dictionary."""
-        test_info = dict(
+        return dict(
             suite_name=get_suite_name(item),
             test_name=get_test_name(item),
             path=get_test_path(item),
@@ -49,10 +49,8 @@ class TestPlanPlugin:
             tags=get_item_tags(item),
             type=get_item_type(item),
             platform_allow=get_item_platform_allow(item),
+            quarantine=get_item_quarantine(item),
         )
-        if skip_reason := get_item_skip(item):
-            test_info['skip_reason'] = skip_reason
-        return test_info
 
     def generate(self, items: List[pytest.Item]) -> dict:
         """Build test plan"""
