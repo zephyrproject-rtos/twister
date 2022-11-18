@@ -80,7 +80,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
                 self.queue.put(line.decode('utf-8').strip())
             if time.time() > end_time:
                 self._process_ended_with_timeout = True
-                logger.debug(f'Finished process with PID {self._process.pid} after {timeout} seconds timeout')
+                logger.info(f'Finished process with PID {self._process.pid} after {timeout} seconds timeout')
                 break
 
         self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
@@ -117,12 +117,9 @@ class NativeSimulatorAdapter(DeviceAbstract):
         """Stop device."""
         self._stop_job = True
         time.sleep(0.1)  # give a time to end while loop in running simulation
-        if self._process is not None:
+        if self._process is not None and self._process.returncode is None:
             # kill subprocess if it is still running
-            try:
-                os.kill(self._process.pid, signal.SIGINT)
-            except ProcessLookupError:
-                pass  # process is not running
+            os.kill(self._process.pid, signal.SIGINT)
         if self._thread is not None:
             self._thread.join(timeout=1)  # Should end immediately, but just in case we set timeout for 1 sec
         if self._exc:
