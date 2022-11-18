@@ -33,11 +33,11 @@ def get_item_type(item: pytest.Item) -> str:
     return ''
 
 
-def get_item_skip(item: pytest.Item) -> str:
-    """Return skip reason if test should be skipped."""
-    if marker := item.get_closest_marker('skip'):
-        return marker.args[0]
-    return None
+def get_item_quarantine(item: pytest.Item) -> str:
+    """Return quarantine reason if test should be under quarantine."""
+    if marker := item.get_closest_marker('quarantine'):
+        return marker.args[0] if marker.args else 'unknown reason'
+    return ''
 
 
 def get_item_platform(item: pytest.Item) -> str:

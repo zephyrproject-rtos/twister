@@ -135,14 +135,9 @@ def pytest_addoption(parser: pytest.Parser):
         metavar='FILENAME',
         action='append',
         help='Load list of test scenarios under quarantine. These scenarios '
-             'will be skipped with quarantine as the reason.'
-    )
-    twister_group.addoption(
-        '--quarantine-verify',
-        dest='quarantine_verify',
-        action='store_true',
-        help='Use the list of test scenarios under quarantine and run them'
-             'to verify their current status.'
+             'will be skipped with quarantine as the reason. '
+             'To verify their current status, one can run only quarantined tests '
+             'using mark: -m quarantine'
     )
 
 
@@ -218,6 +213,15 @@ def pytest_configure(config: pytest.Config):
     config.addinivalue_line(
         'markers', 'slow: mark test as slow'
     )
+    config.addinivalue_line(
+        'markers', 'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
+                   'quarantine-list-yaml file. To mark scenario in code better use skip/skipif'
+    )
 
     if config.getoption('quarantine_list_path'):
-        filter_plugin.add_filter(QuarantineFilter(config))
+        quarantine_plugin = QuarantineFilter(config)
+        if not is_worker_input:
+            config.pluginmanager.register(
+                plugin=quarantine_plugin,
+                name='quarantine'
+            )

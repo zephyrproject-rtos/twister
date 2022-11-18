@@ -23,29 +23,21 @@ class QuarantineFilter(FilterInterface):
         :param config: pytest configuration
         """
         super().__init__(config)
-        self.quarantine_verify = config.getoption('--quarantine-verify')
+        self.quarantine_verify = True if 'quarantine' in config.getoption('-m') else False
         self.quarantine = QuarantineData()
         for quarantine_file in config.getoption('--quarantine-list'):
             self.quarantine.extend(QuarantineData.load_data_from_yaml(quarantine_file))
 
-    def filter(self, item: pytest.Item) -> bool:
-        """
-        Check if test should be deselected
-
-        :param item: pytest test item
-        :return: True if test should be deselected
-        """
-        if qelem := self.quarantine.get_matched_quarantine(item):
-            if not self.quarantine_verify:
-                logger.debug(f"Skipped test {get_test_name(item)} - quarantine reason: {qelem.comment}")
-                # only mark test to be skipped, this test still will be listed in test plan,
-                # but will not be executed
-                item.add_marker(pytest.mark.skip(f'Quarantine: {qelem.comment}'))
-        else:
-            if self.quarantine_verify:
-                logger.debug(f"Skipped tests {get_test_name(item)} - not under quarantine")
-                return True
-        return False
+    def pytest_collection_modifyitems(
+        self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+    ):
+        for item in items:
+            if qelem := self.quarantine.get_matched_quarantine(item):
+                item.add_marker(pytest.mark.quarantine(qelem.comment))
+                # do not mark tests to be skipped if want to verify quarantined tests
+                if not self.quarantine_verify:
+                    item.add_marker(pytest.mark.skip('under quarantine'))
+                    logger.debug("Skipped test %s - quarantine reason: %s" % (get_test_name(item), qelem.comment))
 
 
 @dataclass
@@ -53,7 +45,7 @@ class QuarantineElem:
     scenarios: list[str] = field(default_factory=list)
     platforms: list[str] = field(default_factory=list)
     architectures: list[str] = field(default_factory=list)
-    comment: str = 'NA'
+    comment: str = 'under quarantine'
 
     def __post_init__(self):
         if 'all' in self.scenarios:
@@ -97,7 +89,7 @@ class QuarantineData:
         """Return quarantine element if test is matched to quarantine rules"""
         scenario = item.originalname
         platform = get_item_platform(item)
-        architecture = item.config.twister_config.get_platform(platform).arch
+        architecture = item.config.twister_config.get_platform(platform).arch if platform else ''
 
         for qelem in self.qlist:
             matched: bool = False
