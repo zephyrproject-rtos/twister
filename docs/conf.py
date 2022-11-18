@@ -9,9 +9,6 @@ sys.path.insert(1, os.path.abspath('../src/twister2'))
 
 import twister2  # noqa: E402
 
-
-# -- General configuration ---------------------------------------------
-
 # needs_sphinx = '1.0'
 
 extensions = [
@@ -20,7 +17,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx_rtd_theme',
-    'm2r2',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -28,20 +24,16 @@ templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-source_suffix = ['.rst', '.md']
+source_suffix = ['.rst']
 
 # The master toctree document.
 master_doc = 'index'
 
 # General information about the project.
 project = 'pytest-twister'
-copyright = f"2022-{datetime.now().year}, Zephyr"
-author = "Zephyr"
+copyright = f'2022-{datetime.now().year}, Zephyr'
+author = 'Zephyr'
 
-# The version info for the project you're documenting, acts as replacement
-# for |version| and |release|, also used in various other places throughout
-# the built documents.
-#
 # The short X.Y version.
 version = twister2.__version__
 # The full version, including alpha/beta/rc tags.
@@ -64,19 +56,7 @@ todo_include_todos = False
 # -- Options for HTML output -------------------------------------------
 html_favicon = '_static/favicon.png'
 html_theme = 'sphinx_rtd_theme'
-
-# Theme options are theme-specific and customize the look and feel of a
-# theme further.  For a list of options available for each theme, see the
-# documentation.
-#
-# html_theme_options = {}
 html_static_path = ['_static']
-
-
-# -- Options for HTMLHelp output ---------------------------------------
-
-# Output file base name for HTML help builder.
-htmlhelp_basename = 'twister2doc'
 
 autosummary_generate = True
 
@@ -88,6 +68,3 @@ intersphinx_mapping = {
     'pytest': ('https://docs.pytest.org/en/latest/', None),
     'marshmallow': ('https://marshmallow.readthedocs.io/en/latest/', None),
 }
-
-nitpick_ignore = [
-]
