@@ -32,3 +32,7 @@ class TwisterRunException(TwisterException):
 
 class TwisterTimeoutExpired(TwisterException):
     """Subprocess ended due to timeout."""
+
+
+class TwisterHarnessParserException(TwisterException):
+    """Harness parser exception."""

@@ -4,8 +4,8 @@ import logging
 from typing import Type
 
 from twister2.log_parser.console_log_parser import ConsoleLogParser
-from twister2.log_parser.ztest_log_parser import ZtestLogParser
 from twister2.log_parser.log_parser_abstract import LogParserAbstract
+from twister2.log_parser.ztest_log_parser import ZtestLogParser
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ class LogParserFactory:
     def get_parser(cls, name: str) -> Type[LogParserAbstract]:
         """Return log parser class."""
         try:
+            logger.debug('Get log parser type "%s"', name)
             return cls._parsers[name]
         except KeyError as e:
             logger.exception('There is not parser with name: %s', name)
