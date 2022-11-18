@@ -83,7 +83,7 @@ class YamlTestCase:
                 assert test.result == SubTestStatus.PASS, f'Subtest {test.testname} failed'
 
         if log_parser.state == log_parser.STATE.UNKNOWN:
-            failed_msg: str = f'Test state is {log_parser.state.value}'
+            failed_msg: str = f'Test state is {log_parser.state.value} (timeout has probably occurred)'
         else:
             failed_msg: str = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
         assert log_parser.state == log_parser.STATE.PASSED, failed_msg
