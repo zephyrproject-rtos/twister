@@ -6,7 +6,6 @@ import pytest
 
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
-from twister2.filter.quarantine_filter import QuarantineFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.report.test_plan_csv import CsvTestPlan
@@ -16,6 +15,7 @@ from twister2.report.test_results_json import JsonResultsReport
 from twister2.report.test_results_plugin import TestResultsPlugin
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_file import YamlFile
+from twister2.quarantine_plugin import QuarantinePlugin
 
 SAMPLE_FILENAME: str = 'sample.yaml'
 TESTCASE_FILENAME: str = 'testcase.yaml'
@@ -219,7 +219,7 @@ def pytest_configure(config: pytest.Config):
     )
 
     if config.getoption('quarantine_list_path'):
-        quarantine_plugin = QuarantineFilter(config)
+        quarantine_plugin = QuarantinePlugin(config)
         if not is_worker_input:
             config.pluginmanager.register(
                 plugin=quarantine_plugin,

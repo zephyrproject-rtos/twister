@@ -1,5 +1,5 @@
 - scenarios:
-  - sample.basic.helloworld
+    - sample.basic.helloworld
   platforms:
     - native_posix
   comment: "https://link.to.issue/1234"
