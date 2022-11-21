@@ -2,6 +2,6 @@
     - arm
 
 - scenarios:
-  - xyz.common_merge_2
+    - xyz.common_merge_2
   platforms:
     - all

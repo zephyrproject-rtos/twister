@@ -90,11 +90,11 @@ def test_if_pytest_handle_quarantine_verify(pytester, resources) -> None:
 
 
 def test_quarantine_for_python_tests(pytester, tmp_path):
-    quarantine_file = tmp_path / "quarantine.yml"
+    quarantine_file = tmp_path / 'quarantine.yml'
     quarantine_file.write_text(textwrap.dedent("""\
       - scenarios:
-        - test_quarantine_1
-        - test_quarantine_2
+          - test_quarantine_1
+          - test_quarantine_2
     """))
     pytester.makepyfile(
         textwrap.dedent(
