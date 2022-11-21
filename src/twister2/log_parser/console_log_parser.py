@@ -30,7 +30,6 @@ class ConsoleLogParser(LogParserAbstract):
         self.type: str = harness_config.get('type')
         self.ordered: bool = harness_config.get('ordered', False)
         self.regex: list[str] = harness_config.get('regex', [])
-        self.repeat: int = harness_config.get('repeat', 1)
         self.patterns: list[re.Pattern] = []
         self.parse_method = self._get_parse_method()
         for regex in self.regex:
