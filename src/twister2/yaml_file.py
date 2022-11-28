@@ -16,7 +16,10 @@ import yaml
 from twister2.platform_specification import PlatformSpecification
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import YamlTestFunction, yaml_test_function_factory
-from twister2.yaml_test_specification import YamlTestSpecification
+from twister2.yaml_test_specification import (
+    YamlTestSpecification,
+    validate_test_specification_data,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +91,8 @@ def _read_test_specifications_from_yaml(
     yaml_tests: dict = yaml.safe_load(filepath.open())
     if yaml_tests.get('tests') is None:
         return
+
+    validate_test_specification_data(yaml_tests)
 
     sample = yaml_tests.get('sample', {})  # exists in yaml, but it is not used # noqa: F841
     common = yaml_tests.get('common', {})
