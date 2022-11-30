@@ -26,10 +26,10 @@ logger = logging.getLogger(__name__)
 class ZtestLogParser(LogParserAbstract):
     """Parse Ztest output from log stream."""
 
-    def __init__(self, stream: Iterator[str], *, fail_on_fault: bool = False, **kwargs):
+    def __init__(self, stream: Iterator[str], *, ignore_faults: bool = False, **kwargs):
         super().__init__(stream, **kwargs)
         self.detected_suite_names: list[str] = []
-        self.fail_on_fault = fail_on_fault
+        self.ignore_faults = ignore_faults
 
     def parse(self, timeout: float = 60) -> Generator[SubTestResult, None, None]:
         """Parse logs and return list of tests with statuses."""
@@ -59,7 +59,7 @@ class ZtestLogParser(LogParserAbstract):
                 logger.info('PROJECT EXECUTION SUCCESSFUL')
                 return  # exit: tests finished
 
-            if ZEPHYR_FATAL_ERROR in line and self.fail_on_fault:
+            if ZEPHYR_FATAL_ERROR in line and not self.ignore_faults:
                 logger.error('ZEPHYR FATAL ERROR')
                 self.state = self.STATE.FAILED
                 raise TwisterFatalError('Zephyr fatal error')
