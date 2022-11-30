@@ -7,7 +7,7 @@ from typing import Generator
 
 import pytest
 import yaml
-from marshmallow import fields, Schema, validate
+from marshmallow import Schema, fields, validate
 
 from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import string_to_set
@@ -42,6 +42,7 @@ class PlatformSpecification:
     arch: str = ''
     type: str = 'na'  # mcu, qemu, sim, unit, native
     simulation: str = 'na'  # qemu, simics, xt-sim, renode, nsim, mdb-nsim, tsim, armfvp
+    simulation_exec: str = 'na'
     toolchain: list[str] = field(default_factory=list)  # supported_toolchains
     env: list[str] = field(default_factory=list)
     env_satisfied: bool = True
@@ -78,7 +79,7 @@ _validate_type = validate.OneOf(
     ['mcu', 'qemu', 'sim', 'unit', 'native']
 )
 _validate_simulation = validate.OneOf(
-    ['qemu', 'simics', 'xt-sim', 'renode', 'nsim', 'mdb-nsim', 'tsim', 'armfvp']
+    ['qemu', 'simics', 'xt-sim', 'renode', 'nsim', 'mdb-nsim', 'tsim', 'armfvp', 'native']
 )
 
 
@@ -102,6 +103,7 @@ class PlatformSchema(Schema):
     arch = fields.Str()
     type = fields.Str(validate=_validate_type)
     simulation = fields.Str(validate=_validate_simulation)
+    simulation_exec = fields.Str()
     toolchain = fields.List(fields.Str())
     env = fields.List(fields.Str())
     env_satisfied = fields.Bool()
