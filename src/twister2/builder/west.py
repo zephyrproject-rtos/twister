@@ -7,6 +7,7 @@ from pathlib import Path
 
 from twister2.builder.builder_abstract import BuilderAbstract
 from twister2.exceptions import TwisterBuildException
+from twister2.helper import log_command
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class WestBuilder(BuilderAbstract):
             command.extend(['--', args])
 
         logger.info('Building Zephyr application')
-        logger.info('Build command: %s', ' '.join(command))
+        log_command(logger, 'Build command', command, level=logging.INFO)
         try:
             process = subprocess.run(
                 command,
