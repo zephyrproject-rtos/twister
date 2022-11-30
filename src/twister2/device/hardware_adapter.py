@@ -14,6 +14,7 @@ import serial
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterException, TwisterFlashException
+from twister2.helper import log_command
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,7 @@ class HardwareAdapter(DeviceAbstract):
         command = self._get_command(str(build_dir))
 
         logger.info('Flashing device %s', self.hardware_map.id)
-        logger.info('Flashing command: %s', ' '.join(command))
+        log_command(logger, 'Flashing command', command, level=logging.INFO)
         try:
             process = subprocess.Popen(
                 command,

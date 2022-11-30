@@ -18,6 +18,7 @@ from typing import Generator
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterRunException
+from twister2.helper import log_command
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
 
     def _run_simulation(self, build_dir: str | Path, timeout: float) -> None:
         command: list[str] = self._get_command(build_dir)
-        logger.info('Running command: %s', command)
+        log_command(logger, 'Running command', command, level=logging.INFO)
         try:
             return_code: int = asyncio.run(
                 self._run_command(command, timeout=timeout)
