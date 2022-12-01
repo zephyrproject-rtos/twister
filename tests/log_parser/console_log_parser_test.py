@@ -17,7 +17,7 @@ def test_if_console_log_parser_passes_for_one_line_type():
         mylib says: Hello World!
     """).split('\n')
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
-    list(parser.parse())
+    parser.parse()
     assert parser.state == parser.STATE.PASSED
     assert parser.matched_lines == ['Hello World!']
 
@@ -36,7 +36,7 @@ def test_if_console_log_parser_fails_for_one_line_type():
         Explicit is better than implicit.
     """).split('\n')
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
-    list(parser.parse())
+    parser.parse()
     assert parser.state == parser.STATE.FAILED
 
 
@@ -54,7 +54,7 @@ def test_if_console_log_parser_passes_for_not_ordered_multi_line(resources: Path
     }
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
-        list(parser.parse())
+        parser.parse()
         assert parser.state == parser.STATE.PASSED
         assert parser.matched_lines == [
             'Philosopher 4 [C:-1]        STARVING\n',
@@ -78,7 +78,7 @@ def test_if_console_log_parser_fails_for_not_ordered_multi_line(resources: Path)
     }
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
-        list(parser.parse())
+        parser.parse()
         assert parser.state == parser.STATE.FAILED
 
 
@@ -96,7 +96,7 @@ def test_if_console_log_parser_passes_for_ordered_multi_line(resources: Path):
     }
     with open(log_file, encoding='UTF-8') as file:
         parser = ConsoleLogParser(stream=iter(file), harness_config=harness_config)
-        list(parser.parse())
+        parser.parse()
         assert parser.state == parser.STATE.PASSED
 
 
@@ -120,5 +120,5 @@ def test_if_console_log_parser_fails_for_ordered_multi_line():
         ]
     }
     parser = ConsoleLogParser(stream=iter(log), harness_config=harness_config)
-    list(parser.parse())
+    parser.parse()
     assert parser.state == parser.STATE.FAILED
