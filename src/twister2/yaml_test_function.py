@@ -1,7 +1,7 @@
 """
 Yaml test implementation.
 
-Module creates pytest test function representing Zypher C tests.
+Module creates pytest test function representing Zephyr C tests.
 
 Base on pytest non-python test example:
 https://docs.pytest.org/en/6.2.x/example/nonpython.html
@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from twister2.device.device_abstract import DeviceAbstract
-from twister2.log_parser.log_parser_abstract import LogParserAbstract, SubTestStatus
+from twister2.log_parser.log_parser_abstract import LogParserAbstract
 from twister2.yaml_test_specification import YamlTestSpecification
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,6 @@ class YamlTestCase:
         request: pytest.FixtureRequest,
         dut: DeviceAbstract,
         log_parser: LogParserAbstract,
-        subtests,
         *args, **kwargs
     ):
         """Method called by pytest when it runs test."""
@@ -69,18 +68,7 @@ class YamlTestCase:
 
         logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
 
-        # using subtests fixture to log single C test
-        # https://pypi.org/project/pytest-subtests/
-        for test in log_parser.parse(timeout=self.spec.timeout):
-            with subtests.test(msg=test.testname):
-                if test.result == SubTestStatus.SKIP:
-                    pytest.skip('Skipped on runtime')
-                    continue
-                if test.result == SubTestStatus.BLOCK:
-                    pytest.skip('Blocked')
-                    continue
-
-                assert test.result == SubTestStatus.PASS, f'Subtest {test.testname} failed'
+        log_parser.parse(timeout=self.spec.timeout)
 
         if log_parser.state == log_parser.STATE.UNKNOWN:
             failed_msg: str = f'Test state is {log_parser.state.value} (timeout has probably occurred)'

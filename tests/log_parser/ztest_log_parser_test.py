@@ -1,20 +1,20 @@
 from pathlib import Path
 
 import pytest
+
 from twister2.exceptions import TwisterFatalError
-from twister2.log_parser import SubTestStatus
-from twister2.log_parser.ztest_log_parser import ZtestLogParser
+from twister2.log_parser.ztest_log_parser import SubTestStatus, ZtestLogParser
 
 
 def test_if_ztest_log_parser_returns_correct_status(resources: Path):
     with open(resources / 'ztest_log.txt', encoding='UTF-8') as file:
         parser = ZtestLogParser(stream=file, ignore_faults=False)
-        sub_tests = list(parser.parse())
-        assert len(sub_tests) == 45
+        parser.parse()
+        assert len(parser.subtest_results) == 45
         assert parser.state == parser.STATE.PASSED
         assert parser.detected_suite_names == ['common']
-        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.SKIP]) == 3
-        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.FAIL]) == 0
+        assert len([st for st in parser.subtest_results if st.result == SubTestStatus.SKIP]) == 3
+        assert len([st for st in parser.subtest_results if st.result == SubTestStatus.FAIL]) == 0
 
 
 def test_if_ztest_log_parser_returns_correct_status_with_no_subtests():
@@ -25,8 +25,8 @@ def test_if_ztest_log_parser_returns_correct_status_with_no_subtests():
         PROJECT EXECUTION SUCCESSFUL
     """.split('\n')
     parser = ZtestLogParser(stream=iter(log), ignore_faults=False)
-    sub_tests = list(parser.parse())
-    assert len(sub_tests) == 0
+    parser.parse()
+    assert len(parser.subtest_results) == 0
     assert parser.state == parser.STATE.PASSED
 
 
@@ -42,10 +42,10 @@ def test_if_ztest_log_parser_returns_correct_status_for_all_tests_skipped():
         PROJECT EXECUTION SUCCESSFUL
     """.split('\n')
     parser = ZtestLogParser(stream=iter(log), ignore_faults=False)
-    sub_tests = list(parser.parse())
-    assert len(sub_tests) == 1
+    parser.parse()
+    assert len(parser.subtest_results) == 1
     assert parser.state == parser.STATE.PASSED
-    assert len([tc for tc in sub_tests if tc.result == SubTestStatus.SKIP]) == 1
+    assert len([st for st in parser.subtest_results if st.result == SubTestStatus.SKIP]) == 1
 
 
 def test_if_ztest_log_parser_returns_correct_status_when_subtest_failed():
@@ -57,17 +57,17 @@ def test_if_ztest_log_parser_returns_correct_status_when_subtest_failed():
         PROJECT EXECUTION FAILED
     """.split('\n')
     parser = ZtestLogParser(stream=iter(log), ignore_faults=False)
-    sub_tests = list(parser.parse())
+    parser.parse()
     assert parser.state == parser.STATE.FAILED
-    assert len(sub_tests) == 1
-    assert len([tc for tc in sub_tests if tc.result == SubTestStatus.FAIL]) == 1
+    assert len(parser.subtest_results) == 1
+    assert len([st for st in parser.subtest_results if st.result == SubTestStatus.FAIL]) == 1
 
 
 def test_if_ztest_log_parser_returns_correct_status_with_no_input():
     log = []
     parser = ZtestLogParser(stream=iter(log), ignore_faults=False)
-    sub_tests = list(parser.parse())
-    assert len(sub_tests) == 0
+    parser.parse()
+    assert len(parser.subtest_results) == 0
     assert parser.state == parser.STATE.UNKNOWN
 
 
@@ -82,11 +82,11 @@ def test_if_ztest_log_parser_not_fails_on_fault(resources: Path):
     with open(resources / 'ztest_log_with_fail_dynamic_thread.txt', 'r', encoding='UTF-8') as file:
         stream = (line for line in file)
         parser = ZtestLogParser(stream=stream, ignore_faults=True)
-        sub_tests = list(parser.parse())
-        assert len(sub_tests) == 4
+        parser.parse()
+        assert len(parser.subtest_results) == 4
         assert parser.state == parser.STATE.PASSED
         assert parser.detected_suite_names == ['thread_dynamic']
-        assert len([tc for tc in sub_tests if tc.result == SubTestStatus.PASS]) == 4
+        assert len([st for st in parser.subtest_results if st.result == SubTestStatus.PASS]) == 4
 
 
 # TODO: Write test for BLOCK status for subtest

@@ -9,7 +9,6 @@ import time
 from typing import Callable, Iterator
 
 from twister2.exceptions import TwisterHarnessParserException
-from twister2.log_parser import SubTestResult
 from twister2.log_parser.log_parser_abstract import LogParserAbstract
 
 logger = logging.getLogger(__name__)
@@ -49,7 +48,7 @@ class ConsoleLogParser(LogParserAbstract):
             logger.error('Unknown harness_config type')
             raise TwisterHarnessParserException('Unknown harness_config type')
 
-    def parse(self, timeout: float = 60) -> Iterator[SubTestResult]:
+    def parse(self, timeout: float = 60) -> None:
         logger.debug('%s: Parsing output', self.__class__.__name__)
         end_time = time.time() + timeout
         while self.stream:
@@ -71,8 +70,6 @@ class ConsoleLogParser(LogParserAbstract):
         if len(self.matched_lines) != len(self.regex):
             self.state = self.STATE.FAILED
             self.messages.append('Did not find expected messages')
-
-        return []
 
     def _parse_one_line(self, line: str) -> bool:
         if self.patterns[0].search(line):
