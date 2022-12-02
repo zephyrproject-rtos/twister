@@ -34,6 +34,13 @@ Installation from the source:
   pip install .
 
 
+Installation the project in editable mode:
+
+.. code-block:: sh
+
+  pip install -e .
+
+
 Build wheel package:
 
 .. code-block:: sh
