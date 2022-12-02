@@ -1,11 +1,5 @@
 #!/usr/bin/env python
-import os
-import sys
 from datetime import datetime
-
-
-sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(1, os.path.abspath('../src/twister2'))
 
 import twister2  # noqa: E402
 
@@ -64,7 +58,7 @@ autoapi_type = 'python'
 autoapi_dirs = ['../src/twister2']
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.9/', None),
+    'python': ('https://docs.python.org/3.11/', None),
     'pytest': ('https://docs.pytest.org/en/latest/', None),
     'marshmallow': ('https://marshmallow.readthedocs.io/en/latest/', None),
 }
