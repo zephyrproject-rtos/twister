@@ -23,3 +23,5 @@ exclude_lines =
 
     ^\s*if TYPE_CHECKING:
     ^\s*@overload( |$)
+    def __repr__
+    def __str__
