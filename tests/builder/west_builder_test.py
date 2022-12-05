@@ -42,9 +42,10 @@ def test_if_west_builder_builds_code_from_source_without_errors(patched_run, pat
     )
 
 
+@mock.patch('shutil.which', return_value='west')
 @mock.patch('subprocess.run')
 def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_returncode(
-        patched_run, west_builder: WestBuilder
+        patched_run, patched_which, west_builder: WestBuilder
 ):
     mocked_process = mock.MagicMock()
     mocked_process.returncode = 1
@@ -53,8 +54,11 @@ def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_retu
         west_builder.build(platform='native_posix', scenario='bt', build_dir='src')
 
 
+@mock.patch('shutil.which', return_value='west')
 @mock.patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'test'))
-def test_if_west_builder_raises_exception_when_subprocess_raised_exception(patched_run, west_builder: WestBuilder):
+def test_if_west_builder_raises_exception_when_subprocess_raised_exception(
+        patched_run, patched_which, west_builder: WestBuilder
+):
     with pytest.raises(TwisterBuildException, match='Building error'):
         west_builder.build(platform='native_posix', scenario='bt', build_dir='src')
 
