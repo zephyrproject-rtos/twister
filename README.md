@@ -59,7 +59,7 @@ pytest tests --collect-only
 
 Run tests only for specific platforms:
 ```
-pytest tests --platform=qemu_x86 --platform=nrf51dk_nrf51422
+pytest tests --platform=native_posix --platform=nrf52840dk_nrf52840
 ```
 
 Provide directory to search for board configuration files:
