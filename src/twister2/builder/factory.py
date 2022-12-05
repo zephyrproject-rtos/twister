@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Type
 
 from twister2.builder.builder_abstract import BuilderAbstract
-from twister2.builder.west import WestBuilder
-
-from typing import Type
+from twister2.builder.west_builder import WestBuilder
 
 logger = logging.getLogger(__name__)
 
