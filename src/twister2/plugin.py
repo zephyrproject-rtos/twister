@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+import datetime
 import logging
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -88,7 +92,7 @@ def pytest_addoption(parser: pytest.Parser):
     )
     twister_group.addoption(
         '--zephyr-base',
-        metavar='path',
+        metavar='PATH',
         action='store',
         default=None,
         help='base directory for Zephyr'
@@ -101,14 +105,14 @@ def pytest_addoption(parser: pytest.Parser):
     twister_group.addoption(
         '-O',
         '--outdir',
-        metavar='path',
+        metavar='PATH',
         dest='output_dir',
         default='twister-out',
         help='output directory for logs and binaries (default: %(default)s)'
     )
     twister_group.addoption(
         '--hardware-map',
-        metavar='path',
+        metavar='PATH',
         help='load hardware map from a file',
     )
     twister_group.addoption(
@@ -139,6 +143,18 @@ def pytest_addoption(parser: pytest.Parser):
              'To verify their current status, one can run only quarantined tests '
              'using mark: -m quarantine'
     )
+    twister_group.addoption(
+        '--clear',
+        dest='clear',
+        action='store',
+        default='no',
+        choices=('no', 'delete', 'archive'),
+        help='Clear twister artifacts. '
+             '"no" - use previous artifacts, '
+             '"delete" - delete previous artifacts, '
+             '"archive" - keep previous artifacts '
+             '(default=%(default)s)'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -157,6 +173,10 @@ def pytest_configure(config: pytest.Config):
     os.environ['ZEPHYR_BASE'] = zephyr_base
 
     worker_input = hasattr(config, 'workerinput')  # xdist worker
+
+    if not config.option.collectonly or worker_input:
+        choice = 'delete' if config.option.build_only else config.option.clear
+        run_artifactory_cleanup(choice, config.option.output_dir)
 
     configure_logging(config)
 
@@ -226,3 +246,19 @@ def pytest_configure(config: pytest.Config):
         'markers', 'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
                    'quarantine-list-yaml file. To mark scenario in code better use skip/skipif'
     )
+
+
+def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
+    if choice == 'no':
+        print('Keeping previous artifacts untouched')
+    elif choice == 'delete':
+        print(f'Deleting previous artifacts from {output_dir}')
+        shutil.rmtree(output_dir, ignore_errors=True)
+    elif choice == 'archive':
+        if os.path.exists(output_dir) is False:
+            return
+        timestamp = os.path.getmtime(output_dir)
+        file_date = datetime.datetime.fromtimestamp(timestamp).strftime('%y%m%d%H%M%S')
+        new_output_dir = f'{output_dir}_{file_date}'
+        print(f'Renaming output directory to {new_output_dir}')
+        shutil.move(output_dir, new_output_dir)
