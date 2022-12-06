@@ -172,9 +172,9 @@ def pytest_configure(config: pytest.Config):
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
 
-    worker_input = hasattr(config, 'workerinput')  # xdist worker
+    xdist_worker = hasattr(config, 'workerinput')  # xdist worker
 
-    if not config.option.collectonly or worker_input:
+    if not config.option.collectonly or xdist_worker:
         choice = config.option.clear
         if config.option.build_only and choice == 'no':
             msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
@@ -191,7 +191,7 @@ def pytest_configure(config: pytest.Config):
     if testplan_json_path := config.getoption('testplan_json_path'):
         test_plan_writers.append(JsonTestPlan(testplan_json_path))
 
-    if test_plan_writers and not worker_input:
+    if test_plan_writers and not xdist_worker:
         config.pluginmanager.register(
             plugin=TestPlanPlugin(config=config, writers=test_plan_writers),
             name='testplan'
@@ -201,7 +201,7 @@ def pytest_configure(config: pytest.Config):
     if test_result_json_path := config.getoption('results_json_path'):
         test_results_writers.append(JsonResultsReport(test_result_json_path))
 
-    if test_results_writers and not worker_input and not config.option.collectonly:
+    if test_results_writers and not xdist_worker and not config.option.collectonly:
         config.pluginmanager.register(
             plugin=TestResultsPlugin(config, writers=test_results_writers),
             name='test_results'
@@ -211,7 +211,7 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('tags'):
         filter_plugin.add_filter(TagFilter(config))
 
-    if not worker_input:
+    if not xdist_worker:
         config.pluginmanager.register(
             plugin=filter_plugin,
             name='filter_tests'
@@ -219,7 +219,7 @@ def pytest_configure(config: pytest.Config):
 
     if config.getoption('quarantine_list_path'):
         quarantine_plugin = QuarantinePlugin(config)
-        if not worker_input:
+        if not xdist_worker:
             config.pluginmanager.register(
                 plugin=quarantine_plugin,
                 name='quarantine'
