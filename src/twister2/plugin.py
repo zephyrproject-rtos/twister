@@ -175,7 +175,11 @@ def pytest_configure(config: pytest.Config):
     worker_input = hasattr(config, 'workerinput')  # xdist worker
 
     if not config.option.collectonly or worker_input:
-        choice = 'delete' if config.option.build_only else config.option.clear
+        choice = config.option.clear
+        if config.option.build_only and choice == 'no':
+            msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
+            logger.error(msg)
+            pytest.exit(msg)
         run_artifactory_cleanup(choice, config.option.output_dir)
 
     configure_logging(config)
