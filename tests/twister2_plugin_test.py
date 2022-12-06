@@ -13,8 +13,10 @@ def test_twister_help(pytester):
         '*--build-only*build only*',
         '*--platform=PLATFORM*build tests for specific platforms*',
         '*--board-root=PATH*directory to search for board configuration files*',
-        '*--zephyr-base=path*base directory for Zephyr*',
-        '*--quarantine-list=*'
+        '*--zephyr-base=PAT*base directory for Zephyr*',
+        '*--quarantine-list=*',
+        '*--clear={no,delete,archive}*',
+        '*Clear twister artifacts*',
     ])
 
 
