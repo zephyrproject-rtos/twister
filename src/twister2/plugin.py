@@ -8,6 +8,7 @@ from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
+from twister2.quarantine_plugin import QuarantinePlugin
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
 from twister2.report.test_plan_plugin import TestPlanPlugin
@@ -15,7 +16,6 @@ from twister2.report.test_results_json import JsonResultsReport
 from twister2.report.test_results_plugin import TestResultsPlugin
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_file import YamlFile
-from twister2.quarantine_plugin import QuarantinePlugin
 
 SAMPLE_FILENAME: str = 'sample.yaml'
 TESTCASE_FILENAME: str = 'testcase.yaml'
@@ -156,18 +156,18 @@ def pytest_configure(config: pytest.Config):
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
 
-    is_worker_input = hasattr(config, 'workerinput')  # xdist worker
+    worker_input = hasattr(config, 'workerinput')  # xdist worker
 
     configure_logging(config)
 
-    # configure TestPlan plugin
+    # register plugins
     test_plan_writers = []
     if testplan_csv_path := config.getoption('testplan_csv_path'):
         test_plan_writers.append(CsvTestPlan(testplan_csv_path))
     if testplan_json_path := config.getoption('testplan_json_path'):
         test_plan_writers.append(JsonTestPlan(testplan_json_path))
 
-    if test_plan_writers and not is_worker_input:
+    if test_plan_writers and not worker_input:
         config.pluginmanager.register(
             plugin=TestPlanPlugin(config=config, writers=test_plan_writers),
             name='testplan'
@@ -177,7 +177,7 @@ def pytest_configure(config: pytest.Config):
     if test_result_json_path := config.getoption('results_json_path'):
         test_results_writers.append(JsonResultsReport(test_result_json_path))
 
-    if test_results_writers and not is_worker_input and not config.option.collectonly:
+    if test_results_writers and not worker_input and not config.option.collectonly:
         config.pluginmanager.register(
             plugin=TestResultsPlugin(config, writers=test_results_writers),
             name='test_results'
@@ -187,12 +187,21 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('tags'):
         filter_plugin.add_filter(TagFilter(config))
 
-    if not is_worker_input:
+    if not worker_input:
         config.pluginmanager.register(
             plugin=filter_plugin,
             name='filter_tests'
         )
 
+    if config.getoption('quarantine_list_path'):
+        quarantine_plugin = QuarantinePlugin(config)
+        if not worker_input:
+            config.pluginmanager.register(
+                plugin=quarantine_plugin,
+                name='quarantine'
+            )
+
+    # configure twister
     logger.debug('ZEPHYR_BASE: %s', zephyr_base)
 
     board_root = config.getoption('board_root') or config.getini('board_root')
@@ -217,11 +226,3 @@ def pytest_configure(config: pytest.Config):
         'markers', 'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
                    'quarantine-list-yaml file. To mark scenario in code better use skip/skipif'
     )
-
-    if config.getoption('quarantine_list_path'):
-        quarantine_plugin = QuarantinePlugin(config)
-        if not is_worker_input:
-            config.pluginmanager.register(
-                plugin=quarantine_plugin,
-                name='quarantine'
-            )
