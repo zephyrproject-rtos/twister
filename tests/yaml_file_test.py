@@ -17,8 +17,6 @@ from twister2.yaml_file import (
 )
 from twister2.yaml_test_specification import YamlTestSpecification
 
-DATA_DIR: Path = Path(__file__).parent / 'data'
-
 
 @pytest.fixture(scope='function')
 def testcase() -> YamlTestSpecification:
@@ -181,8 +179,8 @@ def test_if_join_filters_returns_joined_filters_without_empty_strings():
     assert _join_filters(['aaa', '', '', 'bbb']) == '(aaa) and (bbb)'
 
 
-def test_read_test_specifications_from_yaml_common(twister_config):
-    yaml_file_path = DATA_DIR / 'common' / 'testcase.yaml'
+def test_if_can_read_test_specifications_from_yaml_common(twister_config, resources):
+    yaml_file_path = resources / 'tests' / 'common' / 'testcase.yaml'
     for spec in _read_test_specifications_from_yaml(yaml_file_path, twister_config):
         if spec.original_name == 'xyz.common_merge_1':
             assert spec.tags == {'kernel', 'posix', 'picolibc'}
