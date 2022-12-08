@@ -155,6 +155,14 @@ def pytest_addoption(parser: pytest.Parser):
              '"archive" - keep previous artifacts '
              '(default=%(default)s)'
     )
+    twister_group.addoption(
+        '--builder',
+        dest='builder',
+        action='store',
+        default='west',
+        choices=('west',),
+        help='Select builder type (default=%(default)s)'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -168,6 +176,9 @@ def pytest_configure(config: pytest.Config):
         pytest.exit(
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
         )
+
+    output_dir = config.getoption('--outdir')
+    os.makedirs(output_dir, exist_ok=True)
 
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
@@ -234,22 +245,16 @@ def pytest_configure(config: pytest.Config):
     config.twister_config = TwisterConfig.create(config)
 
     # register custom markers for twister
-    config.addinivalue_line(
-        'markers', 'tags(tag1, tag2, ...): mark test for specific tags'
-    )
-    config.addinivalue_line(
-        'markers', 'platform(platform_name): mark test for specific platform'
-    )
-    config.addinivalue_line(
-        'markers', 'type(test_type): mark test for specific type'
-    )
-    config.addinivalue_line(
-        'markers', 'slow: mark test as slow'
-    )
-    config.addinivalue_line(
-        'markers', 'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
-                   'quarantine-list-yaml file. To mark scenario in code better use skip/skipif'
-    )
+    markers = [
+        'tags(tag1, tag2, ...): mark test for specific tags',
+        'platform(platform_name): mark test for specific platform',
+        'type(test_type): mark test for specific type',
+        'slow: mark test as slow',
+        'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
+        'quarantine-list-yaml file. To mark scenario in code better use skip/skipif',
+    ]
+    for marker in markers:
+        config.addinivalue_line('markers', marker)
 
 
 def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
@@ -266,3 +271,13 @@ def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
         new_output_dir = f'{output_dir}_{file_date}'
         print(f'Renaming output directory to {new_output_dir}')
         shutil.move(output_dir, new_output_dir)
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    # extend JUnitXML report for user properties
+    if marker := item.get_closest_marker('type'):
+        item.user_properties.append(('type', marker.args[0]))
+    if marker := item.get_closest_marker('tags'):
+        item.user_properties.append(('tags', ' '.join(marker.args)))
+    if marker := item.get_closest_marker('platform'):
+        item.user_properties.append(('platform', marker.args[0]))

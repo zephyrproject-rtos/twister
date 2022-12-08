@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-import yaml
 from marshmallow import Schema, fields, validate
 
 from twister2.exceptions import TwisterConfigurationException
-from twister2.helper import string_to_set
+from twister2.helper import safe_load_yaml, string_to_set
 
 logger = logging.getLogger(__name__)
 
@@ -57,13 +56,12 @@ class PlatformSpecification:
     @classmethod
     def load_from_yaml(cls, filename: str | Path) -> PlatformSpecification:
         """Load platform from yaml file."""
-        with open(filename, 'r', encoding='UTF-8') as file:
-            data: dict = yaml.safe_load(file)
+        data: dict = safe_load_yaml(Path(filename))
         try:
             data = PlatformSchema().load(data)
             return cls.from_dict(data)
         except Exception as e:
-            logger.exception('Cannot create PlatformSpecification from yaml data: %s', data)
+            logger.error('Cannot create PlatformSpecification from yaml data: %s', data)
             raise TwisterConfigurationException('Cannot create PlatformSpecification from yaml data') from e
 
     @classmethod
@@ -117,7 +115,7 @@ def discover_platforms(directory: Path) -> Generator[PlatformSpecification, None
         try:
             yield PlatformSpecification.load_from_yaml(str(file))
         except Exception as e:
-            logger.exception('Cannot read platform definition from yaml: %e', e)
+            logger.exception('Cannot read platform definition from yaml: %s', e)
             raise
 
 

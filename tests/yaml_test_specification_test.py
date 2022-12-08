@@ -145,7 +145,7 @@ def test_if_can_create_test_specification_instance_from_dict(yaml_specification)
     params = yaml_specification['tests']['test_foo']
     params['name'] = 'test_foo'
     params['original_name'] = 'test_foo'
-    params['path'] = '/tmp'
+    params['source_dir'] = 'src'
     params['rel_to_base_path'] = '/tmp'
     params['platform'] = 'native_posix'
     YamlTestSpecification(**params)
