@@ -3,9 +3,8 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
-from pathlib import Path
 
-from twister2.builder.builder_abstract import BuilderAbstract
+from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.exceptions import TwisterBuildException
 from twister2.helper import log_command
 
@@ -14,14 +13,9 @@ logger = logging.getLogger(__name__)
 
 class WestBuilder(BuilderAbstract):
 
-    def build(self, platform: str, scenario: str, build_dir: str | Path | None = None, **kwargs) -> None:
+    def build(self, build_config: BuildConfig) -> None:
         """
         Build Zephyr application with `west`.
-
-        :param platform: board to build for with optional board revision
-        :param build_dir: build directory to create or use
-        :param scenario: test scenario name
-        :keyword cmake_args: list of extra cmake arguments
         """
         west = shutil.which('west')
         if west is None:
@@ -30,14 +24,14 @@ class WestBuilder(BuilderAbstract):
         command = [
             west,
             'build',
-            str(self.source_dir),
+            str(build_config.source_dir),
             '--pristine', 'always',
-            '--board', platform,
-            '--test-item', scenario
+            '--board', build_config.platform,
+            '--test-item', build_config.scenario
         ]
-        if build_dir:
-            command.extend(['--build-dir', str(build_dir)])
-        if cmake_args := kwargs.get('cmake_args'):
+        if build_config.build_dir:
+            command.extend(['--build-dir', str(build_config.build_dir)])
+        if cmake_args := build_config.extra_args:
             args = self._prepare_cmake_args(cmake_args)
             command.extend(['--', args])
 
@@ -50,14 +44,16 @@ class WestBuilder(BuilderAbstract):
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            logger.error('Failed building %s for %s', self.source_dir, platform)
+            logger.error('Failed building %s for %s', build_config.source_dir, build_config.platform)
             raise TwisterBuildException('Building error') from e
         else:
             if process.returncode == 0:
-                logger.info('Finished building %s for %s', self.source_dir, platform)
+                logger.info('Finished building %s for %s', build_config.source_dir, build_config.platform)
             else:
                 logger.error(process.stderr.decode())
-                raise TwisterBuildException(f'Failed building {self.source_dir} for platform: {platform}')
+                raise TwisterBuildException(
+                    f'Failed building {build_config.source_dir} for platform: {build_config.platform}'
+                )
 
     @staticmethod
     def _prepare_cmake_args(cmake_args: list[str]) -> str:
