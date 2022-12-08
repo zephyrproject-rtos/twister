@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-import yaml
 
+from twister2.helper import safe_load_yaml
 from twister2.platform_specification import PlatformSpecification
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import YamlTestFunction, yaml_test_function_factory
@@ -33,10 +33,6 @@ class YamlFile(pytest.File):
         # read all tests from yaml file and generate pytest test functions
         for spec in _read_test_specifications_from_yaml(self.path, twister_config):
             test_function: YamlTestFunction = yaml_test_function_factory(spec=spec, parent=self)
-            # extend xml report
-            test_function.user_properties.append(('type', spec.type))
-            test_function.user_properties.append(('tags', ' '.join(spec.tags)))
-            test_function.user_properties.append(('platform', spec.platform))
             yield test_function
 
 
@@ -59,20 +55,8 @@ def _generate_test_variants_for_platforms(
         spec['platform'] = platform.identifier
         yaml_test_spec = YamlTestSpecification(**spec)
 
-        if should_skip_for_platform(yaml_test_spec, platform):
+        if should_be_skip(yaml_test_spec, platform):
             continue
-        if should_skip_for_arch(yaml_test_spec, platform):
-            continue
-        if should_skip_for_tag(yaml_test_spec, platform):
-            continue
-        if should_skip_for_toolchain(yaml_test_spec, platform):
-            continue
-        if should_skip_for_min_flash(yaml_test_spec, platform):
-            continue
-        if should_skip_for_min_ram(yaml_test_spec, platform):
-            continue
-        # TODO:
-        # filter by build_on_all
 
         logger.debug('Generated test %s for platform %s', test_name, platform.identifier)
         yield yaml_test_spec
@@ -88,44 +72,52 @@ def _read_test_specifications_from_yaml(
     :param twister_config: twister configuration
     :return: generator of yaml test specifications
     """
-    yaml_tests: dict = yaml.safe_load(filepath.open())
+    yaml_tests: dict = safe_load_yaml(filepath)
     if yaml_tests.get('tests') is None:
         return
 
-    validate_test_specification_data(yaml_tests)
+    yaml_tests = extract_tests(yaml_tests)
 
-    sample = yaml_tests.get('sample', {})  # exists in yaml, but it is not used # noqa: F841
-    common = yaml_tests.get('common', {})
-
-    for test_name, spec in yaml_tests['tests'].items():
+    for test_name, spec in yaml_tests.items():
         test_name: str  # type: ignore
         spec: dict  # type: ignore
-
-        for key, common_value in common.items():
-            if key in spec:
-                if key == 'filter':
-                    spec[key] = _join_filters([spec[key], common_value])
-                elif isinstance(common_value, str):
-                    spec[key] = _join_strings([spec[key], common_value])
-                elif isinstance(common_value, list):
-                    spec[key] = spec[key] + common_value
-                else:
-                    # if option in spec already exists and does not cover above
-                    # mentioned cases - leave it as is
-                    pass
-            else:
-                spec[key] = common_value
-
         spec['name'] = test_name
-        spec['path'] = Path(filepath).parent
+        spec['source_dir'] = Path(filepath).parent
         try:
-            spec['rel_to_base_path'] = Path.relative_to(spec['path'], twister_config.zephyr_base)
+            spec['rel_to_base_path'] = Path.relative_to(spec['source_dir'], twister_config.zephyr_base)
         except ValueError:
             # Test not in zephyr tree
             spec['rel_to_base_path'] = 'out_of_tree'
 
         for test_spec in _generate_test_variants_for_platforms(spec, twister_config):
             yield test_spec
+
+
+def extract_tests(raw_spec: dict) -> dict:
+    validate_test_specification_data(raw_spec)
+    sample = raw_spec.get('sample', {})  # exists in yaml, but it is not used # noqa: F841
+    common = raw_spec.get('common', {})
+
+    tests: dict = {}
+    for test_name, test_spec_dict in raw_spec['tests'].items():
+
+        for key, common_value in common.items():
+            if key in test_spec_dict:
+                if key == 'filter':
+                    test_spec_dict[key] = _join_filters([test_spec_dict[key], common_value])
+                elif isinstance(common_value, str):
+                    test_spec_dict[key] = _join_strings([test_spec_dict[key], common_value])
+                elif isinstance(common_value, list):
+                    test_spec_dict[key] = test_spec_dict[key] + common_value
+                else:
+                    # if option in spec already exists and does not cover above
+                    # mentioned cases - leave it as is
+                    pass
+            else:
+                test_spec_dict[key] = common_value
+        tests[test_name] = test_spec_dict
+
+    return tests
 
 
 def _join_filters(args: list[str]) -> str:
@@ -149,6 +141,31 @@ def _log_test_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         'Skipped test %s for platform %s - %s',
         test_spec.original_name, platform.identifier, reason
     )
+
+
+def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    """
+    Return True if given test spec should be skipped for the platform.
+
+    :param test_spec: test specification
+    :param platform: platform specification
+    :return: True is the specification should be skipped
+    """
+    if should_skip_for_platform(test_spec, platform):
+        return True
+    if should_skip_for_arch(test_spec, platform):
+        return True
+    if should_skip_for_tag(test_spec, platform):
+        return True
+    if should_skip_for_toolchain(test_spec, platform):
+        return True
+    if should_skip_for_min_flash(test_spec, platform):
+        return True
+    if should_skip_for_min_ram(test_spec, platform):
+        return True
+    # TODO:
+    # filter by build_on_all
+    return False
 
 
 def should_skip_for_toolchain(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:

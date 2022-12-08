@@ -28,15 +28,28 @@ def yaml_test_function_factory(spec: YamlTestSpecification, parent: Any) -> Yaml
         parent=parent,
         callobj=YamlTestCase(spec),  # callable object (test function)
     )
-    function.add_marker(pytest.mark.platform(spec.platform))
-    function.add_marker(pytest.mark.type(spec.type))
-    if spec.tags:
-        function.add_marker(pytest.mark.tags(*spec.tags))
-    if spec.slow:
-        function.add_marker(pytest.mark.slow)
-    if spec.skip:
-        function.add_marker(pytest.mark.skip('Skipped in yaml specification'))
+    add_markers_from_specification(function, spec)
     return function
+
+
+def add_markers_from_specification(obj: pytest.Item | pytest.Function, spec: YamlTestSpecification) -> None:
+    """
+    Add markers to pytest function or item.
+
+    Function adds all required markers base on test specification.
+
+    :param obj: instance of pytest Item or Function
+    :param spec: yaml test specification
+    """
+    obj.add_marker(pytest.mark.platform(spec.platform))
+    if spec.type:
+        obj.add_marker(pytest.mark.type(spec.type))
+    if spec.tags:
+        obj.add_marker(pytest.mark.tags(*spec.tags))
+    if spec.slow:
+        obj.add_marker(pytest.mark.slow)
+    if spec.skip:
+        obj.add_marker(pytest.mark.skip('Skipped in yaml specification'))
 
 
 class YamlTestFunction(pytest.Function):
@@ -66,7 +79,7 @@ class YamlTestCase:
             # do not run test for build only
             return
 
-        logger.info('Execution test %s from %s', self.spec.name, self.spec.path)
+        logger.info('Execution test %s from %s', self.spec.name, self.spec.source_dir)
 
         log_parser.parse(timeout=self.spec.timeout)
 

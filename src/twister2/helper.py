@@ -3,8 +3,15 @@ from __future__ import annotations
 import logging
 import platform
 import shlex
+from pathlib import Path
+
+import yaml.parser
+
+from twister2.exceptions import TwisterException
 
 _WINDOWS = (platform.system() == 'Windows')
+
+logger = logging.getLogger(__name__)
 
 
 def string_to_set(value: str | set) -> set[str]:
@@ -19,6 +26,24 @@ def string_to_list(value: str | list) -> list[str]:
         return list(value.split())
     else:
         return value
+
+
+def safe_load_yaml(filename: Path) -> dict:
+    """
+    Return data from yaml file.
+
+    :param filename: path to yaml file
+    :return: data read from yaml file
+    """
+    __tracebackhide__ = True
+    with filename.open(encoding='UTF-8') as file:
+        try:
+            data = yaml.safe_load(file)
+        except yaml.parser.ParserError as exc:
+            logger.error('Parsing error for yaml file %s: %s', filename, exc)
+            raise TwisterException(f'Cannot load data from yaml file: {filename}')
+        else:
+            return data
 
 
 def log_command(logger: logging.Logger, msg: str, args: list, level: int = logging.DEBUG):
