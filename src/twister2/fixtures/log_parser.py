@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Generator
 
 import pytest
 from pytest_subtests import SubTests
@@ -14,9 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
-def log_parser(request: pytest.FixtureRequest, dut: DeviceAbstract, subtests: SubTests) -> LogParserAbstract:
+def log_parser(
+        request: pytest.FixtureRequest, dut: DeviceAbstract, subtests: SubTests
+) -> Generator[LogParserAbstract, None, None]:
     """Return log parser."""
-    spec = request.session.specifications.get(request.node.nodeid)
+    spec = request.session.specifications.get(request.node.nodeid)  # type: ignore
     if not spec:
         msg = f'Could not find test specification for test {request.node.nodeid}'
         logger.error(msg)

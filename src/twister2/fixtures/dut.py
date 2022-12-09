@@ -1,5 +1,5 @@
 import logging
-from typing import Type
+from typing import Generator, Type
 
 import pytest
 
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
-def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> DeviceAbstract:
+def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> Generator[DeviceAbstract, None, None]:
     """Return device instance."""
-    twister_config: TwisterConfig = request.config.twister_config
-    spec = request.session.specifications.get(request.node.nodeid)
+    twister_config: TwisterConfig = request.config.twister_config  # type: ignore
+    spec = request.session.specifications.get(request.node.nodeid)  # type: ignore
     if not spec:
         msg = f'Could not find test specification for test {request.node.nodeid}'
         logger.error(msg)

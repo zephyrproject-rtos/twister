@@ -3,6 +3,7 @@ Pytest fixture for building hex files.
 """
 import logging
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -16,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
-def builder(request: pytest.FixtureRequest) -> BuilderAbstract:
+def builder(request: pytest.FixtureRequest) -> Generator[BuilderAbstract, None, None]:
     """Build hex files for test suite."""
-    twister_config: TwisterConfig = request.config.twister_config
-    spec = request.session.specifications.get(request.node.nodeid)
+    twister_config: TwisterConfig = request.config.twister_config  # type: ignore
+    spec = request.session.specifications.get(request.node.nodeid)  # type: ignore
     if not spec:
         msg = f'Could not find test specification for test {request.node.nodeid}'
         logger.error(msg)
