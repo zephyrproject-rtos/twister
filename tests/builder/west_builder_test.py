@@ -41,7 +41,7 @@ def test_if_west_builder_builds_code_from_source_without_errors(
     patched_run.assert_called_with(
         ['west', 'build', 'source', '--pristine', 'always', '--board', 'native_posix',
          '--test-item', 'bt', '--build-dir', 'build', '--', '-DCONFIG_NEWLIB_LIBC=y'],
-        stdout=-1, stderr=-1
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
 
 
