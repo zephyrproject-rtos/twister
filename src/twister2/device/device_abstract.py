@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class DeviceAbstract(abc.ABC):
     """Class defines an interface for all devices."""
 
-    def __init__(self, twister_config: TwisterConfig, *args, **kwargs) -> None:
+    def __init__(self, twister_config: TwisterConfig, **kwargs) -> None:
         """
         :param twister_config: twister configuration
         """

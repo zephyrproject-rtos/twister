@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class HardwareAdapter(DeviceAbstract):
     """Adapter class for real device."""
 
-    def __init__(self, twister_config, hardware_map: HardwareMap, **kwargs) -> None:
+    def __init__(self, twister_config, *, hardware_map: HardwareMap, **kwargs) -> None:
         """
         :param twister_config: twister configuration
         :param hardware_map: device hardware map
