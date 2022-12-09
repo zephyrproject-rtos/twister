@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -43,7 +44,9 @@ class QuarantineElement:
     scenarios: list[str] = field(default_factory=list)
     platforms: list[str] = field(default_factory=list)
     architectures: list[str] = field(default_factory=list)
+    simulations: list[str] = field(default_factory=list)
     comment: str = 'under quarantine'
+    use_regex: bool = False
 
     def __post_init__(self):
         # If there is no entry in filters then take all possible values.
@@ -54,12 +57,14 @@ class QuarantineElement:
             self.platforms = []
         if 'all' in self.architectures:
             self.architectures = []
+        if 'all' in self.simulations:
+            self.simulations = []
         # However, at least one of the filters ('scenarios', platforms' ...)
         # must be given (there is no sense to put all possible configuration
         # into quarantine)
-        if not any([self.scenarios, self.platforms, self.architectures]):
+        if not any([self.scenarios, self.platforms, self.architectures, self.simulations]):
             raise TwisterConfigurationException(
-                "At least one of filters ('scenarios', 'platforms', 'architectures') must be specified")
+                "At least one of filters ('scenarios', 'platforms' ...) must be specified")
 
 
 @dataclass
@@ -95,32 +100,43 @@ class QuarantineData:
         """Return quarantine element if test is matched to quarantine rules"""
         scenario = item.originalname  # type: ignore[attr-defined]
         platform = get_item_platform(item)
-        architecture = item.config.twister_config.get_platform(platform).arch if platform else ''  # type: ignore
+        if platform:
+            plat_spec = item.config.twister_config.get_platform(platform)
+            architecture = plat_spec.arch
+            simulation = plat_spec.simulation
+        else:
+            architecture = ''
+            simulation = ''  # type: ignore
 
         for qelem in self.qlist:
             matched: bool = False
             if qelem.scenarios:
-                if scenario in qelem.scenarios:
-                    matched = True
-                else:
-                    matched = False
+                if (matched := _is_element_matched(scenario, qelem.scenarios, qelem.use_regex)) is False:
                     continue
             if qelem.platforms:
-                if platform in qelem.platforms:
-                    matched = True
-                else:
-                    matched = False
+                if (matched := _is_element_matched(platform, qelem.platforms, qelem.use_regex)) is False:
                     continue
             if qelem.architectures:
-                if architecture in qelem.architectures:
-                    matched = True
-                else:
-                    matched = False
+                if (matched := _is_element_matched(architecture, qelem.architectures, qelem.use_regex)) is False:
                     continue
+            if qelem.simulations:
+                if (matched := _is_element_matched(simulation, qelem.simulations, qelem.use_regex)) is False:
+                    continue
+
             if matched:
                 return qelem
-
         return None
+
+
+def _is_element_matched(element: str, list_of_elements: list, use_regex=False) -> bool:
+    """Return True if given element is matching to any of elements from the list"""
+    if not use_regex:
+        if element in list_of_elements:
+            return True
+    for pattern in list_of_elements:
+        if re.fullmatch(pattern, element):
+            return True
+    return False
 
 
 class QuarantineSchema(Schema):
@@ -128,4 +144,6 @@ class QuarantineSchema(Schema):
     scenarios = fields.List(fields.String)
     platforms = fields.List(fields.String)
     architectures = fields.List(fields.String)
+    simulations = fields.List(fields.String)
     comment = fields.String()
+    use_regex = fields.Boolean()

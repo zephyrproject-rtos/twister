@@ -1,0 +1,6 @@
+- scenarios:
+    - .*\.common_\w+_(1|2)
+  platforms:
+    - qemu_cortex_..
+  comment: "regex example"
+  use_regex: true
