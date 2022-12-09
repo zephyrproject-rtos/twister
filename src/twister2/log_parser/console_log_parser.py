@@ -26,7 +26,7 @@ class ConsoleLogParser(LogParserAbstract):
         super().__init__(stream)
         self.harness_config = harness_config
         self.matched_lines: list[str] = []
-        self.type: str = harness_config.get('type')
+        self.type: str = harness_config.get('type', '')
         self.ordered: bool = harness_config.get('ordered', False)
         self.regex: list[str] = harness_config.get('regex', [])
         self.patterns: list[re.Pattern] = []
