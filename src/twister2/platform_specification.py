@@ -19,7 +19,7 @@ class Testing:
     default: bool = False
     only_tags: set[str] = field(default_factory=set)
     ignore_tags: set[str] = field(default_factory=set)
-    timeout_multiplier: int = None
+    timeout_multiplier: int = 1
 
     def __post_init__(self):
         self.only_tags = string_to_set(self.only_tags)
@@ -133,7 +133,7 @@ def validate_platforms_list(platforms: list[PlatformSpecification]) -> None:
         pytest.exit(f'There are duplicated platforms: {", ".join(duplicated)}')
 
 
-def search_platforms(zephyr_base: str, board_root: str = None) -> list[PlatformSpecification]:
+def search_platforms(zephyr_base: str, board_root: str | None = None) -> list[PlatformSpecification]:
     """Return list of platforms."""
     board_root_list = [
         f'{zephyr_base}/boards',

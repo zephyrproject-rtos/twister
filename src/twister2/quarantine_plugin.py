@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-import pytest
 import logging
-
-from pathlib import Path
-from yaml import safe_load
-from marshmallow import Schema, fields, ValidationError
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from twister2.report.helper import get_test_name, get_item_platform
+import pytest
+from marshmallow import Schema, ValidationError, fields
+from yaml import safe_load
+
 from twister2.exceptions import TwisterConfigurationException
+from twister2.report.helper import get_item_platform, get_test_name
 
 logger = logging.getLogger(__name__)
 
@@ -79,23 +79,23 @@ class QuarantineData:
     def load_data_from_yaml(cls, filename: str | Path) -> QuarantineData:
         """Load quarantine from yaml file."""
         with open(filename, 'r', encoding='UTF-8') as yaml_fd:
-            qlist: list(dict) = safe_load(yaml_fd)
+            qlist_raw_data: list[dict] = safe_load(yaml_fd)
         try:
-            qlist = QuarantineSchema(many=True).load(qlist)
+            qlist = QuarantineSchema(many=True).load(qlist_raw_data)
             return cls(qlist)
 
         except ValidationError as e:
             logger.error(f'When loading {filename} received error: {e}')
             raise TwisterConfigurationException('Cannot load Quarantine data') from e
 
-    def extend(self, qdata: QuarantineData) -> list[QuarantineElement]:
+    def extend(self, qdata: QuarantineData) -> None:
         self.qlist.extend(qdata.qlist)
 
     def get_matched_quarantine(self, item: pytest.Item) -> QuarantineElement | None:
         """Return quarantine element if test is matched to quarantine rules"""
-        scenario = item.originalname
+        scenario = item.originalname  # type: ignore[attr-defined]
         platform = get_item_platform(item)
-        architecture = item.config.twister_config.get_platform(platform).arch if platform else ''
+        architecture = item.config.twister_config.get_platform(platform).arch if platform else ''  # type: ignore
 
         for qelem in self.qlist:
             matched: bool = False
