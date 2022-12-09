@@ -31,12 +31,12 @@ class TwisterConfig:
         zephyr_base: str = (
             config.getoption('zephyr_base')
             or config.getini('zephyr_base')
-            or os.environ.get('ZEPHYR_BASE')
+            or os.environ.get('ZEPHYR_BASE', '')
         )
         build_only: bool = config.getoption('--build-only')
         default_platforms: list[str] = config.getoption('--platform')
         board_root: list[str] = config.getoption('--board-root')
-        platforms: list[PlatformSpecification] = config._platforms
+        platforms: list[PlatformSpecification] = config._platforms  # type: ignore
         output_dir: str = config.getoption('--outdir')
         hardware_map_file: str = config.getoption('--hardware-map')
         device_testing: bool = config.getoption('--device-testing')
