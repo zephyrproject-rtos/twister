@@ -14,6 +14,7 @@ from twister2.yaml_file import (
     should_skip_for_platform,
     should_skip_for_tag,
     should_skip_for_toolchain,
+    should_skip_for_unsupported_harness,
 )
 from twister2.yaml_test_specification import YamlTestSpecification
 
@@ -165,6 +166,16 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
     assert should_skip_for_min_flash(testcase, platform) is False
 
 
+def test_should_skip_for_unsupported_platform_negative(testcase, platform):
+    testcase.harness = 'pytest'
+    assert should_skip_for_unsupported_harness(testcase, platform)
+
+
+def test_should_skip_for_unsupported_platform_positive(testcase, platform):
+    testcase.harness = 'console'
+    assert should_skip_for_unsupported_harness(testcase, platform) is False
+
+
 def test_if_join_strings_returns_joined_strings():
     assert _join_strings(['aaa', 'bbb']) == 'aaa bbb'
 
@@ -173,7 +184,7 @@ def test_if_join_strings_returns_joined_strings_without_empty_strings():
     assert _join_strings(['aaa', '', 'bbb', '']) == 'aaa bbb'
 
 
-def test_if_join_filters_returns_joined_flters():
+def test_if_join_filters_returns_joined_filters():
     assert _join_filters(['aaa', 'bbb']) == '(aaa) and (bbb)'
 
 
