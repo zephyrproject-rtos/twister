@@ -151,17 +151,15 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
     :param platform: platform specification
     :return: True is the specification should be skipped
     """
-    if should_skip_for_platform(test_spec, platform):
-        return True
-    if should_skip_for_arch(test_spec, platform):
-        return True
-    if should_skip_for_tag(test_spec, platform):
-        return True
-    if should_skip_for_toolchain(test_spec, platform):
-        return True
-    if should_skip_for_min_flash(test_spec, platform):
-        return True
-    if should_skip_for_min_ram(test_spec, platform):
+    if any([
+        should_skip_for_platform(test_spec, platform),
+        should_skip_for_arch(test_spec, platform),
+        should_skip_for_tag(test_spec, platform),
+        should_skip_for_toolchain(test_spec, platform),
+        should_skip_for_min_flash(test_spec, platform),
+        should_skip_for_min_ram(test_spec, platform),
+        should_skip_for_unsupported_harness(test_spec, platform),
+    ]):
         return True
     # TODO:
     # filter by build_on_all
@@ -220,5 +218,12 @@ def should_skip_for_min_ram(test_spec: YamlTestSpecification, platform: Platform
 def should_skip_for_min_flash(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
     if test_spec.min_flash > platform.flash:
         _log_test_skip(test_spec, platform, 'platform.flash is less than testcase.min_flash')
+        return True
+    return False
+
+
+def should_skip_for_unsupported_harness(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.harness not in ['', 'console', 'ztest', 'test']:
+        _log_test_skip(test_spec, platform, f'test harness "{test_spec.harness}" is not supported')
         return True
     return False
