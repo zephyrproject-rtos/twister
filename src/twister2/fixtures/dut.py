@@ -6,7 +6,7 @@ import pytest
 from twister2.builder.builder_abstract import BuilderAbstract
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.factory import DeviceFactory
-from twister2.exceptions import TwisterConfigurationException
+from twister2.exceptions import TwisterConfigurationException, TwisterRunException
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
@@ -37,9 +37,16 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> Generator[D
         pytest.fail(msg)
 
     device_class: Type[DeviceAbstract] = DeviceFactory.get_device(device_type)
+    hardware_map = twister_config.get_hardware_map(platform=spec.platform)
+
+    if device_type == 'hardware' and hardware_map is None:
+        msg = f'There is no available or connected device for the platform {spec.platform} in hardware map'
+        logger.error(msg)
+        raise TwisterRunException(msg)
+
     device = device_class(
         twister_config=twister_config,
-        hardware_map=twister_config.get_hardware_map(platform=spec.platform)
+        hardware_map=hardware_map
     )
 
     if not twister_config.build_only:
