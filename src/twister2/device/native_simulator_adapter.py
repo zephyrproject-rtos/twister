@@ -16,9 +16,9 @@ from queue import Queue
 from typing import Generator
 
 from twister2.device.device_abstract import DeviceAbstract
-from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterRunException
 from twister2.helper import log_command
+from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +28,8 @@ END_DATA = object()
 class NativeSimulatorAdapter(DeviceAbstract):
     """Adapter class for a device simulator."""
 
-    def __init__(self, twister_config, hardware_map: HardwareMap | None = None, **kwargs):
-        super().__init__(twister_config, hardware_map, **kwargs)
+    def __init__(self, twister_config: TwisterConfig, **kwargs) -> None:
+        super().__init__(twister_config, **kwargs)
         self._process: subprocess.Popen | None = None
         self._process_ended_with_timeout: bool = False
         self.queue: Queue = Queue()
