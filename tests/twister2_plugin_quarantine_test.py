@@ -1,7 +1,6 @@
 
 import json
 import textwrap
-
 from pathlib import Path
 
 
@@ -38,6 +37,31 @@ def test_if_pytest_use_quarantine_file(pytester, resources) -> None:
     hello_native = _get_test_scenario(json_data['tests'], 'sample.basic.helloworld[native_posix]')
     assert hello_native
     assert 'link.to.issue' in hello_native['quarantine']
+
+
+def test_if_pytest_use_regex_in_quarantine_files(pytester, resources) -> None:
+    """
+    Run tests with quarantine list. Verify if regex is processed
+    """
+    pytester.copy_example(str(resources))
+    quarantine_file: Path = resources / 'quarantine' / 'regex_example.yml'
+    output_testplan: Path = pytester.path / 'tesplan.json'
+    pytester.runpytest(
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=native_posix',
+        '--platform=qemu_cortex_m3',
+        f'--quarantine-list={quarantine_file}',
+        f'--testplan-json={output_testplan}',
+        '--co',
+    )
+    with open(output_testplan) as f:
+        json_data = json.load(f)
+
+    assert not _get_test_scenario(json_data['tests'], 'sample.basic.helloworld[qemu_cortex_m3]')['quarantine']
+    assert not _get_test_scenario(json_data['tests'], 'sample.basic.helloworld[native_posix]')['quarantine']
+    assert _get_test_scenario(json_data['tests'], 'xyz.common_merge_1[qemu_cortex_m3]')['quarantine']
+    assert _get_test_scenario(json_data['tests'], 'xyz.common_merge_2[qemu_cortex_m3]')['quarantine']
+    assert not _get_test_scenario(json_data['tests'], 'xyz.common_merge_1[native_posix]')['quarantine']
 
 
 def test_if_pytest_use_two_quarantine_files(pytester, resources) -> None:
