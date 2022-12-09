@@ -45,7 +45,7 @@ class YamlTestSpecification:
     ignore_qemu_crash: bool = False
     platform_allow: set[str] = field(default_factory=set)
     platform_exclude: set[str] = field(default_factory=set)
-    platform_type: list[str] = field(default_factory=set)
+    platform_type: list[str] = field(default_factory=list)
     harness_config: dict = field(default_factory=dict)
     toolchain_exclude: set[str] = field(default_factory=set)
     toolchain_allow: set[str] = field(default_factory=set)
