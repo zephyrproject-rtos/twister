@@ -13,6 +13,7 @@ from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.quarantine_plugin import QuarantinePlugin
+from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
 from twister2.report.test_plan_plugin import TestPlanPlugin
@@ -171,7 +172,7 @@ def pytest_configure(config: pytest.Config):
         return
 
     zephyr_base = os.path.expanduser(
-        config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE')
+        config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE', '')
     )
     if not zephyr_base:
         pytest.exit(
@@ -197,7 +198,7 @@ def pytest_configure(config: pytest.Config):
     configure_logging(config)
 
     # register plugins
-    test_plan_writers = []
+    test_plan_writers: list[BaseReportWriter] = []
     if testplan_csv_path := config.getoption('testplan_csv_path'):
         test_plan_writers.append(CsvTestPlan(testplan_csv_path))
     if testplan_json_path := config.getoption('testplan_json_path'):
@@ -242,8 +243,8 @@ def pytest_configure(config: pytest.Config):
 
     board_root = config.getoption('board_root') or config.getini('board_root')
 
-    config._platforms = search_platforms(zephyr_base, board_root)
-    config.twister_config = TwisterConfig.create(config)
+    config._platforms = search_platforms(zephyr_base, board_root)  # type: ignore
+    config.twister_config = TwisterConfig.create(config)  # type: ignore
 
     # register custom markers for twister
     markers = [
