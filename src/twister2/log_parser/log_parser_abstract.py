@@ -16,7 +16,7 @@ class LogParserAbstract(abc.ABC):
 
     def __init__(self, stream: Iterator[str], **kwargs):
         self.stream = stream
-        self.state: self.STATE = self.STATE.UNKNOWN  #: overall state for execution test suite
+        self.state: LogParserState = self.STATE.UNKNOWN  #: overall state for execution test suite
         self.messages: list[str] = []  #: keeps errors from execution
 
     def __repr__(self):
