@@ -75,7 +75,7 @@ class YamlTestCase:
         *args, **kwargs
     ):
         """Method called by pytest when it runs test."""
-        if self.spec.build_only or request.config.twister_config.build_only:
+        if self.spec.build_only or request.config.twister_config.build_only:  # type: ignore
             # do not run test for build only
             return
 
@@ -86,5 +86,5 @@ class YamlTestCase:
         if log_parser.state == log_parser.STATE.UNKNOWN:
             failed_msg: str = f'Test state is {log_parser.state.value} (timeout has probably occurred)'
         else:
-            failed_msg: str = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
+            failed_msg = 'Test failed due to: {}'.format('\n'.join(log_parser.messages))
         assert log_parser.state == log_parser.STATE.PASSED, failed_msg
