@@ -8,7 +8,7 @@ import time
 from enum import Enum
 from pathlib import Path
 
-from filelock import FileLock
+from filelock import BaseFileLock, FileLock
 
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.exceptions import TwisterBuildException
@@ -33,7 +33,7 @@ class BuildManager:
 
     It allows to skip building when it was already built for another test.
     """
-    _lock: FileLock = FileLock(BUILD_LOCK_FILE_PATH, timeout=1)
+    _lock: BaseFileLock = FileLock(BUILD_LOCK_FILE_PATH, timeout=1)
 
     def __init__(self, output_dir: str | Path, wait_build_timeout: int = 600) -> None:
         self._status_file: Path = Path(output_dir) / BUILD_STATUS_FILE_NAME
@@ -47,7 +47,7 @@ class BuildManager:
             logger.info('Create empty builder status file: %s', self._status_file)
             self._write_data({})
 
-    def get_status(self, build_dir: str) -> str:
+    def get_status(self, build_dir: str | Path) -> str:
         """
         Return status for build source.
 
@@ -58,12 +58,12 @@ class BuildManager:
             data = self._read_data()
             return data.get(str(build_dir), BuildStatus.NOT_DONE)
 
-    def _read_data(self):
+    def _read_data(self) -> dict:
         with self._status_file.open(encoding='UTF-8') as file:
             data: dict = json.load(file)
         return data
 
-    def update_status(self, build_dir: str, status: str) -> bool:
+    def update_status(self, build_dir: str | Path, status: str) -> bool:
         """
         Update status for build source.
 
@@ -93,7 +93,7 @@ class BuildManager:
         :param builder: instance of a builder class
         :param build_config: build configuration
         """
-        status = self.get_status(build_config.build_dir)
+        status: str = self.get_status(build_config.build_dir)
         if status == BuildStatus.DONE:
             logger.info('Already build in %s', build_config.build_dir)
             return
@@ -122,7 +122,7 @@ class BuildManager:
         else:
             self.update_status(build_config.build_dir, BuildStatus.DONE)
 
-    def _wait_for_build_to_finish(self, build_dir: str) -> None:
+    def _wait_for_build_to_finish(self, build_dir: str | Path) -> None:
         logger.debug('Waiting for finishing building: %s', build_dir)
         timeout = time.time() + self.wait_build_timeout
         while self.get_status(build_dir) == BuildStatus.IN_PROGRESS:
