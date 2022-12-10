@@ -2,7 +2,7 @@ import argparse
 import os
 
 from twister2.platform_specification import search_platforms
-from twister2.scripts.hardware_map import scan, write_to_file, print_hardware_map
+from twister2.scripts.hardware_map import print_hardware_map, scan, write_to_file
 
 
 def main() -> int:
@@ -25,15 +25,21 @@ def main() -> int:
         action='store_true',
         help='list default platforms',
     )
+    parser.add_argument(
+        '--persistent',
+        dest='persistent',
+        action='store_true',
+        help='Use persistent for searching hardware',
+    )
     args = parser.parse_args()
 
     if args.hardware_map_path:
-        hardware_map_list = scan(persistent=False)
+        hardware_map_list = scan(persistent=args.persistent)
         write_to_file(hardware_map_list=hardware_map_list, filename=args.hardware_map_path)
         print_hardware_map(hardware_map_list)
         return 0
     if args.list_hardware_map:
-        hardware_map_list = scan(persistent=False)
+        hardware_map_list = scan(persistent=args.persistent)
         print_hardware_map(hardware_map_list)
         return 0
     if args.list_default_platforms:
