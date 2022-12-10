@@ -46,7 +46,6 @@ class QuarantineElement:
     architectures: list[str] = field(default_factory=list)
     simulations: list[str] = field(default_factory=list)
     comment: str = 'under quarantine'
-    use_regex: bool = False
 
     def __post_init__(self):
         # If there is no entry in filters then take all possible values.
@@ -101,7 +100,7 @@ class QuarantineData:
         scenario = item.originalname  # type: ignore[attr-defined]
         platform = get_item_platform(item)
         if platform:
-            plat_spec = item.config.twister_config.get_platform(platform)
+            plat_spec = item.config.twister_config.get_platform(platform)  # type: ignore
             architecture = plat_spec.arch
             simulation = plat_spec.simulation
         else:
@@ -110,29 +109,26 @@ class QuarantineData:
 
         for qelem in self.qlist:
             matched: bool = False
-            if qelem.scenarios:
-                if (matched := _is_element_matched(scenario, qelem.scenarios, qelem.use_regex)) is False:
-                    continue
-            if qelem.platforms:
-                if (matched := _is_element_matched(platform, qelem.platforms, qelem.use_regex)) is False:
-                    continue
-            if qelem.architectures:
-                if (matched := _is_element_matched(architecture, qelem.architectures, qelem.use_regex)) is False:
-                    continue
-            if qelem.simulations:
-                if (matched := _is_element_matched(simulation, qelem.simulations, qelem.use_regex)) is False:
-                    continue
+            if (qelem.scenarios
+                    and (matched := _is_element_matched(scenario, qelem.scenarios)) is False):
+                continue
+            if (qelem.platforms
+                    and (matched := _is_element_matched(platform, qelem.platforms)) is False):
+                continue
+            if (qelem.architectures
+                    and (matched := _is_element_matched(architecture, qelem.architectures)) is False):
+                continue
+            if (qelem.simulations
+                    and (matched := _is_element_matched(simulation, qelem.simulations)) is False):
+                continue
 
             if matched:
                 return qelem
         return None
 
 
-def _is_element_matched(element: str, list_of_elements: list, use_regex=False) -> bool:
+def _is_element_matched(element: str, list_of_elements: list) -> bool:
     """Return True if given element is matching to any of elements from the list"""
-    if not use_regex:
-        if element in list_of_elements:
-            return True
     for pattern in list_of_elements:
         if re.fullmatch(pattern, element):
             return True
@@ -146,4 +142,3 @@ class QuarantineSchema(Schema):
     architectures = fields.List(fields.String)
     simulations = fields.List(fields.String)
     comment = fields.String()
-    use_regex = fields.Boolean()

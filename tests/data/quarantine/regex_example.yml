@@ -3,4 +3,3 @@
   platforms:
     - qemu_cortex_..
   comment: "regex example"
-  use_regex: true
