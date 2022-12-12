@@ -33,7 +33,6 @@ class YamlTestSpecification:
     skip: bool = False
     slow: bool = False
     timeout: int = 60
-    timeout_multiplier: int = 1
     min_ram: int = 8
     depends_on: set[str] = field(default_factory=set)
     harness: str = ''
@@ -66,7 +65,6 @@ class YamlTestSpecification:
         self.extra_configs = string_to_list(self.extra_configs)
         self.extra_args = string_to_list(self.extra_args)
         self.integration_platforms = string_to_list(self.integration_platforms)
-        self.timeout *= self.timeout_multiplier
 
     @property
     def scenario(self):
