@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import itertools
 import logging
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -130,6 +131,7 @@ def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Varian
     test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], rootpath)
 
     test_spec = YamlTestSpecification(**test_spec_dict)
+    test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
 
     add_markers_from_specification(item, test_spec)
     if should_be_skip(test_spec, platform):
