@@ -160,6 +160,7 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         should_skip_for_min_ram(test_spec, platform),
         should_skip_for_platform(test_spec, platform),
         should_skip_for_platform_type(test_spec, platform),
+        should_skip_for_pytest_harness(test_spec, platform),
         should_skip_for_tag(test_spec, platform),
         should_skip_for_toolchain(test_spec, platform),
     ]):
@@ -226,5 +227,12 @@ def should_skip_for_min_ram(test_spec: YamlTestSpecification, platform: Platform
 def should_skip_for_min_flash(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
     if test_spec.min_flash > platform.flash:
         _log_test_skip(test_spec, platform, 'platform.flash is less than testcase.min_flash')
+        return True
+    return False
+
+
+def should_skip_for_pytest_harness(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.harness == 'pytest':
+        _log_test_skip(test_spec, platform, 'test harness "pytest" is natively supported by pytest')
         return True
     return False
