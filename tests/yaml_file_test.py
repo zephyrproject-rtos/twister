@@ -12,6 +12,7 @@ from twister2.yaml_file import (
     should_skip_for_min_flash,
     should_skip_for_min_ram,
     should_skip_for_platform,
+    should_skip_for_platform_type,
     should_skip_for_tag,
     should_skip_for_toolchain,
 )
@@ -125,6 +126,18 @@ def test_should_skip_for_platform_negative(testcase, platform):
     testcase.platform_allow = {'platform1', 'platform2'}
     platform.identifier = 'platform1'
     assert should_skip_for_platform(testcase, platform) is False
+
+
+def test_should_skip_for_platform_type_positive(testcase, platform):
+    testcase.platform_type = {'mcu', 'native'}
+    platform.identifier = 'mcu'
+    assert should_skip_for_platform_type(testcase, platform)
+
+
+def test_should_skip_for_platform_type_negative(testcase, platform):
+    testcase.platform_allow = {'mcu', 'native'}
+    platform.identifier = 'qemu'
+    assert should_skip_for_platform_type(testcase, platform) is False
 
 
 def test_should_skip_for_platform_for_platform_exclude_positive(testcase, platform):
