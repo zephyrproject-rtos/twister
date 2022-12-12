@@ -12,11 +12,12 @@ from twister2.helper import safe_load_yaml
 from twister2.platform_specification import PlatformSpecification
 from twister2.yaml_test_function import add_markers_from_specification
 from twister2.yaml_test_specification import (
+    SUPPORTED_HARNESSES,
     YamlTestSpecification,
     validate_test_specification_data,
 )
 
-TEST_SPEC_FILE_NAME = 'testspec.yaml'
+TEST_SPEC_FILE_NAME: str = 'testspec.yaml'
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class SpecificationProcessor(abc.ABC):
     def create_spec_from_dict(test_spec_dict: dict, platform: PlatformSpecification) -> YamlTestSpecification:
         test_spec = YamlTestSpecification(**test_spec_dict)
         test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
+        test_spec.runnable = is_runnable(test_spec)
         return test_spec
 
 
@@ -256,3 +258,7 @@ def _join_strings(args: list[str]) -> str:
     # remove empty strings
     args = [arg for arg in args if arg]
     return ' '.join(args)
+
+
+def is_runnable(spec: YamlTestSpecification) -> bool:
+    return spec.harness in SUPPORTED_HARNESSES

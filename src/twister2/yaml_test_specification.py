@@ -11,6 +11,8 @@ from twister2.helper import string_to_list, string_to_set
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_HARNESSES: list[str] = ['', 'test', 'ztest', 'console']
+
 
 @dataclass
 class YamlTestSpecification:
@@ -22,6 +24,7 @@ class YamlTestSpecification:
     platform: str  #: platform name used for this test
     build_name: str = ''  #: name of build configuration from yaml
     output_dir: Path = Path('.')  #: path to dir with build results
+    runnable: bool = True
     tags: set[str] = field(default_factory=set)
     type: str = 'integration'
     filter: str = ''
