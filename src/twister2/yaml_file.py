@@ -151,17 +151,15 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
     :param platform: platform specification
     :return: True is the specification should be skipped
     """
-    if should_skip_for_platform(test_spec, platform):
-        return True
-    if should_skip_for_arch(test_spec, platform):
-        return True
-    if should_skip_for_tag(test_spec, platform):
-        return True
-    if should_skip_for_toolchain(test_spec, platform):
-        return True
-    if should_skip_for_min_flash(test_spec, platform):
-        return True
-    if should_skip_for_min_ram(test_spec, platform):
+    if any([
+        should_skip_for_arch(test_spec, platform),
+        should_skip_for_min_flash(test_spec, platform),
+        should_skip_for_min_ram(test_spec, platform),
+        should_skip_for_platform(test_spec, platform),
+        should_skip_for_platform_type(test_spec, platform),
+        should_skip_for_tag(test_spec, platform),
+        should_skip_for_toolchain(test_spec, platform),
+    ]):
         return True
     # TODO:
     # filter by build_on_all
@@ -206,6 +204,13 @@ def should_skip_for_platform(test_spec: YamlTestSpecification, platform: Platfor
         return True
     if test_spec.platform_exclude and platform.identifier in test_spec.platform_exclude:
         _log_test_skip(test_spec, platform, 'platform.identifier in testcase.platform_exclude')
+        return True
+    return False
+
+
+def should_skip_for_platform_type(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if test_spec.platform_type and platform.type not in test_spec.platform_type:
+        _log_test_skip(test_spec, platform, 'platform.type not in testcase.platform_type')
         return True
     return False
 
