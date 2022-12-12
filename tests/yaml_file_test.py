@@ -13,6 +13,7 @@ from twister2.yaml_file import (
     should_skip_for_min_ram,
     should_skip_for_platform,
     should_skip_for_platform_type,
+    should_skip_for_pytest_harness,
     should_skip_for_tag,
     should_skip_for_toolchain,
 )
@@ -150,6 +151,16 @@ def test_should_skip_for_platform_for_platform_exclude_negative(testcase, platfo
     testcase.platform_exclude = {'platform3', 'platform2'}
     platform.identifier = 'platform1'
     assert should_skip_for_platform(testcase, platform) is False
+
+
+def test_should_skip_for_harness_pytest_positive(testcase, platform):
+    testcase.harness = 'pytest'
+    assert should_skip_for_pytest_harness(testcase, platform)
+
+
+def test_should_skip_for_harness_pytest_negative(testcase, platform):
+    testcase.harness = 'ztest'
+    assert should_skip_for_pytest_harness(testcase, platform) is False
 
 
 def test_should_skip_for_min_ram_negative(testcase, platform):
