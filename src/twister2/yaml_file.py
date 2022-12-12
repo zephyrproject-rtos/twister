@@ -7,6 +7,7 @@ https://github.com/pytest-dev/pytest/issues/3639
 from __future__ import annotations
 
 import logging
+import math
 from pathlib import Path
 from typing import Generator
 
@@ -54,6 +55,7 @@ def _generate_test_variants_for_platforms(
         spec['original_name'] = test_name
         spec['platform'] = platform.identifier
         yaml_test_spec = YamlTestSpecification(**spec)
+        yaml_test_spec.timeout = math.ceil(yaml_test_spec.timeout * platform.testing.timeout_multiplier)
 
         if should_be_skip(yaml_test_spec, platform):
             continue
@@ -151,6 +153,7 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
     :param platform: platform specification
     :return: True is the specification should be skipped
     """
+    # TODO: Implement #1 #13
     if any([
         should_skip_for_arch(test_spec, platform),
         should_skip_for_min_flash(test_spec, platform),
@@ -161,8 +164,6 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         should_skip_for_toolchain(test_spec, platform),
     ]):
         return True
-    # TODO:
-    # filter by build_on_all
     return False
 
 
