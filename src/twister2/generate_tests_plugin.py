@@ -7,20 +7,18 @@ from __future__ import annotations
 
 import itertools
 import logging
-import math
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import safe_load_yaml
 from twister2.platform_specification import PlatformSpecification
-from twister2.yaml_file import extract_tests, should_be_skip
-from twister2.yaml_test_function import add_markers_from_specification
+from twister2.specification_processor import (
+    TEST_SPEC_FILE_NAME,
+    RegularSpecificationProcessor,
+)
 from twister2.yaml_test_specification import YamlTestSpecification
-
-TEST_SPEC_FILE_NAME = 'testspec.yaml'
 
 logger = logging.getLogger(__name__)
 
@@ -108,35 +106,8 @@ def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Varian
     scenario: str = variant.scenario
     platform: PlatformSpecification = variant.platform
 
-    spec_path: Path = item.path.parent.joinpath(TEST_SPEC_FILE_NAME)
-    assert spec_path.exists(), f'Spec file does not exist: {spec_path}'
-    test_directory_path: Path = item.path.parent
-    rootpath: Path = item.config.rootpath
-
-    raw_spec: dict = safe_load_yaml(spec_path)
-    tests: dict = extract_tests(raw_spec)
-
-    try:
-        test_spec_dict = tests[scenario]
-    except KeyError:
-        msg = f'There is no specification for {scenario} in file {spec_path}'
-        logger.error(msg)
-        raise TwisterConfigurationException(msg)
-
-    test_spec_dict['name'] = item.name
-    test_spec_dict['original_name'] = item.originalname
-    test_spec_dict['source_dir'] = test_directory_path
-    test_spec_dict['platform'] = platform.identifier
-    test_spec_dict['build_name'] = scenario
-    test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], rootpath)
-
-    test_spec = YamlTestSpecification(**test_spec_dict)
-    test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
-
-    add_markers_from_specification(item, test_spec)
-    if should_be_skip(test_spec, platform):
-        item.add_marker(pytest.mark.skip('Does not match requirements'))
-
+    processor = RegularSpecificationProcessor(item)
+    test_spec = processor.process(platform, scenario)
     return test_spec
 
 
