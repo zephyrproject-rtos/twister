@@ -9,6 +9,7 @@ import itertools
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
 
@@ -61,7 +62,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     if 'specification' not in metafunc.fixturenames:
         return
 
-    twister_config = metafunc.config.twister_config
+    twister_config = metafunc.config.twister_config  # type: ignore[attr-defined]
 
     platforms_list: list[PlatformSpecification] = [
         platform for platform in twister_config.platforms
@@ -73,7 +74,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     if not scenarios:
         scenarios = get_scenarios_from_yaml(spec_file_path)
     variants = itertools.product(platforms_list, scenarios)
-    params: list[pytest.param] = []
+    params: list[NamedTuple] = []
     for variant in variants:
         v = Variant(*variant)
         params.append(
@@ -100,7 +101,7 @@ def pytest_configure(config: pytest.Config):
     )
 
 
-def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Variant) -> YamlTestSpecification:
+def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Variant) -> YamlTestSpecification | None:
     """Add test specification from yaml file to test item."""
     logger.debug('Adding test specification to item "%s"', item.nodeid)
     scenario: str = variant.scenario
@@ -116,15 +117,15 @@ def pytest_collection_modifyitems(
     session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
 ):
     if not hasattr(session, 'specifications'):
-        session.specifications = {}
+        session.specifications = {}  # type: ignore[attr-defined]
 
     for item in items:
         # add YAML test specification to session for consistency with python tests
-        if hasattr(item.function, 'spec') and item.nodeid not in session.specifications:
-            session.specifications[item.nodeid] = item.function.spec
+        if hasattr(item.function, 'spec') and item.nodeid not in session.specifications:  # type: ignore[attr-defined]
+            session.specifications[item.nodeid] = item.function.spec  # type: ignore[attr-defined]
         # yaml test function has no `callspec`
         if not hasattr(item, 'callspec'):
             continue
         if variant := item.callspec.params.get('specification'):
-            spec = generate_yaml_test_specification_for_item(item, variant)
-            session.specifications[item.nodeid] = spec
+            if spec := generate_yaml_test_specification_for_item(item, variant):
+                session.specifications[item.nodeid] = spec  # type: ignore[attr-defined]
