@@ -30,7 +30,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
 
     def __init__(self, twister_config: TwisterConfig, **kwargs) -> None:
         super().__init__(twister_config, **kwargs)
-        self._process: subprocess.Popen | None = None
+        self._process: asyncio.subprocess.Process | None = None
         self._process_ended_with_timeout: bool = False
         self.queue: Queue = Queue()
         self._stop_job: bool = False
@@ -72,9 +72,9 @@ class NativeSimulatorAdapter(DeviceAbstract):
         )
         logger.debug('Started subprocess with PID %s', self._process.pid)
         end_time = time.time() + timeout
-        while not self._stop_job and not self._process.stdout.at_eof():
+        while not self._stop_job and not self._process.stdout.at_eof():  # type: ignore[union-attr]
             try:
-                line = await asyncio.wait_for(self._process.stdout.readline(), timeout=0.1)
+                line = await asyncio.wait_for(self._process.stdout.readline(), timeout=0.1)  # type: ignore[union-attr]
             except asyncio.TimeoutError:
                 pass
             else:
