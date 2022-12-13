@@ -42,11 +42,11 @@ class YamlSpecificationProcessor(SpecificationProcessor):
         self.spec_file_path = filepath
         self.zephyr_base = zephyr_base
         self.test_directory_path: Path = self.spec_file_path.parent
-        self.raw_spec = safe_load_yaml(self.spec_file_path)
-        self.tests = extract_tests(self.raw_spec)
-        self.scenarios = self.tests.keys()
+        self.raw_spec: dict = safe_load_yaml(self.spec_file_path)
+        self.tests: dict = extract_tests(self.raw_spec)
+        self.scenarios: list[str] = list(self.tests.keys())
 
-    def prepare_spec_dict(self, platform, scenario) -> dict:
+    def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
         try:
             test_spec_dict = self.tests[scenario]
         except KeyError:
@@ -98,7 +98,7 @@ class RegularSpecificationProcessor(SpecificationProcessor):
 
         return test_spec
 
-    def prepare_spec_dict(self, platform, scenario) -> dict:
+    def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
         try:
             test_spec_dict = self.tests[scenario]
         except KeyError:
