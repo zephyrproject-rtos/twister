@@ -13,13 +13,13 @@ from pytest_subtests import SubTestReport
 
 from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
+    get_item_platform,
     get_item_platform_allow,
+    get_item_quarantine,
     get_item_tags,
     get_item_type,
     get_suite_name,
     get_test_name,
-    get_item_platform,
-    get_item_quarantine
 )
 
 
@@ -41,7 +41,7 @@ class TestResult:
         self.nodeid = report.nodeid
         self.name: str = self.test_id
         if getattr(report, 'when', 'call') != 'call':
-            self.test_id = '::'.join([report.nodeid, report.when])
+            self.test_id = '::'.join([report.nodeid, report.when])  # type: ignore[list-item]
         self.status = outcome
         self.item = report.nodeid
         self.report = report
@@ -109,7 +109,7 @@ class TestResultsPlugin:
             )
 
     @staticmethod
-    def _is_sub_test(report: pytest.Report) -> bool:
+    def _is_sub_test(report: pytest.TestReport) -> bool:
         return isinstance(report, SubTestReport)
 
     def pytest_sessionstart(self, session: pytest.Session):
@@ -124,7 +124,7 @@ class TestResultsPlugin:
         for writer in self.writers:
             terminalreporter.write_sep('-', f'generated results report file: {writer.filename}')
 
-    def _get_outcome(self, report: pytest.TestReport) -> str | None:
+    def _get_outcome(self, report: pytest.TestReport) -> str | None:  # type: ignore[return]
         if report.failed:
             if report.when != 'call':
                 return Status.ERROR
@@ -192,7 +192,7 @@ class TestResultsPlugin:
 
         return dict(
             environment=environment,
-            configuration=self.config.twister_config.asdict(),
+            configuration=self.config.twister_config.asdict(),  # type: ignore
             summary=summary,
             tests=tests_list,
         )
