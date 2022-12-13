@@ -133,7 +133,11 @@ def write_to_file(filename: str | Path, hardware_map_list: list[HardwareMap]) ->
 
         for new_hardware in new_hardware_map_list:
             for old_hardware in old_hardware_map_list:
-                if old_hardware.id == new_hardware.id and old_hardware.product == new_hardware.product:
+                if all([
+                    old_hardware.id == new_hardware.id,
+                    old_hardware.product == new_hardware.product,
+                    old_hardware.connected is False
+                ]):
                     old_hardware.serial = new_hardware.serial
                     old_hardware.connected = True
                     break
