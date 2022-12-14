@@ -97,6 +97,7 @@ def test_if_regular_tests_work_with_specification_file(pytester, resources):
                 tags: tag1
             scenario3:
                 tags: tag2
+                platform_allow: mps2_an521_remote
     """)
     test_spec_file = pytester.path / 'tests' / 'testspec.yaml'
     test_spec_file.write_text(test_spec_content)
@@ -105,15 +106,17 @@ def test_if_regular_tests_work_with_specification_file(pytester, resources):
         str(test_file),
         f'--zephyr-base={str(pytester.path)}',
         '--platform=native_posix',
-        '--collect-only'
+        '--collect-only',
+        '-m not skip'
     )
-    print(result.stdout.lines)
     result.stdout.fnmatch_lines_random([
         '*<Module*tests/foobar_test.py>*',
         '*<Function*test_foo*native_posix:scenario1*>*',
         '*<Function*test_foo*native_posix:scenario2*>*',
-        '*<Function*test_foo*native_posix:scenario3*>*',
         '*<Function*test_bar*native_posix:scenario1*>*',
         '*<Function*test_bar*native_posix:scenario2*>*',
         '*5 tests collected*',
     ])
+    result.stdout.no_fnmatch_line(
+        '*<Function*test_foo*native_posix:scenario3*>*',  # should be marked as skip
+    )
