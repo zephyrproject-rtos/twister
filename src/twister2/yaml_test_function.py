@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 
 from twister2.device.device_abstract import DeviceAbstract
+from twister2.fixtures.common import TestSetupManager
 from twister2.log_parser.log_parser_abstract import LogParserAbstract
 from twister2.yaml_test_specification import YamlTestSpecification
 
@@ -48,6 +49,8 @@ def add_markers_from_specification(obj: pytest.Item | pytest.Function, spec: Yam
         obj.add_marker(pytest.mark.tags(*spec.tags))
     if spec.slow:
         obj.add_marker(pytest.mark.slow)
+    if spec.build_only:
+        obj.add_marker(pytest.mark.build_only)
     if spec.skip:
         obj.add_marker(pytest.mark.skip('Skipped in yaml specification'))
 
@@ -72,11 +75,12 @@ class YamlTestCase:
         request: pytest.FixtureRequest,
         dut: DeviceAbstract,
         log_parser: LogParserAbstract,
+        setup_manager: TestSetupManager,
         *args, **kwargs
     ):
         """Method called by pytest when it runs test."""
-        if self.spec.build_only or request.config.twister_config.build_only:  # type: ignore
-            # do not run test for build only
+        if not setup_manager.is_executable:
+            # test was only built
             return
 
         logger.info('Execution test %s from %s', self.spec.name, self.spec.source_dir)

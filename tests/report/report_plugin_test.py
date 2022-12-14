@@ -95,10 +95,13 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
         'platform',
         'tags',
         'type',
+        'build_only',
+        'runnable',
         'platform_allow',
         'status',
         'quarantine',
         'duration',
+        'execution_time',
         'message',
         'subtests',
     }

@@ -1,10 +1,15 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
 from twister2.specification_processor import (
     _join_filters,
     _join_strings,
+    is_runnable,
     should_skip_for_arch,
     should_skip_for_min_flash,
     should_skip_for_min_ram,
@@ -188,3 +193,58 @@ def test_if_join_strings_returns_joined_strings(in_put, out_put):
 ])
 def test_if_join_filters_returns_joined_filters(in_put, out_put):
     assert _join_filters(in_put) == out_put
+
+
+@dataclass
+class MockSpecification:
+    harness: str = 'console'
+    harness_config: dict = field(default_factory=dict)
+    type: str = 'unit'
+    build_only: bool = False
+
+
+@dataclass
+class MockPlatform:
+    type: str = 'native'
+    simulation: str = 'nsim'
+    simulation_exec: str = ''
+
+
+@pytest.mark.parametrize(
+    'spec,platform,fixtures',
+    [
+        (MockSpecification(), MockPlatform(), []),
+        (MockSpecification(), MockPlatform(simulation_exec='na'), []),
+        (MockSpecification(), MockPlatform(), None),
+        (MockSpecification(type='unit'), MockPlatform(type='nsim', simulation='not-supported'), []),
+        (MockSpecification(type='mcu'), MockPlatform(type='native', simulation='not-supported'), []),
+        (MockSpecification(), MockPlatform(simulation_exec='python'), []),
+        (MockSpecification(harness_config=dict(fixture='fixture_display')), MockPlatform(), ['fixture_display']),
+        (MockSpecification(), MockPlatform(), ['fixture_display']),
+        (MockSpecification(type='integration'), MockPlatform(type='mcu', simulation='na'), []),  # test on hardware
+    ]
+)
+def test_if_test_is_runnable(spec, platform, fixtures):
+    with mock.patch('os.name', 'linux'):
+        assert is_runnable(spec, platform, fixtures)  # type: ignore
+
+
+@pytest.mark.parametrize(
+    'spec,platform,fixtures',
+    [
+        (MockSpecification(harness='keyboard'), MockPlatform(), []),  # not supported harness
+        # not supported target type:
+        (MockSpecification(type='integration'), MockPlatform(type='sim', simulation='not-supported'), []),
+        (MockSpecification(), MockPlatform(simulation_exec='dummy'), []),  # tool not installed
+        (MockSpecification(harness_config=dict(fixture='fixture_display')), MockPlatform(), []),  # fixture not match
+        (MockSpecification(harness_config=dict(fixture='fixture_ppk')), MockPlatform(), ['fixture_display']),
+    ]
+)
+def test_if_test_is_not_runnable(spec, platform, fixtures):
+    with mock.patch('os.name', 'linux'):
+        assert is_runnable(spec, platform, fixtures) is False  # type: ignore
+
+
+def test_if_test_is_not_runnable_on_windows():
+    with mock.patch('os.name', 'nt'):
+        assert is_runnable(MockSpecification(), MockPlatform(), []) is False  # type: ignore

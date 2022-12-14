@@ -6,32 +6,22 @@ import pytest
 from twister2.builder.builder_abstract import BuilderAbstract
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.factory import DeviceFactory
-from twister2.exceptions import TwisterConfigurationException, TwisterRunException
-from twister2.twister_config import TwisterConfig
+from twister2.fixtures.common import TestSetupManager
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
-def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> Generator[DeviceAbstract, None, None]:
+def dut(
+        builder: BuilderAbstract, setup_manager: TestSetupManager
+) -> Generator[DeviceAbstract, None, None]:
     """Return device instance."""
-    twister_config: TwisterConfig = request.config.twister_config  # type: ignore
-    spec = request.session.specifications.get(request.node.nodeid)  # type: ignore
-    if not spec:
-        msg = f'Could not find test specification for test {request.node.nodeid}'
-        logger.error(msg)
-        raise TwisterConfigurationException(msg)
+    spec = setup_manager.specification
+    twister_config = setup_manager.twister_config
+    build_dir = setup_manager.specification.build_dir
+    platform = setup_manager.platform
 
-    build_dir = spec.build_dir
-
-    platform = twister_config.get_platform(spec.platform)
-
-    # TODO: implement
-    if twister_config.device_testing:
-        device_type = 'hardware'
-    elif platform.type == 'native':
-        device_type = 'native'
-    else:
+    if not (device_type := setup_manager.get_device_type()):
         msg = f'Handling of device type {platform.type} not implemented yet.'
         logger.error(msg)
         pytest.fail(msg)
@@ -39,21 +29,17 @@ def dut(request: pytest.FixtureRequest, builder: BuilderAbstract) -> Generator[D
     device_class: Type[DeviceAbstract] = DeviceFactory.get_device(device_type)
     hardware_map = twister_config.get_hardware_map(platform=spec.platform)
 
-    if device_type == 'hardware' and hardware_map is None:
-        msg = f'There is no available or connected device for the platform {spec.platform} in hardware map'
-        logger.error(msg)
-        raise TwisterRunException(msg)
-
     device = device_class(
         twister_config=twister_config,
         hardware_map=hardware_map
     )
 
-    if not twister_config.build_only:
+    # check if test should be executed, if not than do not flash/run code on device
+    if setup_manager.is_executable:
         device.connect()
         device.generate_command(build_dir)
         device.flash_and_run(timeout=spec.timeout)
     yield device
-    if not twister_config.build_only:
+    if setup_manager.is_executable:
         device.disconnect()
         device.stop()

@@ -10,10 +10,10 @@ import yaml
 class HardwareMap:
     """Class keeps configuration for connected hardware."""
     id: str
-    product: str
-    platform: str
-    runner: str
-    connected: bool
+    product: str = ''
+    platform: str = ''
+    runner: str = ''
+    connected: bool = False
     available: bool = False
     notes: str = ''
     probe_id: str = ''

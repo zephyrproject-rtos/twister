@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 pytest_plugins = (
     'twister2.fixtures.builder',
     'twister2.fixtures.dut',
+    'twister2.fixtures.fixtures',
     'twister2.fixtures.log_parser',
     'twister2.generate_tests_plugin',
     'twister2.report.test_plan_plugin',
@@ -83,16 +84,16 @@ def pytest_addoption(parser: pytest.Parser):
         help='output directory for logs and binaries (default: %(default)s)'
     )
     twister_group.addoption(
-        '--hardware-map',
-        metavar='PATH',
-        help='load hardware map from a file',
-    )
-    twister_group.addoption(
         '--device-testing',
         dest='device_testing',
         action='store_true',
         help='Test on device directly. Specify the serial device to '
              'use with the --device-serial option.'
+    )
+    twister_group.addoption(
+        '--hardware-map',
+        metavar='PATH',
+        help='load hardware map from a file',
     )
     twister_group.addoption(
         '--tags',
@@ -136,6 +137,13 @@ def pytest_addoption(parser: pytest.Parser):
         help='Select builder type (default=%(default)s)'
     )
     twister_group.addoption(
+        '-X', '--fixture',
+        dest='fixtures',
+        action='append',
+        default=[],
+        help='Specify a fixture that a test setup is supporting.'
+    )
+    twister_group.addoption(
         '--extra-args',
         default=[],
         action='append',
@@ -161,7 +169,9 @@ def pytest_configure(config: pytest.Config):
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
         )
 
-    output_dir: str = config.getoption('--outdir')
+    validate_options(config)
+
+    output_dir = config.option.output_dir
 
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
@@ -203,7 +213,7 @@ def pytest_configure(config: pytest.Config):
     # configure twister
     logger.debug('ZEPHYR_BASE: %s', zephyr_base)
 
-    board_root = config.getoption('board_root') or config.getini('board_root')
+    board_root = config.option.board_root or config.getini('board_root')
 
     config._platforms = search_platforms(zephyr_base, board_root)  # type: ignore
     config.twister_config = TwisterConfig.create(config)  # type: ignore
@@ -214,11 +224,20 @@ def pytest_configure(config: pytest.Config):
         'platform(platform_name): mark test for specific platform',
         'type(test_type): mark test for specific type',
         'slow: mark test as slow',
+        'build_only: test can only be built',
         'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
         'quarantine-list-yaml file. To mark scenario in code better use skip/skipif',
     ]
     for marker in markers:
         config.addinivalue_line('markers', marker)
+
+
+def validate_options(config: pytest.Config) -> None:
+    """Verify if user provided proper options"""
+    if config.option.device_testing and not config.option.hardware_map:
+        pytest.exit(
+            'Option `--device-testing` must be used with `--hardware-map`,.'
+        )
 
 
 def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:

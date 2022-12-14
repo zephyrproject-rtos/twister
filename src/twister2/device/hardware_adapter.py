@@ -13,7 +13,7 @@ import serial
 
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
-from twister2.exceptions import TwisterException, TwisterFlashException
+from twister2.exceptions import TwisterFlashException
 from twister2.helper import log_command
 from twister2.twister_config import TwisterConfig
 
@@ -30,8 +30,6 @@ class HardwareAdapter(DeviceAbstract):
         :param twister_config: twister configuration
         :param hardware_map: device hardware map
         """
-        if not isinstance(hardware_map, HardwareMap):
-            raise TwisterException('hardware_map must be an instance of HardwareMap')
         super().__init__(twister_config, **kwargs)
         self.hardware_map = hardware_map
         self.connection: serial.Serial | None = None

@@ -3,6 +3,8 @@ from __future__ import annotations
 import abc
 import logging
 import math
+import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -18,6 +20,7 @@ from twister2.yaml_test_specification import (
 )
 
 TEST_SPEC_FILE_NAME: str = 'testspec.yaml'
+SUPPORTED_SIMS: list[str] = ['mdb-nsim', 'nsim', 'renode', 'qemu', 'tsim', 'armfvp', 'xt-sim', 'native']
 
 logger = logging.getLogger(__name__)
 
@@ -25,24 +28,27 @@ logger = logging.getLogger(__name__)
 class SpecificationProcessor(abc.ABC):
     """Prepars specification for test"""
 
+    def __init__(self, twister_config):
+        self.twister_config = twister_config
+
     @abc.abstractmethod
     def process(self, platform: PlatformSpecification, scenario: str) -> YamlTestSpecification | None:
         """Create yaml specification for platform and scenario."""
 
-    @staticmethod
-    def create_spec_from_dict(test_spec_dict: dict, platform: PlatformSpecification) -> YamlTestSpecification:
+    def create_spec_from_dict(self, test_spec_dict: dict, platform: PlatformSpecification) -> YamlTestSpecification:
         test_spec = YamlTestSpecification(**test_spec_dict)
         test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
-        test_spec.runnable = is_runnable(test_spec)
+        test_spec.runnable = is_runnable(test_spec, platform, self.twister_config.fixtures)
         return test_spec
 
 
 class YamlSpecificationProcessor(SpecificationProcessor):
     """Specification processor class for twister tests."""
 
-    def __init__(self, filepath: Path, zephyr_base: str) -> None:
+    def __init__(self, twister_config, filepath: Path) -> None:
+        super().__init__(twister_config)
         self.spec_file_path = filepath
-        self.zephyr_base = zephyr_base
+        self.zephyr_base: str = self.twister_config.zephyr_base
         self.test_directory_path: Path = self.spec_file_path.parent
         self.raw_spec: dict = safe_load_yaml(self.spec_file_path)
         self.tests: dict = extract_tests(self.raw_spec)
@@ -81,7 +87,8 @@ class YamlSpecificationProcessor(SpecificationProcessor):
 class RegularSpecificationProcessor(SpecificationProcessor):
     """Specification processor class for regular pytest tests."""
 
-    def __init__(self, item: pytest.Item) -> None:
+    def __init__(self, twister_config, item: pytest.Item) -> None:
+        super().__init__(twister_config)
         self.item = item
         self.config = self.item.config
         self.rootpath = self.config.rootpath
@@ -260,5 +267,45 @@ def _join_strings(args: list[str]) -> str:
     return ' '.join(args)
 
 
-def is_runnable(spec: YamlTestSpecification) -> bool:
-    return spec.harness in SUPPORTED_HARNESSES
+def is_runnable(
+    spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    fixtures: list[str] | None = None
+) -> bool:
+    """
+    Return if test can be executed on current setup.
+
+    :param spec: test specification
+    :param platform: selected platform
+    :param fixtures: list of additional devices connected to the test setup
+    :return: True if test is runnable
+    """
+    if os.name == 'nt' and platform.simulation != 'na':
+        logger.debug('Simulators not supported on Windows')
+        return False
+
+    if spec.harness not in SUPPORTED_HARNESSES:
+        logger.debug(f'Harness is not supported {spec.harness}')
+        return False
+
+    if not any([
+        spec.type == 'unit',
+        platform.type in ['native', 'mcu'],
+        platform.simulation in SUPPORTED_SIMS
+    ]):
+        logger.debug(f'Target type not supported: {platform.type}')
+        return False
+
+    for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']:
+        if platform.simulation == sim and platform.simulation_exec and platform.simulation_exec != 'na':
+            if shutil.which(platform.simulation_exec) is None:
+                logger.debug(f'{platform.simulation_exec} not found.')
+                return False
+
+    if fixtures is None:
+        fixtures = []
+    if (fixture := spec.harness_config.get('fixture')) and fixture not in fixtures:
+        logger.debug('Required fixture {fixture} is not available')
+        return False
+
+    return True

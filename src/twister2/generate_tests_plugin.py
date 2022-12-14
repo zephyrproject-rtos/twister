@@ -56,8 +56,9 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
     if not metafunc.definition.get_closest_marker('build_specification'):
         return
 
-    # incject fixture for parametrized tests
-    metafunc.definition.fixturenames.append('specification')
+    # inject fixture for parametrized tests
+    if 'specification' not in metafunc.definition.fixturenames:
+        metafunc.definition.fixturenames.append('specification')
 
     twister_config = metafunc.config.twister_config  # type: ignore[attr-defined]
 
@@ -85,11 +86,12 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
 
 
 @pytest.fixture(scope='function')
-def specification() -> None:
-    """Injects a test specification from yaml file to a test item"""
-    # The body of this function is empty because it is only used to
-    # inform pytest that we want to generate parametrized tests for
-    # a test function which uses this fixture
+def specification(request: pytest.FixtureRequest) -> YamlTestSpecification | None:
+    """Return test specification from yaml file taking into account the appropriate platform and scenario."""
+    if hasattr(request.session, 'specifications'):
+        return request.session.specifications.get(request.node.nodeid)
+    else:
+        return None
 
 
 def pytest_configure(config: pytest.Config):
@@ -104,7 +106,8 @@ def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Varian
     scenario: str = variant.scenario
     platform: PlatformSpecification = variant.platform
 
-    processor = RegularSpecificationProcessor(item)
+    twister_config = item.config.twister_config  # type: ignore[attr-defined]
+    processor = RegularSpecificationProcessor(twister_config, item)
     test_spec = processor.process(platform, scenario)
     return test_spec
 

@@ -13,9 +13,11 @@ from pytest_subtests import SubTestReport
 
 from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
+    get_item_build_only_status,
     get_item_platform,
     get_item_platform_allow,
     get_item_quarantine,
+    get_item_runnable_status,
     get_item_tags,
     get_item_type,
     get_suite_name,
@@ -47,7 +49,8 @@ class TestResult:
         self.item = report.nodeid
         self.report = report
         self.config = config
-        self.duration: float = getattr(report, 'duration', 0.0)
+        self.duration: float = getattr(report, 'duration', 0.0)  #: whole time spent on running test
+        self.call_duration: float = 0.0  #: time spent only on execution (without setup and teardown)
         self.message: str = report.longreprtext
         self.subtests: list = []
 
@@ -92,6 +95,12 @@ class TestResultsPlugin:
         if not hasattr(session, 'items'):
             # Collection was skipped (probably due to xdist)
             session.perform_collect()
+
+    def pytest_runtest_call(self, item):
+        time_start = time.time()
+        yield
+        duration = time.time() - time_start
+        self.test_results[item.nodeid].call_duration = duration
 
     def pytest_runtest_logreport(self, report: pytest.TestReport):
         outcome = self._get_outcome(report)
@@ -172,11 +181,14 @@ class TestResultsPlugin:
                 platform=get_item_platform(item),
                 tags=get_item_tags(item),
                 type=get_item_type(item),
+                build_only=get_item_build_only_status(item),
+                runnable=get_item_runnable_status(item),
                 platform_allow=get_item_platform_allow(item),
                 status=result.status,
                 message=result.message,
                 quarantine=get_item_quarantine(item),
                 duration=result.duration,
+                execution_time=result.call_duration,
                 subtests=result.subtests,
             )
             tests_list.append(test)
