@@ -187,7 +187,7 @@ def pytest_configure(config: pytest.Config):
 
     xdist_worker = hasattr(config, 'workerinput')  # xdist worker
 
-    if not config.option.collectonly or xdist_worker:
+    if not config.option.collectonly and not xdist_worker:
         choice = config.option.clear
         if config.option.build_only and choice == 'no':
             msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
