@@ -20,6 +20,8 @@ from twister2.report.helper import (
     get_test_name,
     get_test_path,
 )
+from twister2.report.test_plan_csv import CsvTestPlan
+from twister2.report.test_plan_json import JsonTestPlan
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +77,40 @@ class TestPlanPlugin:
         """Loop over all writers and save report."""
         for writer in self.writers:
             writer.write(data)
+
+
+def pytest_addoption(parser: pytest.Parser):
+    custom_reports = parser.getgroup('Twister reports')
+    custom_reports.addoption(
+        '--testplan-csv',
+        dest='testplan_csv_path',
+        metavar='PATH',
+        action='store',
+        default=None,
+        help='generate test plan in CSV format'
+    )
+    custom_reports.addoption(
+        '--testplan-json',
+        dest='testplan_json_path',
+        metavar='PATH',
+        action='store',
+        default=None,
+        help='generate test plan in JSON format'
+    )
+
+
+def pytest_configure(config: pytest.Config):
+    if hasattr(config, 'workerinput'):  # xdist worker
+        return
+
+    test_plan_writers: list[BaseReportWriter] = []
+    if testplan_csv_path := config.getoption('testplan_csv_path'):
+        test_plan_writers.append(CsvTestPlan(testplan_csv_path))
+    if testplan_json_path := config.getoption('testplan_json_path'):
+        test_plan_writers.append(JsonTestPlan(testplan_json_path))
+
+    if test_plan_writers:
+        config.pluginmanager.register(
+            plugin=TestPlanPlugin(config=config, writers=test_plan_writers),
+            name='testplan'
+        )
