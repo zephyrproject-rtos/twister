@@ -17,3 +17,6 @@ class BaseReportWriter(abc.ABC):
     @abc.abstractmethod
     def write(self, data: dict) -> None:
         """Save report."""
+
+    def print_summary(self, terminalreporter) -> None:
+        terminalreporter.write_sep('-', 'Report has been written')
