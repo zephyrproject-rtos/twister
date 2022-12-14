@@ -170,17 +170,21 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
     assert should_skip_for_min_flash(testcase, platform) is False
 
 
-def test_if_join_strings_returns_joined_strings():
-    assert _join_strings(['aaa', 'bbb']) == 'aaa bbb'
+@pytest.mark.parametrize('in_put,out_put', [
+    ([], ''),
+    (['aaa'], 'aaa'),
+    (['aaa', 'bbb'], 'aaa bbb'),
+    (['aaa', '', 'bbb', ''], 'aaa bbb'),
+])
+def test_if_join_strings_returns_joined_strings(in_put, out_put):
+    assert _join_strings(in_put) == out_put
 
 
-def test_if_join_strings_returns_joined_strings_without_empty_strings():
-    assert _join_strings(['aaa', '', 'bbb', '']) == 'aaa bbb'
-
-
-def test_if_join_filters_returns_joined_flters():
-    assert _join_filters(['aaa', 'bbb']) == '(aaa) and (bbb)'
-
-
-def test_if_join_filters_returns_joined_filters_without_empty_strings():
-    assert _join_filters(['aaa', '', '', 'bbb']) == '(aaa) and (bbb)'
+@pytest.mark.parametrize('in_put,out_put', [
+    ([], ''),
+    (['aaa'], 'aaa'),
+    (['aaa', 'bbb'], '(aaa) and (bbb)'),
+    (['aaa', '', '', 'bbb'], '(aaa) and (bbb)'),
+])
+def test_if_join_filters_returns_joined_filters(in_put, out_put):
+    assert _join_filters(in_put) == out_put
