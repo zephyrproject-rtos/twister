@@ -93,7 +93,7 @@ Run tests only for specific platforms:
 
 .. code-block:: sh
 
-  pytest tests --platform=qemu_x86 --platform=nrf51dk_nrf51422
+  pytest tests --platform=native_posix --platform=nrf52840dk_nrf52840
 
 
 Provide directory to search for board configuration files:
@@ -173,8 +173,15 @@ Scan connected devices and list hardware map:
   twister_tools --list-hardware-map
 
 
-List default platforms:
+List all platforms:
 
 .. code-block:: sh
 
-  twister_tools --list-default-platforms
+  twister_tools --list-platforms
+
+
+List default platforms only:
+
+.. code-block:: sh
+
+  twister_tools --list-platforms --default-only
