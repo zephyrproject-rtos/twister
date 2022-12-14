@@ -21,6 +21,7 @@ from twister2.report.helper import (
     get_suite_name,
     get_test_name,
 )
+from twister2.report.test_results_json import JsonResultsReport
 
 
 class Status:
@@ -200,3 +201,30 @@ class TestResultsPlugin:
     def _save_report(self, data: dict) -> None:
         for writer in self.writers:
             writer.write(data)
+
+
+def pytest_addoption(parser: pytest.Parser):
+    custom_reports = parser.getgroup('Twister reports')
+    custom_reports.addoption(
+        '--results-json',
+        dest='results_json_path',
+        metavar='PATH',
+        action='store',
+        default=None,
+        help='generate test results report in JSON format'
+    )
+
+
+def pytest_configure(config: pytest.Config):
+    if hasattr(config, 'workerinput'):  # xdist worker
+        return
+
+    test_results_writers = []
+    if test_result_json_path := config.getoption('results_json_path'):
+        test_results_writers.append(JsonResultsReport(test_result_json_path))
+
+    if test_results_writers and not config.option.collectonly:
+        config.pluginmanager.register(
+            plugin=TestResultsPlugin(config, writers=test_results_writers),
+            name='test_results'
+        )

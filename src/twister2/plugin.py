@@ -13,12 +13,6 @@ from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.quarantine_plugin import QuarantinePlugin
-from twister2.report.base_report_writer import BaseReportWriter
-from twister2.report.test_plan_csv import CsvTestPlan
-from twister2.report.test_plan_json import JsonTestPlan
-from twister2.report.test_plan_plugin import TestPlanPlugin
-from twister2.report.test_results_json import JsonResultsReport
-from twister2.report.test_results_plugin import TestResultsPlugin
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_file import YamlFile
 
@@ -32,6 +26,8 @@ pytest_plugins = (
     'twister2.fixtures.dut',
     'twister2.fixtures.log_parser',
     'twister2.generate_tests_plugin',
+    'twister2.report.test_plan_plugin',
+    'twister2.report.test_results_plugin',
 )
 
 
@@ -42,32 +38,6 @@ def pytest_collect_file(parent, path):
 
 
 def pytest_addoption(parser: pytest.Parser):
-    custom_reports = parser.getgroup('Twister reports')
-    custom_reports.addoption(
-        '--testplan-csv',
-        dest='testplan_csv_path',
-        metavar='PATH',
-        action='store',
-        default=None,
-        help='generate test plan in CSV format'
-    )
-    custom_reports.addoption(
-        '--testplan-json',
-        dest='testplan_json_path',
-        metavar='PATH',
-        action='store',
-        default=None,
-        help='generate test plan in JSON format'
-    )
-    custom_reports.addoption(
-        '--results-json',
-        dest='results_json_path',
-        metavar='PATH',
-        action='store',
-        default=None,
-        help='generate test results report in JSON format'
-    )
-
     twister_group = parser.getgroup('Twister')
     twister_group.addoption(
         '--build-only',
@@ -200,28 +170,6 @@ def pytest_configure(config: pytest.Config):
     configure_logging(config)
 
     # register plugins
-    test_plan_writers: list[BaseReportWriter] = []
-    if testplan_csv_path := config.getoption('testplan_csv_path'):
-        test_plan_writers.append(CsvTestPlan(testplan_csv_path))
-    if testplan_json_path := config.getoption('testplan_json_path'):
-        test_plan_writers.append(JsonTestPlan(testplan_json_path))
-
-    if test_plan_writers and not xdist_worker:
-        config.pluginmanager.register(
-            plugin=TestPlanPlugin(config=config, writers=test_plan_writers),
-            name='testplan'
-        )
-
-    test_results_writers = []
-    if test_result_json_path := config.getoption('results_json_path'):
-        test_results_writers.append(JsonResultsReport(test_result_json_path))
-
-    if test_results_writers and not xdist_worker and not config.option.collectonly:
-        config.pluginmanager.register(
-            plugin=TestResultsPlugin(config, writers=test_results_writers),
-            name='test_results'
-        )
-
     filter_plugin = FilterPlugin(config)
     if config.getoption('tags'):
         filter_plugin.add_filter(TagFilter(config))
