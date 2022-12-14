@@ -29,3 +29,6 @@ class JsonTestPlan(BaseReportWriter):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w', encoding='UTF-8') as fd:
             json.dump(data, fd, indent=4)
+
+    def print_summary(self, terminalreporter) -> None:
+        terminalreporter.write_sep('-', f'generated results report file: {self.filename}')

@@ -22,3 +22,6 @@ class JsonResultsReport(BaseReportWriter):
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w', encoding='UTF-8') as file:
             json.dump(data, file, indent=4)
+
+    def print_summary(self, terminalreporter) -> None:
+        terminalreporter.write_sep('-', f'generated results report file: {self.filename}')

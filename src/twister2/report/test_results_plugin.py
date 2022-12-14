@@ -122,7 +122,7 @@ class TestResultsPlugin:
 
     def pytest_terminal_summary(self, terminalreporter):
         for writer in self.writers:
-            terminalreporter.write_sep('-', f'generated results report file: {writer.filename}')
+            writer.print_summary(terminalreporter)
 
     def _get_outcome(self, report: pytest.TestReport) -> str | None:  # type: ignore[return]
         if report.failed:

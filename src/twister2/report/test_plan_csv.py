@@ -44,3 +44,6 @@ class CsvTestPlan(BaseReportWriter):
             )
             writer.writeheader()
             writer.writerows(tests)
+
+    def print_summary(self, terminalreporter) -> None:
+        terminalreporter.write_sep('-', f'generated results report file: {self.filename}')
