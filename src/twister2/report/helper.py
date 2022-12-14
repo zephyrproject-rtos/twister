@@ -5,8 +5,6 @@ from __future__ import annotations
 
 import pytest
 
-from twister2.yaml_test_function import YamlFunction
-
 
 def get_suite_name(item: pytest.Item) -> str:
     """Return suite name."""
@@ -51,9 +49,18 @@ def get_item_platform(item: pytest.Item) -> str:
 
 def get_item_platform_allow(item: pytest.Item) -> str:
     """Return allowed platforms."""
-    if isinstance(item, YamlFunction):
-        return ' '.join(item.function.spec.platform_allow)
+    if hasattr(item.session, 'specification'):
+        if spec := item.session.specification.get(item.nodeid):
+            return ' '.join(spec.platform_allow)
     return ''
+
+
+def get_item_runnable_status(item: pytest.Item) -> bool:
+    """Return runnable status."""
+    if hasattr(item.session, 'specification'):
+        if spec := item.session.specification.get(item.nodeid):
+            return spec.runnable
+    return True
 
 
 def get_item_tags(item: pytest.Item) -> str:
@@ -63,3 +70,10 @@ def get_item_tags(item: pytest.Item) -> str:
     else:
         tags = []
     return ' '.join(tags)
+
+
+def get_item_build_only_status(item: pytest.Item) -> bool:
+    """Return True if test is build_only"""
+    if item.get_closest_marker('build_only'):
+        return True
+    return False

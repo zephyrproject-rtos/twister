@@ -43,7 +43,7 @@ def read_test_specifications_from_yaml(
     :param twister_config: twister configuration
     :return: generator of yaml test specifications
     """
-    processor = YamlSpecificationProcessor(filepath, twister_config.zephyr_base)
+    processor = YamlSpecificationProcessor(twister_config, filepath)
 
     platforms = (
         platform for platform in twister_config.platforms

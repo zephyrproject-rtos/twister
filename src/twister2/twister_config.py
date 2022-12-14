@@ -24,23 +24,25 @@ class TwisterConfig:
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
     device_testing: bool = False
+    fixtures: list[str] = field(default_factory=list, repr=False)
     extra_args_cli: list = field(default_factory=list)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
         """Create new instance from pytest.Config."""
         zephyr_base: str = (
-            config.getoption('zephyr_base')
+            config.option.zephyr_base
             or config.getini('zephyr_base')
             or os.environ.get('ZEPHYR_BASE', '')
         )
-        build_only: bool = config.getoption('--build-only')
-        default_platforms: list[str] = config.getoption('--platform')
-        board_root: list[str] = config.getoption('--board-root')
+        build_only: bool = config.option.build_only
+        default_platforms: list[str] = config.option.platform
+        board_root: list[str] = config.option.board_root or config.getini('board_root')
         platforms: list[PlatformSpecification] = config._platforms  # type: ignore
-        output_dir: str = config.getoption('--outdir')
-        hardware_map_file: str = config.getoption('--hardware-map')
-        device_testing: bool = config.getoption('--device-testing')
+        output_dir: str = config.option.output_dir
+        hardware_map_file: str = config.option.hardware_map
+        device_testing: bool = config.option.device_testing
+        fixtures: list[str] = config.option.fixtures
         extra_args_cli: list[str] = config.getoption('--extra-args')
 
         hardware_map_list: list[HardwareMap] = []
@@ -64,6 +66,7 @@ class TwisterConfig:
             output_dir=output_dir,
             hardware_map_list=hardware_map_list,
             device_testing=device_testing,
+            fixtures=fixtures,
             extra_args_cli=extra_args_cli,
         )
         return cls(**data)
