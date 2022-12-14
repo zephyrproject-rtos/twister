@@ -1,4 +1,4 @@
-
+import textwrap
 from pathlib import Path
 
 
@@ -65,3 +65,55 @@ def test_if_pytest_generate_testplan_csv(pytester, resources) -> None:
         '--co'
     )
     assert output_testplan.is_file()
+
+
+def test_if_regular_tests_work_with_specification_file(pytester, resources):
+    pytester.copy_example(str(resources))
+    test_file_content = textwrap.dedent("""
+        import pytest
+
+        def test_foo(specification, builder):
+            pass
+
+        @pytest.mark.build_specification('scenario1', 'scenario2')
+        def test_bar(specification, builder):
+            pass
+    """)
+    test_file = pytester.path / 'tests' / 'foobar_test.py'
+    test_file.write_text(test_file_content)
+
+    test_spec_content = textwrap.dedent("""
+        common:
+            timeout: 30
+            harness: console
+            harness_config:
+                type: one_line
+                regex:
+                    - "Hello World! (.*)"
+        tests:
+            scenario1:
+                tags: tag1
+            scenario2:
+                tags: tag1
+            scenario3:
+                tags: tag2
+    """)
+    test_spec_file = pytester.path / 'tests' / 'testspec.yaml'
+    test_spec_file.write_text(test_spec_content)
+
+    result = pytester.runpytest(
+        str(test_file),
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=native_posix',
+        '--collect-only'
+    )
+    print(result.stdout.lines)
+    result.stdout.fnmatch_lines_random([
+        '*<Module*tests/foobar_test.py>*',
+        '*<Function*test_foo*native_posix:scenario1*>*',
+        '*<Function*test_foo*native_posix:scenario2*>*',
+        '*<Function*test_foo*native_posix:scenario3*>*',
+        '*<Function*test_bar*native_posix:scenario1*>*',
+        '*<Function*test_bar*native_posix:scenario2*>*',
+        '*5 tests collected*',
+    ])
