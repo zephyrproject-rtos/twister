@@ -179,8 +179,7 @@ def pytest_configure(config: pytest.Config):
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
         )
 
-    output_dir = config.getoption('--outdir')
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir: str = config.getoption('--outdir')
 
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
@@ -193,7 +192,10 @@ def pytest_configure(config: pytest.Config):
             msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
             logger.error(msg)
             pytest.exit(msg)
-        run_artifactory_cleanup(choice, config.option.output_dir)
+        run_artifactory_cleanup(choice, output_dir)
+
+    # create output directory if not exists
+    os.makedirs(output_dir, exist_ok=True)
 
     configure_logging(config)
 
@@ -260,14 +262,14 @@ def pytest_configure(config: pytest.Config):
 
 
 def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
-    if choice == 'no':
+    if os.path.exists(output_dir) is False:
+        return
+    elif choice == 'no':
         print('Keeping previous artifacts untouched')
     elif choice == 'delete':
         print(f'Deleting previous artifacts from {output_dir}')
         shutil.rmtree(output_dir, ignore_errors=True)
     elif choice == 'archive':
-        if os.path.exists(output_dir) is False:
-            return
         timestamp = os.path.getmtime(output_dir)
         file_date = datetime.datetime.fromtimestamp(timestamp).strftime('%y%m%d%H%M%S')
         new_output_dir = f'{output_dir}_{file_date}'
