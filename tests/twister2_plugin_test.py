@@ -72,11 +72,12 @@ def test_if_regular_tests_work_with_specification_file(pytester, resources):
     test_file_content = textwrap.dedent("""
         import pytest
 
-        def test_foo(specification, builder):
+        @pytest.mark.build_specification
+        def test_foo(builder):
             pass
 
         @pytest.mark.build_specification('scenario1', 'scenario2')
-        def test_bar(specification, builder):
+        def test_bar(builder):
             pass
     """)
     test_file = pytester.path / 'tests' / 'foobar_test.py'

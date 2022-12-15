@@ -37,13 +37,7 @@ class Variant:
 def get_scenarios_from_fixture(metafunc: pytest.Metafunc) -> list[str]:
     """Return scenarios selected by fixture `build_specification`."""
     if mark := metafunc.definition.get_closest_marker('build_specification'):
-        scenarios = list(mark.args)
-        if not scenarios:
-            logger.warning(
-                'At least one `scenario` should be added to `build_specification` decorator in test: %s',
-                metafunc.definition.nodeid
-            )
-        return scenarios
+        return list(mark.args)
     return []
 
 
@@ -58,9 +52,12 @@ def get_scenarios_from_yaml(spec_file: Path) -> list[str]:
 
 def pytest_generate_tests(metafunc: pytest.Metafunc):
     # generate parametrized tests for each selected platform for ordinary pytest tests
-    # if `specification` fixture is used
-    if 'specification' not in metafunc.fixturenames:
+    # if `build_specification` marker is used
+    if not metafunc.definition.get_closest_marker('build_specification'):
         return
+
+    # incject fixture for parametrized tests
+    metafunc.definition.fixturenames.append('specification')
 
     twister_config = metafunc.config.twister_config  # type: ignore[attr-defined]
 
