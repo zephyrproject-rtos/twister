@@ -19,15 +19,15 @@ class BuilderFactory:
             cls._builders[name] = klass
 
     @classmethod
-    def get_builder(cls, name: str) -> Type[BuilderAbstract]:
+    def get_builder(cls, name: str) -> BuilderAbstract:
         """
-        Return builder class.
+        Return builder.
 
         :param name: builder name
-        :return: builder class
+        :return: builder instance
         """
         try:
-            return cls._builders[name]
+            return cls._builders[name]()
         except KeyError as e:
             logger.exception('There is not builder with name: %s', name)
             raise KeyError(f'Builder "{name}" does not exist') from e

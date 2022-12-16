@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Set, List, Sequence
+from typing import List, Sequence, Set
 
 import pytest
 
@@ -31,10 +31,10 @@ class TagFilter(FilterInterface):
     @staticmethod
     def get_item_tags(item: pytest.Item) -> Set[str]:
         """Return tags assigned to test item."""
-        tags = []
+        tags: set[str] = set()
         for marker in item.iter_markers(name='tags'):
-            tags.extend(marker.args)
-        return set(tags)
+            tags.update(marker.args)
+        return tags
 
 
 class TagMatcher:

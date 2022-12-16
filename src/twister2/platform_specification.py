@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-import yaml
 from marshmallow import Schema, fields, validate
 
 from twister2.exceptions import TwisterConfigurationException
-from twister2.helper import string_to_set
+from twister2.helper import safe_load_yaml, string_to_set
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,7 @@ class Testing:
     default: bool = False
     only_tags: set[str] = field(default_factory=set)
     ignore_tags: set[str] = field(default_factory=set)
-    timeout_multiplier: int = None
+    timeout_multiplier: float = 1
 
     def __post_init__(self):
         self.only_tags = string_to_set(self.only_tags)
@@ -57,13 +56,12 @@ class PlatformSpecification:
     @classmethod
     def load_from_yaml(cls, filename: str | Path) -> PlatformSpecification:
         """Load platform from yaml file."""
-        with open(filename, 'r', encoding='UTF-8') as file:
-            data: dict = yaml.safe_load(file)
+        data: dict = safe_load_yaml(Path(filename))
         try:
             data = PlatformSchema().load(data)
             return cls.from_dict(data)
         except Exception as e:
-            logger.exception('Cannot create PlatformSpecification from yaml data: %s', data)
+            logger.error('Cannot create PlatformSpecification from yaml data: %s', data)
             raise TwisterConfigurationException('Cannot create PlatformSpecification from yaml data') from e
 
     @classmethod
@@ -87,7 +85,7 @@ class TestingSchema(Schema):
     default = fields.Bool()
     only_tags = fields.List(fields.Str)
     ignore_tags = fields.List(fields.Str)
-    timeout_multiplier = fields.Int()
+    timeout_multiplier = fields.Float()
 
 
 class PlatformSchema(Schema):
@@ -117,7 +115,7 @@ def discover_platforms(directory: Path) -> Generator[PlatformSpecification, None
         try:
             yield PlatformSpecification.load_from_yaml(str(file))
         except Exception as e:
-            logger.exception('Cannot read platform definition from yaml: %e', e)
+            logger.exception('Cannot read platform definition from yaml: %s', e)
             raise
 
 
@@ -135,7 +133,7 @@ def validate_platforms_list(platforms: list[PlatformSpecification]) -> None:
         pytest.exit(f'There are duplicated platforms: {", ".join(duplicated)}')
 
 
-def search_platforms(zephyr_base: str, board_root: str = None) -> list[PlatformSpecification]:
+def search_platforms(zephyr_base: str, board_root: str | None = None) -> list[PlatformSpecification]:
     """Return list of platforms."""
     board_root_list = [
         f'{zephyr_base}/boards',

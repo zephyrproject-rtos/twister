@@ -31,12 +31,14 @@ logger = logging.getLogger(__name__)
 class ZtestLogParser(LogParserAbstract):
     """Parse Ztest output from log stream."""
 
-    def __init__(self,
-                 stream: Iterator[str],
-                 *,
-                 ignore_faults: bool = False,
-                 subtests_fixture: SubTests | None = None,
-                 **kwargs):
+    def __init__(
+        self,
+        stream: Iterator[str],
+        *,
+        ignore_faults: bool = False,
+        subtests_fixture: SubTests | None = None,
+        **kwargs
+    ):
         super().__init__(stream, **kwargs)
         self.subtests_fixture: SubTests = subtests_fixture
         self.ignore_faults: bool = ignore_faults
@@ -82,16 +84,16 @@ class ZtestLogParser(LogParserAbstract):
                 self.detected_suite_names.append(test_suite_name)
 
             if result_match := result_re_pattern.match(line):
-                subtest = SubTestResult(**result_match.groupdict())
+                subtest = SubTestResult(**result_match.groupdict())  # type: ignore
                 self.subtest_results.append(subtest)
                 logger.info('Ztest: %s - %s in %s', subtest.testname, subtest.result, subtest.duration)
                 self._register_pytest_subtests(subtest)
 
     def _register_pytest_subtests(self, subtest: SubTestResult):
-        '''
+        """
         Using subtests fixture to log single C test
         https://pypi.org/project/pytest-subtests/
-        '''
+        """
         if self.subtests_fixture is None:
             return
 

@@ -13,6 +13,7 @@ from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.quarantine_plugin import QuarantinePlugin
+from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
 from twister2.report.test_plan_plugin import TestPlanPlugin
@@ -30,6 +31,7 @@ pytest_plugins = (
     'twister2.fixtures.builder',
     'twister2.fixtures.dut',
     'twister2.fixtures.log_parser',
+    'twister2.generate_tests_plugin',
 )
 
 
@@ -155,6 +157,14 @@ def pytest_addoption(parser: pytest.Parser):
              '"archive" - keep previous artifacts '
              '(default=%(default)s)'
     )
+    twister_group.addoption(
+        '--builder',
+        dest='builder',
+        action='store',
+        default='west',
+        choices=('west',),
+        help='Select builder type (default=%(default)s)'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -162,30 +172,35 @@ def pytest_configure(config: pytest.Config):
         return
 
     zephyr_base = os.path.expanduser(
-        config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE')
+        config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE', '')
     )
     if not zephyr_base:
         pytest.exit(
             'Path to Zephyr directory must be provided as pytest argument or in environment variable: ZEPHYR_BASE'
         )
 
+    output_dir: str = config.getoption('--outdir')
+
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
 
     xdist_worker = hasattr(config, 'workerinput')  # xdist worker
 
-    if not config.option.collectonly or xdist_worker:
+    if not config.option.collectonly and not xdist_worker:
         choice = config.option.clear
         if config.option.build_only and choice == 'no':
             msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
             logger.error(msg)
             pytest.exit(msg)
-        run_artifactory_cleanup(choice, config.option.output_dir)
+        run_artifactory_cleanup(choice, output_dir)
+
+    # create output directory if not exists
+    os.makedirs(output_dir, exist_ok=True)
 
     configure_logging(config)
 
     # register plugins
-    test_plan_writers = []
+    test_plan_writers: list[BaseReportWriter] = []
     if testplan_csv_path := config.getoption('testplan_csv_path'):
         test_plan_writers.append(CsvTestPlan(testplan_csv_path))
     if testplan_json_path := config.getoption('testplan_json_path'):
@@ -230,39 +245,43 @@ def pytest_configure(config: pytest.Config):
 
     board_root = config.getoption('board_root') or config.getini('board_root')
 
-    config._platforms = search_platforms(zephyr_base, board_root)
-    config.twister_config = TwisterConfig.create(config)
+    config._platforms = search_platforms(zephyr_base, board_root)  # type: ignore
+    config.twister_config = TwisterConfig.create(config)  # type: ignore
 
     # register custom markers for twister
-    config.addinivalue_line(
-        'markers', 'tags(tag1, tag2, ...): mark test for specific tags'
-    )
-    config.addinivalue_line(
-        'markers', 'platform(platform_name): mark test for specific platform'
-    )
-    config.addinivalue_line(
-        'markers', 'type(test_type): mark test for specific type'
-    )
-    config.addinivalue_line(
-        'markers', 'slow: mark test as slow'
-    )
-    config.addinivalue_line(
-        'markers', 'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
-                   'quarantine-list-yaml file. To mark scenario in code better use skip/skipif'
-    )
+    markers = [
+        'tags(tag1, tag2, ...): mark test for specific tags',
+        'platform(platform_name): mark test for specific platform',
+        'type(test_type): mark test for specific type',
+        'slow: mark test as slow',
+        'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
+        'quarantine-list-yaml file. To mark scenario in code better use skip/skipif',
+    ]
+    for marker in markers:
+        config.addinivalue_line('markers', marker)
 
 
 def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
-    if choice == 'no':
+    if os.path.exists(output_dir) is False:
+        return
+    elif choice == 'no':
         print('Keeping previous artifacts untouched')
     elif choice == 'delete':
         print(f'Deleting previous artifacts from {output_dir}')
         shutil.rmtree(output_dir, ignore_errors=True)
     elif choice == 'archive':
-        if os.path.exists(output_dir) is False:
-            return
         timestamp = os.path.getmtime(output_dir)
         file_date = datetime.datetime.fromtimestamp(timestamp).strftime('%y%m%d%H%M%S')
         new_output_dir = f'{output_dir}_{file_date}'
         print(f'Renaming output directory to {new_output_dir}')
         shutil.move(output_dir, new_output_dir)
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    # extend JUnitXML report for user properties
+    if marker := item.get_closest_marker('type'):
+        item.user_properties.append(('type', marker.args[0]))
+    if marker := item.get_closest_marker('tags'):
+        item.user_properties.append(('tags', ' '.join(marker.args)))
+    if marker := item.get_closest_marker('platform'):
+        item.user_properties.append(('platform', marker.args[0]))

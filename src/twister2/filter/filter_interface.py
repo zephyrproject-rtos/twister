@@ -14,5 +14,6 @@ class FilterInterface(abc.ABC):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
 
+    @abc.abstractmethod
     def filter(self, item: pytest.Item) -> bool:
         """Return true if item should be deselected."""

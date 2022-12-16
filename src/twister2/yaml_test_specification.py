@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from marshmallow import Schema, ValidationError, fields, validate
 
@@ -12,16 +11,20 @@ from twister2.helper import string_to_list, string_to_set
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_HARNESSES: list[str] = ['', 'test', 'ztest', 'console']
+
 
 @dataclass
 class YamlTestSpecification:
     """Test specification for yaml test."""
     name: str  #: test case name plus platform
     original_name: str  #: keeps test case name without platform
-    path: Path  #: path to a folder where C files are stored
+    source_dir: Path  #: path to a folder where C files are stored
     rel_to_base_path: Path  #: path relative to zephyr base
     platform: str  #: platform name used for this test
-    build_dir: Optional[Path] = None  #: path to dir with build results
+    build_name: str = ''  #: name of build configuration from yaml
+    output_dir: Path = Path('.')  #: path to dir with build results
+    runnable: bool = True
     tags: set[str] = field(default_factory=set)
     type: str = 'integration'
     filter: str = ''
@@ -33,7 +36,6 @@ class YamlTestSpecification:
     skip: bool = False
     slow: bool = False
     timeout: int = 60
-    timeout_multiplier: int = 1
     min_ram: int = 8
     depends_on: set[str] = field(default_factory=set)
     harness: str = ''
@@ -45,7 +47,7 @@ class YamlTestSpecification:
     ignore_qemu_crash: bool = False
     platform_allow: set[str] = field(default_factory=set)
     platform_exclude: set[str] = field(default_factory=set)
-    platform_type: list[str] = field(default_factory=set)
+    platform_type: list[str] = field(default_factory=list)
     harness_config: dict = field(default_factory=dict)
     toolchain_exclude: set[str] = field(default_factory=set)
     toolchain_allow: set[str] = field(default_factory=set)
@@ -66,7 +68,16 @@ class YamlTestSpecification:
         self.extra_configs = string_to_list(self.extra_configs)
         self.extra_args = string_to_list(self.extra_args)
         self.integration_platforms = string_to_list(self.integration_platforms)
-        self.timeout *= self.timeout_multiplier
+
+    @property
+    def scenario(self):
+        return self.build_name or self.original_name
+
+    @property
+    def build_dir(self) -> Path:
+        return (
+            self.output_dir / self.platform / self.rel_to_base_path / self.scenario
+        )
 
 
 # Using marshmallow to validate specification from yaml

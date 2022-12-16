@@ -22,10 +22,15 @@ logger = logging.getLogger(__name__)
 class HardwareAdapter(DeviceAbstract):
     """Adapter class for real device."""
 
-    def __init__(self, twister_config, hardware_map: HardwareMap | None = None) -> None:
-        if hardware_map is None:
-            raise TwisterException('Hardware map must be provided for hardware adapter')
-        super().__init__(twister_config, hardware_map=hardware_map)
+    def __init__(self, twister_config, *, hardware_map: HardwareMap, **kwargs) -> None:
+        """
+        :param twister_config: twister configuration
+        :param hardware_map: device hardware map
+        """
+        if not isinstance(hardware_map, HardwareMap):
+            raise TwisterException('hardware_map must be an instance of HardwareMap')
+        super().__init__(twister_config, **kwargs)
+        self.hardware_map = hardware_map
         self.connection: serial.Serial | None = None
 
     def connect(self, timeout: float = 1) -> None:
@@ -124,9 +129,9 @@ class HardwareAdapter(DeviceAbstract):
             except subprocess.TimeoutExpired:
                 process.kill()
             else:
-                for stdout in stdout.decode('utf-8').split('\n'):
-                    if stdout:
-                        logger.info(stdout)
+                for line in stdout.decode('utf-8').split('\n'):
+                    if line:
+                        logger.info(line)
 
             if process.returncode == 0:
                 logger.info('Finished flashing %s', build_dir)
