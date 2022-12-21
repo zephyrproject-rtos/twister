@@ -54,9 +54,10 @@ class BuildManager:
         :param build_dir: path to build director
         :return: build status
         """
+        build_dir = str(build_dir)
         with self._lock:
             data = self._read_data()
-            return data.get(str(build_dir), BuildStatus.NOT_DONE)
+            return data.get(build_dir, BuildStatus.NOT_DONE)
 
     def _read_data(self) -> dict:
         with self._status_file.open(encoding='UTF-8') as file:
@@ -74,11 +75,12 @@ class BuildManager:
         :param status: new status
         :return: True if status was updated otherwise return False
         """
+        build_dir = str(build_dir)
         with self._lock:
             data = self._read_data()
             if data.get(build_dir) == status:
                 return False
-            data[str(build_dir)] = status
+            data[build_dir] = status
             self._write_data(data)
             return True
 
@@ -94,9 +96,6 @@ class BuildManager:
         :param build_config: build configuration
         """
         status: str = self.get_status(build_config.build_dir)
-        if status == BuildStatus.DONE:
-            logger.info('Already build in %s', build_config.build_dir)
-            return
         if status == BuildStatus.NOT_DONE:
             if self.update_status(build_config.build_dir, BuildStatus.IN_PROGRESS):
                 self._build(builder=builder, build_config=build_config)
@@ -107,6 +106,9 @@ class BuildManager:
             # another builder is building the same source
             self._wait_for_build_to_finish(build_config.build_dir)
             status = self.get_status(build_config.build_dir)
+        if status == BuildStatus.DONE:
+            logger.info('Already build in %s', build_config.build_dir)
+            return
         if status == BuildStatus.FAILED:
             msg = f'Found in {self._status_file} the build status is set as {BuildStatus.FAILED} ' \
                   f'for: {build_config.build_dir}'
