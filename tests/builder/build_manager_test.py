@@ -1,6 +1,7 @@
 import threading
 import time
 from contextlib import contextmanager
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -41,8 +42,7 @@ def test_if_status_can_be_updated(build_manager):
     assert build_manager.get_status('build_dir_1') == BuildStatus.DONE
 
 
-def test_if_status_was_updated_after_build(build_manager, build_config):
-    mocked_builder = MockBuilder()
+def test_if_status_was_updated_after_build(build_manager, mocked_builder, build_config):
     build_manager.update_status(BUILD_DIR, BuildStatus.NOT_DONE)
 
     build_manager.build(builder=mocked_builder, build_config=build_config)
@@ -65,6 +65,20 @@ def test_if_test_is_failed_when_build_status_was_failed(build_manager, mocked_bu
     expected_msg = f'Found in .*twister_builder.json the build status is set as {BuildStatus.FAILED} for: {BUILD_DIR}'
     with pytest.raises(TwisterBuildException, match=expected_msg):
         build_manager.build(builder=mocked_builder, build_config=build_config)
+
+
+def test_if_update_status_detect_properly_that_status_was_already_set(tmp_path):
+    build_manager_1 = BuildManager(tmp_path)
+    build_manager_2 = BuildManager(tmp_path)
+    build_dir = Path('samples/hello_world')
+
+    status = build_manager_1.get_status(build_dir)
+    assert status == BuildStatus.NOT_DONE
+    status = build_manager_2.get_status(build_dir)
+    assert status == BuildStatus.NOT_DONE
+
+    assert build_manager_1.update_status(build_dir, BuildStatus.IN_PROGRESS)
+    assert not build_manager_2.update_status(build_dir, BuildStatus.IN_PROGRESS)
 
 
 def test_if_build_manager_does_not_build_when_source_is_already_built(
