@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import logging
 import os
-from pathlib import Path
 from typing import Generator
 
 from twister2.twister_config import TwisterConfig
@@ -37,19 +36,10 @@ class DeviceAbstract(abc.ABC):
     def disconnect(self) -> None:
         pass
 
-    def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
+    def flash_and_run(self, timeout: float = 60.0) -> None:
         """
-        Flash a device.
+        Flash and run application on a device.
 
-        :param build_dir: build directory
-        :param timeout: time out in seconds
-        """
-
-    def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        """
-        Run code on a device.
-
-        :param build_dir: build directory
         :param timeout: time out in seconds
         """
 
