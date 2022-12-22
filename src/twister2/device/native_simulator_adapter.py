@@ -29,6 +29,9 @@ class NativeSimulatorAdapter(DeviceAbstract):
     """Adapter class for a device simulator."""
 
     def __init__(self, twister_config: TwisterConfig, **kwargs) -> None:
+        """
+        :param twister_config: twister configuration
+        """
         super().__init__(twister_config, **kwargs)
         self._process: asyncio.subprocess.Process | None = None
         self._process_ended_with_timeout: bool = False
@@ -36,22 +39,31 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self._stop_job: bool = False
         self._exc: Exception | None = None  #: store any exception which appeared running this thread
         self._thread: threading.Thread | None = None
+        self.command: list[str] = []
+        self.process_kwargs: dict = {
+            'stdout': asyncio.subprocess.PIPE,
+            'stderr': asyncio.subprocess.STDOUT,
+            'env': self.env,
+        }
 
-    @staticmethod
-    def _get_command(build_dir: Path | str) -> list[str]:
+    def generate_command(self, build_dir: Path | str) -> list[str]:
         """
         Return command to run.
 
         :param build_dir: build directory
         :return: command to run
         """
-        return [str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())]
+        self.command = [str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())]
 
     def connect(self, timeout: float = 1) -> None:
         pass
 
-    def run(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        self._thread = threading.Thread(target=self._run_simulation, args=(build_dir, timeout), daemon=True)
+    def flash_and_run(self, timeout: float = 60.0) -> None:
+        if self.command == []:
+            msg = 'Run simulation command is empty, please verify if it was generated properly.'
+            logger.error(msg)
+            raise TwisterRunException(msg)
+        self._thread = threading.Thread(target=self._run_simulation, args=(timeout,), daemon=True)
         self._thread.start()
         # Give a time to start subprocess before test is executed
         time.sleep(0.1)
@@ -60,15 +72,13 @@ class NativeSimulatorAdapter(DeviceAbstract):
             logger.error('Simulation failed due to an exception: %s', self._exc)
             raise self._exc
 
-    async def _run_command(self, command: list[str], timeout: float = 60.):
-        assert isinstance(command, (list, tuple, set))  # to avoid stupid and difficult to debug mistakes
+    async def _run_command(self, timeout: float = 60.):
+        assert isinstance(self.command, (list, tuple, set))  # to avoid stupid and difficult to debug mistakes
         # we are using asyncio to run subprocess to be able to read from stdout
         # without blocking while loop (readline with timeout)
         self._process = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=self.env
+            *self.command,
+            **self.process_kwargs
         )
         logger.debug('Started subprocess with PID %s', self._process.pid)
         end_time = time.time() + timeout
@@ -87,12 +97,11 @@ class NativeSimulatorAdapter(DeviceAbstract):
         self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
         return await self._process.wait()
 
-    def _run_simulation(self, build_dir: str | Path, timeout: float) -> None:
-        command: list[str] = self._get_command(build_dir)
-        log_command(logger, 'Running command', command, level=logging.INFO)
+    def _run_simulation(self, timeout: float) -> None:
+        log_command(logger, 'Running command', self.command, level=logging.INFO)
         try:
             return_code: int = asyncio.run(
-                self._run_command(command, timeout=timeout)
+                self._run_command(timeout=timeout)
             )
         except subprocess.SubprocessError as e:
             logger.error('Running simulation failed due to subprocess error %s', e)

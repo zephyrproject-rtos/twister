@@ -15,6 +15,7 @@ from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterException, TwisterFlashException
 from twister2.helper import log_command
+from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,9 @@ logger = logging.getLogger(__name__)
 class HardwareAdapter(DeviceAbstract):
     """Adapter class for real device."""
 
-    def __init__(self, twister_config, *, hardware_map: HardwareMap, **kwargs) -> None:
+    def __init__(
+        self, twister_config: TwisterConfig, *, hardware_map: HardwareMap, **kwargs
+    ) -> None:
         """
         :param twister_config: twister configuration
         :param hardware_map: device hardware map
@@ -32,6 +35,13 @@ class HardwareAdapter(DeviceAbstract):
         super().__init__(twister_config, **kwargs)
         self.hardware_map = hardware_map
         self.connection: serial.Serial | None = None
+        self.command: list[str] = []
+        self.process_kwargs: dict = {
+            'stdout': subprocess.PIPE,
+            'stderr': subprocess.STDOUT,
+            'cwd': self.twister_config.zephyr_base,
+            'env': self.env,
+        }
 
     def connect(self, timeout: float = 1) -> None:
         """
@@ -66,7 +76,13 @@ class HardwareAdapter(DeviceAbstract):
             self.connection = None
             logger.info('Closed serial connection for %s', self.hardware_map.serial)
 
-    def _get_command(self, build_dir: str) -> list[str]:
+    def generate_command(self, build_dir: Path | str) -> list[str]:
+        """
+        Return command to flash.
+
+        :param build_dir: build directory
+        :return: command to flash
+        """
         west = shutil.which('west')
         if west is None:
             raise TwisterFlashException('west not found')
@@ -75,7 +91,7 @@ class HardwareAdapter(DeviceAbstract):
             west,
             'flash',
             '--skip-rebuild',
-            '--build-dir', build_dir,
+            '--build-dir', str(build_dir),
         ]
 
         board_id: str = self.hardware_map.probe_id or self.hardware_map.id
@@ -105,20 +121,19 @@ class HardwareAdapter(DeviceAbstract):
             if command_extra_args:
                 command.append('--')
                 command.extend(command_extra_args)
-        return command
+        self.command = command
 
-    def flash(self, build_dir: str | Path, timeout: float = 60.0) -> None:
-        command = self._get_command(str(build_dir))
-
+    def flash_and_run(self, timeout: float = 60.0) -> None:
+        if self.command == []:
+            msg = 'Flash command is empty, please verify if it was generated properly.'
+            logger.error(msg)
+            raise TwisterFlashException(msg)
         logger.info('Flashing device %s', self.hardware_map.id)
-        log_command(logger, 'Flashing command', command, level=logging.INFO)
+        log_command(logger, 'Flashing command', self.command, level=logging.INFO)
         try:
             process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                cwd=self.twister_config.zephyr_base,
-                env=self.env,
+                self.command,
+                **self.process_kwargs
             )
         except subprocess.CalledProcessError:
             logger.error('Error while flashing device %s', self.hardware_map.id)
@@ -134,7 +149,7 @@ class HardwareAdapter(DeviceAbstract):
                         logger.info(line)
 
             if process.returncode == 0:
-                logger.info('Finished flashing %s', build_dir)
+                logger.info('Flashing finished')
             else:
                 raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
 
