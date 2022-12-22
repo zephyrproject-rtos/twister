@@ -135,6 +135,18 @@ def pytest_addoption(parser: pytest.Parser):
         choices=('west',),
         help='Select builder type (default=%(default)s)'
     )
+    twister_group.addoption(
+        '--extra-args',
+        default=[],
+        action='append',
+        help='Extra CMake arguments which will be passed to CMake during '
+             'building. May be called multiple times. The key-value entries '
+             'will be prefixed with -D before being passed to CMake. '
+             'For example: '
+             'pytest --extra-args=USE_CCACHE=0 '
+             'will be translated to '
+             'cmake -DUSE_CCACHE=0'
+    )
 
 
 def pytest_configure(config: pytest.Config):

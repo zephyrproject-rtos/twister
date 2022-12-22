@@ -12,6 +12,7 @@ from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.builder.factory import BuilderFactory
 from twister2.exceptions import TwisterConfigurationException
 from twister2.twister_config import TwisterConfig
+from twister2.yaml_test_specification import YamlTestSpecification
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 def builder(request: pytest.FixtureRequest) -> Generator[BuilderAbstract, None, None]:
     """Build hex files for test suite."""
     twister_config: TwisterConfig = request.config.twister_config  # type: ignore
-    spec = request.session.specifications.get(request.node.nodeid)  # type: ignore
+    spec: YamlTestSpecification = request.session.specifications.get(request.node.nodeid)  # type: ignore
     if not spec:
         msg = f'Could not find test specification for test {request.node.nodeid}'
         logger.error(msg)
@@ -36,7 +37,9 @@ def builder(request: pytest.FixtureRequest) -> Generator[BuilderAbstract, None, 
         platform=spec.platform,
         build_dir=spec.build_dir,
         scenario=spec.scenario,
-        extra_args=spec.extra_args
+        extra_configs=spec.extra_configs,
+        extra_args_spec=spec.extra_args,
+        extra_args_cli=twister_config.extra_args_cli
     )
     build_manager = BuildManager(request.config.option.output_dir)
     build_manager.build(builder, build_config)

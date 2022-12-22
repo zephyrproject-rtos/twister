@@ -65,7 +65,6 @@ class YamlTestSpecification:
         self.arch_exclude = string_to_set(self.arch_exclude)
         self.depends_on = string_to_set(self.depends_on)
         self.extra_sections = string_to_list(self.extra_sections)
-        self.extra_configs = string_to_list(self.extra_configs)
         self.extra_args = string_to_list(self.extra_args)
         self.integration_platforms = string_to_list(self.integration_platforms)
 

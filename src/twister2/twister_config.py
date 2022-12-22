@@ -24,6 +24,7 @@ class TwisterConfig:
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
     device_testing: bool = False
+    extra_args_cli: list = field(default_factory=list)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -40,6 +41,7 @@ class TwisterConfig:
         output_dir: str = config.getoption('--outdir')
         hardware_map_file: str = config.getoption('--hardware-map')
         device_testing: bool = config.getoption('--device-testing')
+        extra_args_cli: list[str] = config.getoption('--extra-args')
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:
@@ -62,6 +64,7 @@ class TwisterConfig:
             output_dir=output_dir,
             hardware_map_list=hardware_map_list,
             device_testing=device_testing,
+            extra_args_cli=extra_args_cli,
         )
         return cls(**data)
 
