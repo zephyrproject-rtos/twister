@@ -14,19 +14,23 @@ def fixture_west_builder() -> WestBuilder:
     return WestBuilder()
 
 
-def test_prepare_cmake_args_with_no_args(west_builder: WestBuilder):
-    cmake_args = []
-    assert west_builder._prepare_cmake_args(cmake_args=cmake_args) == ''
+def test_prepare_cmake_args_with_no_extra_args(west_builder: WestBuilder, build_config: BuildConfig):
+    build_config.extra_configs = []
+    build_config.extra_args_spec = []
+    build_config.extra_args_cli = []
+    assert west_builder._prepare_cmake_args(build_config) == []
 
 
-def test_prepare_cmake_args_with_one_arg(west_builder: WestBuilder):
-    cmake_args = ['FORKS=FIFOS']
-    assert west_builder._prepare_cmake_args(cmake_args=cmake_args) == '-DFORKS=FIFOS'
+def test_prepare_cmake_args_with_one_extra_arg(west_builder: WestBuilder, build_config: BuildConfig):
+    assert west_builder._prepare_cmake_args(build_config) == ['-DCONF_FILE=prj_single.conf']
 
 
-def test_prepare_cmake_args_with_two_args(west_builder: WestBuilder):
-    cmake_args = ['FORKS=FIFOS', 'CONF_FILE=prj_single.conf']
-    assert west_builder._prepare_cmake_args(cmake_args=cmake_args) == '"-DFORKS=FIFOS -DCONF_FILE=prj_single.conf"'
+def test_prepare_cmake_args_with_several_extra_args(west_builder: WestBuilder, build_config: BuildConfig):
+    build_config.extra_configs = ['CONFIG_BOOT_BANNER=n']
+    build_config.extra_args_spec = ['CONF_FILE=prj_single.conf']
+    build_config.extra_args_cli = ['CONFIG_BOOT_DELAY=600']
+    prepared_cmake_args = ['-DCONFIG_BOOT_BANNER=n', '-DCONF_FILE=prj_single.conf', '-DCONFIG_BOOT_DELAY=600']
+    assert west_builder._prepare_cmake_args(build_config) == prepared_cmake_args
 
 
 @mock.patch('shutil.which', return_value='west')
@@ -40,7 +44,7 @@ def test_if_west_builder_builds_code_from_source_without_errors(
     west_builder.build(build_config)
     patched_run.assert_called_with(
         ['west', 'build', 'source', '--pristine', 'always', '--board', 'native_posix',
-         '--test-item', 'bt', '--build-dir', 'build', '--', '-DCONFIG_NEWLIB_LIBC=y'],
+         '--build-dir', 'build', '--', '-DCONF_FILE=prj_single.conf'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
 

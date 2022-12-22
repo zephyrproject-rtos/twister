@@ -11,5 +11,5 @@ def fixture_build_config() -> BuildConfig:
         build_dir='build',
         platform='native_posix',
         scenario='bt',
-        extra_args=['CONFIG_NEWLIB_LIBC=y']
+        extra_args_spec=['CONF_FILE=prj_single.conf']
     )
