@@ -13,10 +13,12 @@ def test_twister_help(pytester):
         '*--build-only*build only*',
         '*--platform=PLATFORM*build tests for specific platforms*',
         '*--board-root=PATH*directory to search for board configuration files*',
-        '*--zephyr-base=PAT*base directory for Zephyr*',
+        '*--zephyr-base=PATH*base directory for Zephyr*',
         '*--quarantine-list=*',
         '*--clear={no,delete,archive}*',
         '*Clear twister artifacts*',
+        '*--extra-args=EXTRA_ARGS*',
+        '*Extra CMake arguments*',
     ])
 
 
