@@ -26,13 +26,11 @@ class WestBuilder(BuilderAbstract):
             str(build_config.source_dir),
             '--pristine', 'always',
             '--board', build_config.platform,
-            '--test-item', build_config.scenario
         ]
         if build_config.build_dir:
             command.extend(['--build-dir', str(build_config.build_dir)])
-        if cmake_args := build_config.extra_args:
-            args = self._prepare_cmake_args(cmake_args)
-            command.extend(['--', args])
+        if cmake_args := self._prepare_cmake_args(build_config):
+            command.extend(['--'] + cmake_args)
 
         logger.info('Building Zephyr application')
         log_command(logger, 'Build command', command, level=logging.INFO)
@@ -58,14 +56,27 @@ class WestBuilder(BuilderAbstract):
                 logger.error(msg)
                 raise TwisterBuildException(msg)
 
+    def _prepare_cmake_args(self, build_config: BuildConfig) -> list[str]:
+        """
+        "extra_configs" and "extra_args" which came from .yaml file are unpacked
+        and parsed here to avoid limitation of west "--test-item" option which
+        works properly only with testcase.yaml and sample.yaml files.
+        "--test-item" option doesn't work with unorthodox .yaml files like
+        testspec.yaml file.
+        """
+        cmake_args = []
+
+        cmake_args += (self._prepare_args(build_config.extra_configs))
+        cmake_args += (self._prepare_args(build_config.extra_args_spec))
+        cmake_args += (self._prepare_args(build_config.extra_args_cli))
+
+        return cmake_args
+
+    @staticmethod
+    def _prepare_args(args: list[str]) -> list[str]:
+        return ['-D{}'.format(arg.replace('"', '')) for arg in args]
+
     @staticmethod
     def _log_output(output: bytes, level: int) -> None:
         for line in output.decode().split('\n'):
             logger.log(level, line)
-
-    @staticmethod
-    def _prepare_cmake_args(cmake_args: list[str]) -> str:
-        args_joined = ' '.join([f'-D{arg}' for arg in cmake_args])
-        if ' ' in args_joined:
-            return f'"{args_joined}"'
-        return f'{args_joined}'

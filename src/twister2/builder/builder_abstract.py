@@ -15,7 +15,9 @@ class BuildConfig:
     build_dir: str | Path
     platform: str
     scenario: str
-    extra_args: list[str] = field(default_factory=list)
+    extra_configs: list[str] = field(default_factory=list)
+    extra_args_spec: list[str] = field(default_factory=list)
+    extra_args_cli: list[str] = field(default_factory=list)
 
 
 class BuilderAbstract(abc.ABC):
