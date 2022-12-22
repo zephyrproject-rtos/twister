@@ -11,29 +11,29 @@ def fixture_adapter() -> NativeSimulatorAdapter:
 
 
 def test_if_get_command_returns_proper_string(device, resources) -> None:
-    command = device._get_command(resources)
-    assert isinstance(command, list)
-    assert command == [str(resources.joinpath('zephyr', 'zephyr.exe'))]
+    device.generate_command(resources)
+    assert isinstance(device.command, list)
+    assert device.command == [str(resources.joinpath('zephyr', 'zephyr.exe'))]
 
 
-def test_if_native_simulator_adapter_runs_without_errors(monkeypatch, resources, device) -> None:
+def test_if_native_simulator_adapter_runs_without_errors(resources, device) -> None:
     """
     Run script which prints text line by line and ends without errors.
     Verify if subprocess was ended without errors, and without timeout.
     """
     script_path = resources.joinpath('mock_script.py')
     # patching original command by mock_script.py to simulate same behaviour as zephyr.exe
-    monkeypatch.setattr(device, '_get_command', lambda _: ['python3', str(script_path)])
-    device.run(build_dir='dummy', timeout=4)
+    device.command = ['python3', str(script_path)]
+    device.flash_and_run(timeout=4)
     lines = list(device.iter_stdout)  # give it time before close thread
     device.stop()
     assert device._process_ended_with_timeout is False
     assert 'Readability counts.' in lines
 
 
-def test_if_native_simulator_adapter_finishes_after_timeout(monkeypatch, device) -> None:
-    monkeypatch.setattr(device, '_get_command', lambda _: ['sleep', '0.2'])
-    device.run(build_dir='dummy', timeout=0.1)
+def test_if_native_simulator_adapter_finishes_after_timeout(device) -> None:
+    device.command = ['sleep', '0.2']
+    device.flash_and_run(timeout=0.1)
     list(device.iter_stdout)
     device.stop()
     assert device._process_ended_with_timeout is True
@@ -41,12 +41,12 @@ def test_if_native_simulator_adapter_finishes_after_timeout(monkeypatch, device)
 
 
 def test_if_native_simulator_adapter_finishes_after_timeout_while_there_is_no_data_from_subprocess(
-        monkeypatch, resources, device
+        resources, device
 ) -> None:
     """Test if thread finishes after timeout when there is no data on stdout, but subprocess is still running"""
     script_path = resources.joinpath('mock_script.py')
-    monkeypatch.setattr(device, '_get_command', lambda _: ['python3', str(script_path), '--long-sleep', '--sleep=5'])
-    device.run(build_dir='dummy', timeout=0.5)
+    device.command = ['python3', str(script_path), '--long-sleep', '--sleep=5']
+    device.flash_and_run(timeout=0.5)
     lines = list(device.iter_stdout)
     device.stop()
     assert device._process_ended_with_timeout is True
@@ -55,10 +55,17 @@ def test_if_native_simulator_adapter_finishes_after_timeout_while_there_is_no_da
     assert 'End of script' not in lines, 'Script has not been terminated before end'
 
 
-def test_if_native_simulator_adapter_raises_exception_file_not_found(monkeypatch, device) -> None:
-    monkeypatch.setattr(device, '_get_command', lambda _: ['dummy'])
+def test_if_native_simulator_adapter_raises_exception_file_not_found(device) -> None:
+    device.command = ['dummy']
     with pytest.raises(TwisterRunException, match='File not found: dummy'):
-        device.run(build_dir='dummy', timeout=0.1)
+        device.flash_and_run(timeout=0.1)
         device.stop()
     assert device._exc is not None
     assert isinstance(device._exc, TwisterRunException)
+
+
+def test_if_simulator_adapter_raises_exception_empty_command(device) -> None:
+    device.command = []
+    exception_msg = 'Run simulation command is empty, please verify if it was generated properly.'
+    with pytest.raises(TwisterRunException, match=exception_msg):
+        device.flash_and_run(timeout=0.1)
