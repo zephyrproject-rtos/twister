@@ -130,7 +130,7 @@ class TestResultsPlugin:
             if report.when != 'call':
                 return Status.ERROR
             elif hasattr(report, 'wasxfail'):
-                return Status.XPASSED
+                return Status.XFAILED
             else:
                 return Status.FAILED
         elif report.skipped:
@@ -139,7 +139,10 @@ class TestResultsPlugin:
             else:
                 return Status.SKIPPED
         elif report.passed and report.when == 'call':
-            return Status.PASSED
+            if hasattr(report, 'wasxfail'):
+                return Status.XPASSED
+            else:
+                return Status.PASSED
 
     def _generate_report(self, session: pytest.Session) -> dict:
         """Return test report data as dictionary."""

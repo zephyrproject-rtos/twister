@@ -1,5 +1,4 @@
 import textwrap
-from pathlib import Path
 
 
 def test_twister_help(pytester):
@@ -41,30 +40,6 @@ def test_if_pytest_discovers_twister_tests_with_provided_platform(pytester, reso
     result.stdout.re_match_lines_random([
         r'.*bluetooth.mesh.mesh_shell\[qemu_cortex_m3\].*',
     ])
-
-
-def test_if_pytest_generate_testplan_json(pytester, resources) -> None:
-    pytester.copy_example(str(resources))
-    output_testplan: Path = pytester.path / 'tesplan.json'
-    pytester.runpytest(
-        f'--zephyr-base={str(pytester.path)}',
-        '--platform=qemu_cortex_m3',
-        f'--testplan-json={output_testplan}',
-        '--co'
-    )
-    assert output_testplan.is_file()
-
-
-def test_if_pytest_generate_testplan_csv(pytester, resources) -> None:
-    pytester.copy_example(str(resources))
-    output_testplan: Path = pytester.path / 'tesplan.csv'
-    pytester.runpytest(
-        f'--zephyr-base={str(pytester.path)}',
-        '--platform=qemu_cortex_m3',
-        f'--testplan-csv={output_testplan}',
-        '--co'
-    )
-    assert output_testplan.is_file()
 
 
 def test_if_regular_tests_work_with_specification_file(pytester, resources):
