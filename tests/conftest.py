@@ -28,3 +28,11 @@ def twister_config(platform) -> TwisterConfig:
         default_platforms=[platform.identifier],
         platforms=[platform]
     )
+
+
+@pytest.fixture(scope='function')
+def copy_example(pytester) -> Path:
+    """Copy example tests to temporary directory and return path the temp directory."""
+    resources_dir = Path(__file__).parent / 'data'
+    pytester.copy_example(str(resources_dir))
+    return pytester.path
