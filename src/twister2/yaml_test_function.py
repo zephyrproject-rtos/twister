@@ -20,9 +20,9 @@ from twister2.yaml_test_specification import YamlTestSpecification
 logger = logging.getLogger(__name__)
 
 
-def yaml_test_function_factory(spec: YamlTestSpecification, parent: Any) -> YamlTestFunction:
+def yaml_test_function_factory(spec: YamlTestSpecification, parent: Any) -> YamlFunction:
     """Generate test function."""
-    function = YamlTestFunction.from_parent(
+    function = YamlFunction.from_parent(
         name=spec.name,
         originalname=spec.original_name,
         parent=parent,
@@ -52,7 +52,7 @@ def add_markers_from_specification(obj: pytest.Item | pytest.Function, spec: Yam
         obj.add_marker(pytest.mark.skip('Skipped in yaml specification'))
 
 
-class YamlTestFunction(pytest.Function):
+class YamlFunction(pytest.Function):
     """Wrapper for pytest.Function to extend functionality."""
 
 

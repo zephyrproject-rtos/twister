@@ -14,7 +14,7 @@ from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.quarantine_plugin import QuarantinePlugin
 from twister2.twister_config import TwisterConfig
-from twister2.yaml_file import YamlFile
+from twister2.yaml_file import YamlModule
 
 SAMPLE_FILENAME: str = 'sample.yaml'
 TESTCASE_FILENAME: str = 'testcase.yaml'
@@ -34,7 +34,7 @@ pytest_plugins = (
 def pytest_collect_file(parent, path):
     # discovers all yaml tests in test directory
     if path.basename in (SAMPLE_FILENAME, TESTCASE_FILENAME):
-        return YamlFile.from_parent(parent, path=Path(path))
+        return YamlModule.from_parent(parent, path=Path(path))
 
 
 def pytest_addoption(parser: pytest.Parser):
