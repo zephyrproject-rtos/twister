@@ -133,8 +133,19 @@ def validate_platforms_list(platforms: list[PlatformSpecification]) -> None:
         pytest.exit(f'There are duplicated platforms: {", ".join(duplicated)}')
 
 
-def search_platforms(zephyr_base: str, board_root: str | None = None) -> list[PlatformSpecification]:
-    """Return list of platforms."""
+def search_platforms(
+    zephyr_base: str,
+    board_root: str | None = None,
+    default_only: bool = False
+) -> list[PlatformSpecification]:
+    """
+    Return list of platforms.
+
+    :param zephyr_base: path to Zephyr directory
+    :param board_root: path to additional Boards directory
+    :param default_only: return only default platforms
+    :return: list of platform specifications
+    """
     board_root_list = [
         f'{zephyr_base}/boards',
         f'{zephyr_base}/scripts/pylib/twister/boards',
@@ -148,6 +159,9 @@ def search_platforms(zephyr_base: str, board_root: str | None = None) -> list[Pl
     for directory in board_root_list:
         logger.info('Reading platform configuration files under %s', directory)
         for platform_config in discover_platforms(Path(directory)):
+            if default_only and platform_config.testing.default is False:
+                logger.debug('Skip for not default platform: %s', platform_config.identifier)
+                continue
             logger.debug('Found platform: %s', platform_config.identifier)
             platforms.append(platform_config)
     validate_platforms_list(platforms)

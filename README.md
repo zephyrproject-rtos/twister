@@ -114,7 +114,12 @@ Scan connected devices and list hardware map:
 twister_tools --list-hardware-map
 ```
 
-List default platforms:
+List all platforms:
 ```
-twister_tools --list-default-platforms
+twister_tools --list-platforms
+```
+
+List default platforms only:
+```
+twister_tools --list-platforms --default-only
 ```
