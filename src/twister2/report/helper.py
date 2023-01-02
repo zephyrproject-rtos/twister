@@ -3,7 +3,7 @@ Module contains helper function used in report package.
 """
 import pytest
 
-from twister2.yaml_test_function import YamlTestFunction
+from twister2.yaml_test_function import YamlFunction
 
 
 def get_suite_name(item: pytest.Item) -> str:
@@ -49,7 +49,7 @@ def get_item_platform(item: pytest.Item) -> str:
 
 def get_item_platform_allow(item: pytest.Item) -> str:
     """Return allowed platforms."""
-    if isinstance(item, YamlTestFunction):
+    if isinstance(item, YamlFunction):
         return ' '.join(item.function.spec.platform_allow)
     return ''
 
