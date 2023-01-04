@@ -76,7 +76,7 @@ class HardwareAdapter(DeviceAbstract):
             self.connection = None
             logger.info('Closed serial connection for %s', self.hardware_map.serial)
 
-    def generate_command(self, build_dir: Path | str) -> list[str]:
+    def generate_command(self, build_dir: Path | str) -> None:
         """
         Return command to flash.
 

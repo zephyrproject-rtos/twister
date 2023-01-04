@@ -46,7 +46,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
             'env': self.env,
         }
 
-    def generate_command(self, build_dir: Path | str) -> list[str]:
+    def generate_command(self, build_dir: Path | str) -> None:
         """
         Return command to run.
 
