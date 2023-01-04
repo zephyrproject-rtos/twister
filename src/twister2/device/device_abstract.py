@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import logging
 import os
+from pathlib import Path
 from typing import Generator
 
 from twister2.twister_config import TwisterConfig
@@ -34,6 +35,14 @@ class DeviceAbstract(abc.ABC):
 
     @abc.abstractmethod
     def disconnect(self) -> None:
+        pass
+
+    def generate_command(self, build_dir: Path | str) -> None:
+        """
+        Generate command which will be used during flashing or running device.
+
+        :param build_dir: path to directory with built application
+        """
         pass
 
     def flash_and_run(self, timeout: float = 60.0) -> None:
