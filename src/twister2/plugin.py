@@ -234,7 +234,7 @@ def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
         file_date = datetime.datetime.fromtimestamp(timestamp).strftime('%y%m%d%H%M%S')
         new_output_dir = f'{output_dir}_{file_date}'
         print(f'Renaming output directory to {new_output_dir}')
-        shutil.move(output_dir, new_output_dir)
+        shutil.move(str(output_dir), new_output_dir)
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:

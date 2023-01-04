@@ -1,6 +1,8 @@
 """
 Module contains helper function used in report package.
 """
+from __future__ import annotations
+
 import pytest
 
 from twister2.yaml_test_function import YamlFunction

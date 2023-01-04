@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 class YamlModule(pytest.File):
     """Class for collecting tests from a yaml file."""
 
-    def collect(self):
+    def collect(self) -> Generator[YamlFunction, None, None]:
         """Return a list of yaml tests."""
-        twister_config = self.config.twister_config
+        twister_config = self.config.twister_config  # type: ignore
         # read all tests from yaml file and generate pytest test functions
         for spec in read_test_specifications_from_yaml(self.path, twister_config):
             test_function: YamlFunction = yaml_test_function_factory(spec=spec, parent=self)
