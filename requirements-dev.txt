@@ -1,0 +1,6 @@
+flake8
+isort
+mypy==0.991
+pytest-cov
+types-PyYAML
+types-tabulate
