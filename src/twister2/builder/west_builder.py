@@ -66,7 +66,7 @@ class WestBuilder(BuilderAbstract):
         """
         cmake_args = []
 
-        cmake_args += (self._prepare_args(build_config.extra_configs))
+        cmake_args += (self._prepare_extra_configs(build_config.extra_configs))
         cmake_args += (self._prepare_args(build_config.extra_args_spec))
         cmake_args += (self._prepare_args(build_config.extra_args_cli))
 
@@ -75,6 +75,10 @@ class WestBuilder(BuilderAbstract):
     @staticmethod
     def _prepare_args(args: list[str]) -> list[str]:
         return ['-D{}'.format(arg.replace('"', '')) for arg in args]
+
+    @staticmethod
+    def _prepare_extra_configs(args: list[str]) -> list[str]:
+        return ['-D{}'.format(arg) for arg in args]
 
     @staticmethod
     def _log_output(output: bytes, level: int) -> None:
