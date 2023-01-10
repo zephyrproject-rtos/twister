@@ -17,8 +17,8 @@ from twister2.yaml_test_specification import YamlTestSpecification
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='function')
-def builder(request: pytest.FixtureRequest) -> Generator[BuilderAbstract, None, None]:
+@pytest.fixture(name='build_manager', scope='function')
+def fixture_build_manager(request: pytest.FixtureRequest) -> Generator[BuildManager, None, None]:
     """Build hex files for test suite."""
     twister_config: TwisterConfig = request.config.twister_config  # type: ignore
     spec: YamlTestSpecification = request.session.specifications.get(request.node.nodeid)  # type: ignore
@@ -41,6 +41,11 @@ def builder(request: pytest.FixtureRequest) -> Generator[BuilderAbstract, None, 
         extra_args_spec=spec.extra_args,
         extra_args_cli=twister_config.extra_args_cli
     )
-    build_manager = BuildManager(request.config.option.output_dir)
-    build_manager.build(builder, build_config)
-    yield builder
+    build_manager = BuildManager(request.config.option.output_dir, build_config, builder)
+    yield build_manager
+
+
+@pytest.fixture(scope='function')
+def builder(build_manager: BuildManager) -> Generator[BuilderAbstract, None, None]:
+    build_manager.build()
+    yield build_manager.builder

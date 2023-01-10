@@ -35,9 +35,15 @@ class BuildManager:
     """
     _lock: BaseFileLock = FileLock(BUILD_LOCK_FILE_PATH, timeout=1)
 
-    def __init__(self, output_dir: str | Path, wait_build_timeout: int = 600) -> None:
+    def __init__(self,
+                 output_dir: str | Path,
+                 build_config: BuildConfig,
+                 builder: BuilderAbstract,
+                 wait_build_timeout: int = 600) -> None:
         self._status_file: Path = Path(output_dir) / BUILD_STATUS_FILE_NAME
         self.wait_build_timeout: int = wait_build_timeout  # seconds
+        self.build_config: BuildConfig = build_config
+        self.builder: BuilderAbstract = builder
         self.initialize()
 
     def initialize(self):
@@ -47,14 +53,13 @@ class BuildManager:
             logger.info('Create empty builder status file: %s', self._status_file)
             self._write_data({})
 
-    def get_status(self, build_dir: str | Path) -> str:
+    def get_status(self) -> str:
         """
         Return status for build source.
 
-        :param build_dir: path to build director
         :return: build status
         """
-        build_dir = str(build_dir)
+        build_dir = str(self.build_config.build_dir)
         with self._lock:
             data = self._read_data()
             return data.get(build_dir, BuildStatus.NOT_DONE)
@@ -64,18 +69,17 @@ class BuildManager:
             data: dict = json.load(file)
         return data
 
-    def update_status(self, build_dir: str | Path, status: str) -> bool:
+    def update_status(self, status: str) -> bool:
         """
         Update status for build source.
 
         If new status is equal to old one than return False,
         otherwise return True
 
-        :param build_dir: path to build director
         :param status: new status
         :return: True if status was updated otherwise return False
         """
-        build_dir = str(build_dir)
+        build_dir = str(self.build_config.build_dir)
         with self._lock:
             data = self._read_data()
             if data.get(build_dir) == status:
@@ -88,48 +92,45 @@ class BuildManager:
         with self._status_file.open('w', encoding='UTF-8') as file:
             json.dump(data, file, indent=2)
 
-    def build(self, builder: BuilderAbstract, build_config: BuildConfig) -> None:
+    def build(self) -> None:
         """
         Build source code.
-
-        :param builder: instance of a builder class
-        :param build_config: build configuration
         """
-        status: str = self.get_status(build_config.build_dir)
+        status: str = self.get_status()
         if status == BuildStatus.NOT_DONE:
-            if self.update_status(build_config.build_dir, BuildStatus.IN_PROGRESS):
-                self._build(builder=builder, build_config=build_config)
+            if self.update_status(BuildStatus.IN_PROGRESS):
+                self._build(builder=self.builder)
                 return
             else:
-                status = self.get_status(build_config.build_dir)
+                status = self.get_status()
         if status == BuildStatus.IN_PROGRESS:
             # another builder is building the same source
-            self._wait_for_build_to_finish(build_config.build_dir)
-            status = self.get_status(build_config.build_dir)
+            self._wait_for_build_to_finish()
+            status = self.get_status()
         if status == BuildStatus.DONE:
-            logger.info('Already build in %s', build_config.build_dir)
+            logger.info('Already build in %s', self.build_config.build_dir)
             return
         if status == BuildStatus.FAILED:
             msg = f'Found in {self._status_file} the build status is set as {BuildStatus.FAILED} ' \
-                  f'for: {build_config.build_dir}'
+                  f'for: {self.build_config.build_dir}'
             logger.error(msg)
             raise TwisterBuildException(msg)
 
-    def _build(self, builder: BuilderAbstract, build_config: BuildConfig) -> None:
+    def _build(self, builder: BuilderAbstract) -> None:
         try:
-            builder.build(build_config)
+            builder.build(self.build_config)
         except Exception:
-            self.update_status(build_config.build_dir, BuildStatus.FAILED)
+            self.update_status(BuildStatus.FAILED)
             raise
         else:
-            self.update_status(build_config.build_dir, BuildStatus.DONE)
+            self.update_status(BuildStatus.DONE)
 
-    def _wait_for_build_to_finish(self, build_dir: str | Path) -> None:
-        logger.debug('Waiting for finishing building: %s', build_dir)
+    def _wait_for_build_to_finish(self) -> None:
+        logger.debug('Waiting for finishing building: %s', self.build_config.build_dir)
         timeout = time.time() + self.wait_build_timeout
-        while self.get_status(build_dir) == BuildStatus.IN_PROGRESS:
+        while self.get_status() == BuildStatus.IN_PROGRESS:
             time.sleep(1)
             if time.time() > timeout:
-                msg = f'Timed out waiting for another thread to finish building: {build_dir}'
+                msg = f'Timed out waiting for another thread to finish building: {self.build_config.build_dir}'
                 logger.error(msg)
                 raise TwisterBuildException(msg)
