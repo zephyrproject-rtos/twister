@@ -10,7 +10,7 @@ import pytest
 from twister2.builder.build_manager import BuildManager
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.builder.factory import BuilderFactory
-from twister2.fixtures.common import TestSetupManager
+from twister2.fixtures.common import SetupTestManager
 from twister2.yaml_test_function import YamlTestCase
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture(name='build_manager', scope='function')
 def fixture_build_manager(
-        request: pytest.FixtureRequest, setup_manager: TestSetupManager
+        request: pytest.FixtureRequest, setup_manager: SetupTestManager
 ) -> Generator[BuildManager, None, None]:
     """Build manager"""
     spec = setup_manager.specification
@@ -28,6 +28,10 @@ def fixture_build_manager(
 
     builder_type: str = request.config.option.builder
     builder = BuilderFactory.get_builder(builder_type)
+
+    if setup_manager.get_device_type() == 'qemu':
+        spec.extra_args.append(f'QEMU_PIPE={spec.fifo_file}')
+
     build_config = BuildConfig(
         zephyr_base=setup_manager.twister_config.zephyr_base,
         source_dir=spec.source_dir,
@@ -47,7 +51,7 @@ def fixture_builder(
         request: pytest.FixtureRequest, build_manager: BuildManager
 ) -> Generator[BuilderAbstract, None, None]:
     """Build hex files for test suite."""
-    setup = TestSetupManager(request)
+    setup = SetupTestManager(request)
 
     build_manager.build()
 

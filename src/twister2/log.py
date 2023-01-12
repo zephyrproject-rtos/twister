@@ -70,6 +70,11 @@ def configure_logging(config: pytest.Config) -> None:
                 'level': log_level,
                 'propagate': False,
             },
+            'filelock': {
+                'handlers': ['console', 'file'],
+                'level': 'WARNING',
+                'propagate': False
+            },
             'testcases': {  # logger to log tests which are skipped on tests collection phase
                 'handlers': ['file_with_skipped_tests'],
                 'level': 'DEBUG',

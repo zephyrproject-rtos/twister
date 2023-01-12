@@ -6,6 +6,7 @@ from pathlib import Path
 
 from marshmallow import Schema, ValidationError, fields, validate
 
+from twister2.constants import QEMU_FIFO_FILE_NAME
 from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import string_to_list, string_to_set
 
@@ -77,6 +78,10 @@ class YamlTestSpecification:
         return (
             self.output_dir / self.platform / self.rel_to_base_path / self.scenario
         )
+
+    @property
+    def fifo_file(self) -> Path:
+        return self.build_dir / QEMU_FIFO_FILE_NAME
 
 
 # Using marshmallow to validate specification from yaml
