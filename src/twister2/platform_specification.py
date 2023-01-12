@@ -19,6 +19,7 @@ class Testing:
     default: bool = False
     only_tags: set[str] = field(default_factory=set)
     ignore_tags: set[str] = field(default_factory=set)
+    binaries: set[str] = field(default_factory=set)
     timeout_multiplier: float = 1
 
     def __post_init__(self):
@@ -85,6 +86,7 @@ class TestingSchema(Schema):
     default = fields.Bool()
     only_tags = fields.List(fields.Str)
     ignore_tags = fields.List(fields.Str)
+    binaries = fields.List(fields.Str)
     timeout_multiplier = fields.Float()
 
 
