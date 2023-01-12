@@ -20,7 +20,7 @@ class TwisterConfig:
     output_dir: str = 'twister-out'
     board_root: list = field(default_factory=list)
     build_only: bool = False
-    default_platforms: list[str] = field(default_factory=list, repr=False)
+    selected_platforms: list[str] = field(default_factory=list, repr=False)
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
     device_testing: bool = False
@@ -36,7 +36,7 @@ class TwisterConfig:
             or os.environ.get('ZEPHYR_BASE', '')
         )
         build_only: bool = config.option.build_only
-        default_platforms: list[str] = config.option.platform
+        selected_platforms: list[str] = config.option.platform
         board_root: list[str] = config.option.board_root or config.getini('board_root')
         platforms: list[PlatformSpecification] = config._platforms  # type: ignore
         output_dir: str = config.option.output_dir
@@ -49,19 +49,19 @@ class TwisterConfig:
         if hardware_map_file:
             hardware_map_list = HardwareMap.read_from_file(filename=hardware_map_file)
 
-        if not default_platforms:
-            default_platforms = [
+        if not selected_platforms:
+            selected_platforms = [
                 platform.identifier for platform in platforms
                 if platform.testing.default
             ]
         else:
-            default_platforms = list(set(default_platforms))  # remove duplicates
+            selected_platforms = list(set(selected_platforms))  # remove duplicates
 
         data: dict[str, Any] = dict(
             zephyr_base=zephyr_base,
             build_only=build_only,
             platforms=platforms,
-            default_platforms=default_platforms,
+            selected_platforms=selected_platforms,
             board_root=board_root,
             output_dir=output_dir,
             hardware_map_list=hardware_map_list,
@@ -75,7 +75,7 @@ class TwisterConfig:
         """Return dictionary which can be serialized as Json."""
         return dict(
             build_only=self.build_only,
-            default_platforms=self.default_platforms,
+            selected_platforms=self.selected_platforms,
             board_root=self.board_root,
             output_dir=self.output_dir,
         )

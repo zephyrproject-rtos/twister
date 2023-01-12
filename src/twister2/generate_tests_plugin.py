@@ -64,7 +64,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
 
     platforms_list: list[PlatformSpecification] = [
         platform for platform in twister_config.platforms
-        if platform.identifier in twister_config.default_platforms
+        if platform.identifier in twister_config.selected_platforms
     ]
     spec_file_path: Path = Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME
     scenarios = get_scenarios_from_fixture(metafunc)
