@@ -47,7 +47,7 @@ def read_test_specifications_from_yaml(
 
     platforms = (
         platform for platform in twister_config.platforms
-        if platform.identifier in twister_config.default_platforms
+        if platform.identifier in twister_config.selected_platforms
     )
     scenarios: list[str] = processor.scenarios
 
