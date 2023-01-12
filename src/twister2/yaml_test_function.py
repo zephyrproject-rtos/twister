@@ -14,7 +14,7 @@ from typing import Any
 import pytest
 
 from twister2.device.device_abstract import DeviceAbstract
-from twister2.fixtures.common import TestSetupManager
+from twister2.fixtures.common import SetupTestManager
 from twister2.log_parser.log_parser_abstract import LogParserAbstract
 from twister2.yaml_test_specification import YamlTestSpecification
 
@@ -75,7 +75,7 @@ class YamlTestCase:
         request: pytest.FixtureRequest,
         dut: DeviceAbstract,
         log_parser: LogParserAbstract,
-        setup_manager: TestSetupManager,
+        setup_manager: SetupTestManager,
         *args, **kwargs
     ):
         """Method called by pytest when it runs test."""

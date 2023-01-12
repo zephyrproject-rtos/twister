@@ -15,14 +15,13 @@ from pathlib import Path
 from queue import Queue
 from typing import Generator
 
+from twister2.device import END_OF_DATA
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.exceptions import TwisterRunException
 from twister2.helper import log_command
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
-
-END_DATA = object()
 
 
 class NativeSimulatorAdapter(DeviceAbstract):
@@ -59,7 +58,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
         pass
 
     def flash_and_run(self, timeout: float = 60.0) -> None:
-        if self.command == []:
+        if not self.command:
             msg = 'Run simulation command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterRunException(msg)
@@ -83,19 +82,21 @@ class NativeSimulatorAdapter(DeviceAbstract):
         logger.debug('Started subprocess with PID %s', self._process.pid)
         end_time = time.time() + timeout
         while not self._stop_job and not self._process.stdout.at_eof():  # type: ignore[union-attr]
-            try:
-                line = await asyncio.wait_for(self._process.stdout.readline(), timeout=0.1)  # type: ignore[union-attr]
-            except asyncio.TimeoutError:
-                pass
-            else:
+            if line := await self._read_line(timeout=0.1):
                 self.queue.put(line.decode('utf-8').strip())
             if time.time() > end_time:
                 self._process_ended_with_timeout = True
                 logger.info(f'Finished process with PID {self._process.pid} after {timeout} seconds timeout')
                 break
 
-        self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
+        self.queue.put(END_OF_DATA)  # indicate to the other threads that there will be no more data in queue
         return await self._process.wait()
+
+    async def _read_line(self, timeout=0.1) -> bytes | None:
+        try:
+            return await asyncio.wait_for(self._process.stdout.readline(), timeout=timeout)  # type: ignore[union-attr]
+        except asyncio.TimeoutError:
+            return None
 
     def _run_simulation(self, timeout: float) -> None:
         log_command(logger, 'Running command', self.command, level=logging.INFO)
@@ -118,7 +119,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
             else:
                 logger.warning('Running simulation finished with return code %s', return_code)
         finally:
-            self.queue.put(END_DATA)  # indicate to the other threads that there will be no more data in queue
+            self.queue.put(END_OF_DATA)  # indicate to the other threads that there will be no more data in queue
 
     def disconnect(self):
         pass
@@ -140,7 +141,7 @@ class NativeSimulatorAdapter(DeviceAbstract):
         """Return output from serial."""
         while True:
             line = self.queue.get()
-            if line == END_DATA:
+            if line == END_OF_DATA:
                 logger.debug('No more data from running process')
                 break
             yield line

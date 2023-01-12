@@ -26,7 +26,7 @@ class State:
         return self.should_run
 
 
-class TestSetupManager:
+class SetupTestManager:
     """Helper class to handle all setup required for test execution."""
 
     def __init__(self, request: pytest.FixtureRequest) -> None:
@@ -75,5 +75,7 @@ class TestSetupManager:
             return 'hardware'
         elif self.platform.type == 'native':
             return 'native'
+        elif self.platform.type == 'qemu':
+            return 'qemu'
         else:
             return ''

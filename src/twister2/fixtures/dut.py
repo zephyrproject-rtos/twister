@@ -6,14 +6,14 @@ import pytest
 from twister2.builder.builder_abstract import BuilderAbstract
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.factory import DeviceFactory
-from twister2.fixtures.common import TestSetupManager
+from twister2.fixtures.common import SetupTestManager
 
 logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='function')
 def dut(
-        builder: BuilderAbstract, setup_manager: TestSetupManager
+        builder: BuilderAbstract, setup_manager: SetupTestManager
 ) -> Generator[DeviceAbstract, None, None]:
     """Return device instance."""
     spec = setup_manager.specification
@@ -31,15 +31,21 @@ def dut(
 
     device = device_class(
         twister_config=twister_config,
-        hardware_map=hardware_map
+        hardware_map=hardware_map,
+        build_dir=build_dir
     )
 
-    # check if test should be executed, if not than do not flash/run code on device
-    if setup_manager.is_executable:
-        device.connect()
-        device.generate_command(build_dir)
-        device.flash_and_run(timeout=spec.timeout)
-    yield device
-    if setup_manager.is_executable:
-        device.disconnect()
-        device.stop()
+    try:
+        # check if test should be executed, if not than do not flash/run code on device
+        if setup_manager.is_executable:
+            device.connect()
+            device.generate_command(build_dir)
+            device.flash_and_run(timeout=spec.timeout)
+            device.connect()
+        yield device
+    except KeyboardInterrupt:
+        pass
+    finally:  # to make sure we close all running processes after user broke execution
+        if setup_manager.is_executable:
+            device.disconnect()
+            device.stop()

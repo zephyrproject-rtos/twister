@@ -1,6 +1,6 @@
 import pytest
 
-from twister2.fixtures.common import TestSetupManager
+from twister2.fixtures.common import SetupTestManager
 
 
 @pytest.mark.parametrize(
@@ -14,5 +14,5 @@ from twister2.fixtures.common import TestSetupManager
     ]
 )
 def test_if_test_should_be_skipped(build_only, device_testing, runnable, platform_type, expected):
-    result = TestSetupManager.should_be_executed(build_only, device_testing, runnable, platform_type)
+    result = SetupTestManager.should_be_executed(build_only, device_testing, runnable, platform_type)
     assert result.should_run == expected
