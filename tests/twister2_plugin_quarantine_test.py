@@ -152,3 +152,25 @@ def test_quarantine_for_python_tests(pytester, tmp_path):
     )
     assert result.ret == 0
     result.assert_outcomes(passed=2, skipped=0)
+
+
+def test_quarantine_for_empty_file(pytester, tmp_path):
+    quarantine_file = tmp_path / 'quarantine.yml'
+    quarantine_file.write_text(textwrap.dedent("""\
+      # empty quarantine
+    """))
+    pytester.makepyfile(
+        textwrap.dedent(
+            """\
+            import pytest
+            def test_quarantine_1():
+                assert True
+            """)
+    )
+    result = pytester.runpytest(
+        '-v',
+        '--zephyr-base=.',
+        f'--quarantine-list={quarantine_file}'
+    )
+    assert result.ret == 0
+    result.assert_outcomes(passed=1, skipped=0)
