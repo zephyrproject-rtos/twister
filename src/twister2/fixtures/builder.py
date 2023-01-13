@@ -36,7 +36,8 @@ def fixture_build_manager(
         scenario=spec.scenario,
         extra_configs=spec.extra_configs,
         extra_args_spec=spec.extra_args,
-        extra_args_cli=twister_config.extra_args_cli
+        extra_args_cli=twister_config.extra_args_cli,
+        kconfig_dts_filter=spec.filter
     )
     build_manager = BuildManager(request.config.option.output_dir, build_config, builder)
     yield build_manager

@@ -13,24 +13,65 @@ logger = logging.getLogger(__name__)
 
 class WestBuilder(BuilderAbstract):
 
-    def build(self, build_config: BuildConfig) -> None:
+    def run_cmake_and_build(self, build_config: BuildConfig) -> None:
         """
         Build Zephyr application with `west`.
         """
         if (west := shutil.which('west')) is None:
             raise TwisterBuildException('west not found')
 
+        self.run_cmake(west, build_config)
+        self.apply_kconfig_and_dts_filtration(build_config)
+        self.run_build(west, build_config)
+
+    def run_cmake(self, west: str, build_config: BuildConfig):
         command = [
             west,
             'build',
             str(build_config.source_dir),
             '--pristine', 'always',
+            '--cmake-only',
             '--board', build_config.platform,
         ]
         if build_config.build_dir:
             command.extend(['--build-dir', str(build_config.build_dir)])
         if cmake_args := self._prepare_cmake_args(build_config):
             command.extend(['--'] + cmake_args)
+
+        logger.info('Running CMake for Zephyr application')
+        log_command(logger, 'CMake command', command, level=logging.INFO)
+        try:
+            process = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception(
+                'An exception has been raised for CMake subprocess: %s for %s',
+                build_config.source_dir, build_config.platform
+            )
+            raise TwisterBuildException('CMake error') from e
+        else:
+            if process.returncode == 0:
+                self._log_output(process.stdout, logging.DEBUG)
+                logger.info('Finished running CMake on %s for %s', build_config.source_dir, build_config.platform)
+            else:
+                self._log_output(process.stdout, logging.INFO)
+                msg = f'Failed running CMake on {build_config.source_dir} for platform: {build_config.platform}'
+                logger.error(msg)
+                raise TwisterBuildException(msg)
+
+    def apply_kconfig_and_dts_filtration(self, build_config: BuildConfig):
+        pass
+
+    def run_build(self, west: str, build_config: BuildConfig):
+        command = [
+            west,
+            'build',
+        ]
+        if build_config.build_dir:
+            command.extend(['--build-dir', str(build_config.build_dir)])
 
         logger.info('Building Zephyr application')
         log_command(logger, 'Build command', command, level=logging.INFO)

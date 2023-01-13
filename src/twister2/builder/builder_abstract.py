@@ -15,6 +15,7 @@ class BuildConfig:
     build_dir: str | Path
     platform: str
     scenario: str
+    kconfig_dts_filter: str
     extra_configs: list[str] = field(default_factory=list)
     extra_args_spec: list[str] = field(default_factory=list)
     extra_args_cli: list[str] = field(default_factory=list)
@@ -27,9 +28,9 @@ class BuilderAbstract(abc.ABC):
         return f'{self.__class__.__name__}()'
 
     @abc.abstractmethod
-    def build(self, build_config: BuildConfig) -> None:
+    def run_cmake_and_build(self, build_config: BuildConfig) -> None:
         """
-        Build Zephyr application.
+        Run CMake and build Zephyr application.
 
         :param build_config: build configuration
         """
