@@ -131,6 +131,7 @@ class TestSchema(Schema):
     skip = fields.Bool()
     slow = fields.Bool()
     sysbuild = fields.Bool()
+    source_dir = fields.Str()
 
 
 class CommonSchema(TestSchema):

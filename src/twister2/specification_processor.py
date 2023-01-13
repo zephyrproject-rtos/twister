@@ -117,11 +117,25 @@ class RegularSpecificationProcessor(SpecificationProcessor):
 
         test_spec_dict['name'] = self.item.name
         test_spec_dict['original_name'] = self.item.originalname  # type: ignore[attr-defined]
-        test_spec_dict['source_dir'] = self.test_directory_path
+        test_spec_dict['source_dir'] = self._resolve_source_dir(test_spec_dict)
         test_spec_dict['platform'] = platform.identifier
         test_spec_dict['build_name'] = scenario
         test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.rootpath)
         return test_spec_dict
+
+    def _resolve_source_dir(self, test_spec_dict):
+        if 'source_dir' not in test_spec_dict:
+            return self.test_directory_path
+        source_dir = os.path.expandvars(os.path.expanduser(test_spec_dict['source_dir']))
+        if os.path.isabs(source_dir):
+            source_dir = Path(source_dir)
+        else:
+            source_dir = Path(self.twister_config.zephyr_base, source_dir).resolve()
+        if not source_dir.is_dir():
+            msg = f'Source directory does not exists: {source_dir}'
+            logger.error(msg)
+            raise TwisterConfigurationException(msg)
+        return source_dir
 
 
 def extract_tests(raw_spec: dict) -> dict:
@@ -136,6 +150,8 @@ def extract_tests(raw_spec: dict) -> dict:
             if key in test_spec_dict:
                 if key == 'filter':
                     test_spec_dict[key] = _join_filters([test_spec_dict[key], common_value])
+                elif key == 'source_dir':
+                    pass
                 elif isinstance(common_value, str):
                     test_spec_dict[key] = _join_strings([test_spec_dict[key], common_value])
                 elif isinstance(common_value, list):
