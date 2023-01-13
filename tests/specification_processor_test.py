@@ -11,6 +11,7 @@ from twister2.specification_processor import (
     _join_strings,
     is_runnable,
     should_skip_for_arch,
+    should_skip_for_depends_on,
     should_skip_for_min_flash,
     should_skip_for_min_ram,
     should_skip_for_platform,
@@ -173,6 +174,18 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
     testcase.min_flash = 200
     platform.flash = 300
     assert should_skip_for_min_flash(testcase, platform) is False
+
+
+def test_should_skip_for_depends_on_negative(testcase, platform):
+    testcase.depends_on = {'spi'}
+    platform.supported = {'gpio'}
+    assert should_skip_for_depends_on(testcase, platform)
+
+
+def test_should_skip_for_depends_on_positive(testcase, platform):
+    testcase.depends_on = {'spi'}
+    platform.supported = {'gpio', 'spi'}
+    assert should_skip_for_depends_on(testcase, platform) is False
 
 
 @pytest.mark.parametrize('in_put,out_put', [

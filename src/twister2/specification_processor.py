@@ -170,6 +170,7 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
     # TODO: Implement #1 #13
     if any([
         should_skip_for_arch(test_spec, platform),
+        should_skip_for_depends_on(test_spec, platform),
         should_skip_for_min_flash(test_spec, platform),
         should_skip_for_min_ram(test_spec, platform),
         should_skip_for_platform(test_spec, platform),
@@ -248,6 +249,19 @@ def should_skip_for_min_flash(test_spec: YamlTestSpecification, platform: Platfo
 def should_skip_for_pytest_harness(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
     if test_spec.harness == 'pytest':
         _log_test_skip(test_spec, platform, 'test harness "pytest" is natively supported by pytest')
+        return True
+    return False
+
+
+def should_skip_for_depends_on(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    not_supported_dependencies = []
+    for dependency in test_spec.depends_on:
+        if dependency not in platform.supported:
+            not_supported_dependencies.append(dependency)
+    if not_supported_dependencies:
+        reason = f'"{_join_strings(not_supported_dependencies)}" not occur in the "supported" section in the ' \
+                 'platform definition yaml'
+        _log_test_skip(test_spec, platform, reason)
         return True
     return False
 
