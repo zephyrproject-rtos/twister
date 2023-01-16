@@ -71,11 +71,14 @@ class SetupTestManager:
         return State(True)
 
     def get_device_type(self) -> str:
-        if self.platform.type == 'mcu':
+        if self.platform.simulation != 'na':
+            if self.platform.type == 'qemu':
+                return 'qemu'
+            elif self.platform.type == 'native':
+                return 'native'
+            else:
+                return 'custom'
+        elif self.platform.type == 'mcu':
             return 'hardware'
-        elif self.platform.type == 'native':
-            return 'native'
-        elif self.platform.type == 'qemu':
-            return 'qemu'
         else:
             return ''

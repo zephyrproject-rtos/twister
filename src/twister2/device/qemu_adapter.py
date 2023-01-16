@@ -117,7 +117,7 @@ class QemuAdapter(DeviceAbstract):
         self._stop_job = True
         time.sleep(0.1)  # give a time to end while loop in running simulation
         if self._process is not None and self._process.returncode is None:
-            logger.debug('Stopping all running processes')
+            logger.debug('Stopping all running processes for PID %s', self._process.pid)
             # kill all child subprocesses
             for child in psutil.Process(self._process.pid).children(recursive=True):
                 try:
