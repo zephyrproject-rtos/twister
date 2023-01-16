@@ -163,25 +163,26 @@ Scan connected devices and create hardware map:
 
 .. code-block:: sh
 
-  twister_tools --generate-hardware-map hardware_map.yaml
+  twister2 hardware-map --generate hardware_map.yaml
 
 
 Scan connected devices and list hardware map:
 
 .. code-block:: sh
 
-  twister_tools --list-hardware-map
+  twister2 hardware-map --list
 
 
 List all platforms:
 
 .. code-block:: sh
 
-  twister_tools --list-platforms
+  twister2 platforms --list
 
 
 List default platforms only:
 
 .. code-block:: sh
 
-  twister_tools --list-platforms --default-only
+  twister2 platforms --list --default-only
+
