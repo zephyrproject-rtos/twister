@@ -1,6 +1,12 @@
+import subprocess
+from unittest import mock
+
 import pytest
 
-from twister2.device.native_simulator_adapter import NativeSimulatorAdapter
+from twister2.device.simulator_adapter import (
+    CustomSimulatorAdapter,
+    NativeSimulatorAdapter,
+)
 from twister2.exceptions import TwisterRunException
 from twister2.twister_config import TwisterConfig
 
@@ -10,7 +16,7 @@ def fixture_adapter() -> NativeSimulatorAdapter:
     return NativeSimulatorAdapter(TwisterConfig('zephyr'))
 
 
-def test_if_get_command_returns_proper_string(device, resources) -> None:
+def test_if_native_simulator_adapter_get_command_returns_proper_string(device, resources) -> None:
     device.generate_command(resources)
     assert isinstance(device.command, list)
     assert device.command == [str(resources.joinpath('zephyr', 'zephyr.exe'))]
@@ -69,3 +75,35 @@ def test_if_simulator_adapter_raises_exception_empty_command(device) -> None:
     exception_msg = 'Run simulation command is empty, please verify if it was generated properly.'
     with pytest.raises(TwisterRunException, match=exception_msg):
         device.flash_and_run(timeout=0.1)
+
+
+@mock.patch('asyncio.run', side_effect=subprocess.SubprocessError(1, 'Exception message'))
+def test_if_simulator_adapter_raises_exception_when_subprocess_raised_subprocess_error(patched_run, device):
+    device.command = ['echo', 'TEST']
+    with pytest.raises(TwisterRunException, match='Exception message'):
+        device.flash_and_run(timeout=0.1)
+        device.stop()
+
+
+@mock.patch('asyncio.run', side_effect=Exception(1, 'Raised other exception'))
+def test_if_simulator_adapter_raises_exception_when_subprocess_raised_an_error(patched_run, device):
+    device.command = ['echo', 'TEST']
+    with pytest.raises(TwisterRunException, match='Raised other exception'):
+        device.flash_and_run(timeout=0.1)
+        device.stop()
+
+
+@mock.patch('shutil.which', return_value='west')
+def test_if_custom_simulator_adapter_get_command_returns_proper_string(patched_which) -> None:
+    device = CustomSimulatorAdapter(TwisterConfig(zephyr_base='zephyr'))
+    device.generate_command('build_dir')
+    assert isinstance(device.command, list)
+    assert device.command == ['west', 'build', '-d', 'build_dir', '-t', 'run']
+
+
+@mock.patch('shutil.which', return_value=None)
+def test_if_custom_simulator_adapter_get_command_returns_empty_string(patched_which) -> None:
+    device = CustomSimulatorAdapter(TwisterConfig(zephyr_base='zephyr'))
+    device.generate_command('build_dir')
+    assert isinstance(device.command, list)
+    assert device.command == []

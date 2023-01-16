@@ -1,3 +1,5 @@
+import subprocess
+from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -45,6 +47,14 @@ def test_if_qemu_adapter_raises_exception_file_not_found(device) -> None:
         device.stop()
     assert device._exc is not None
     assert isinstance(device._exc, TwisterRunException)
+
+
+@mock.patch('subprocess.Popen', side_effect=subprocess.SubprocessError(1, 'Exception message'))
+def test_if_qemu_adapter_raises_exception_when_subprocess_raised_an_error(patched_run, device):
+    device.command = ['echo', 'TEST']
+    with pytest.raises(TwisterRunException, match='Exception message'):
+        device.flash_and_run(timeout=0.1)
+        device.stop()
 
 
 def test_if_qemu_adapter_runs_without_errors(resources, twister_config, tmp_path) -> None:

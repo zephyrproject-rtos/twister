@@ -76,7 +76,7 @@ class FifoFile:
 
 
 def main():
-    logging.basicConfig(level='DEBUG', filename='fifo_mock.log', filemode='w')
+    logging.basicConfig(level='DEBUG')
     parser = ArgumentParser()
     parser.add_argument('file')
     args = parser.parse_args()

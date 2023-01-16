@@ -122,7 +122,7 @@ class HardwareAdapter(DeviceAbstract):
         self.command = command
 
     def flash_and_run(self, timeout: float = 60.0) -> None:
-        if self.command == []:
+        if not self.command:
             msg = 'Flash command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterFlashException(msg)

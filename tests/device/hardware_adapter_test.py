@@ -43,6 +43,13 @@ def test_if_get_command_returns_proper_string_2(patched_which, device) -> None:
 
 
 @mock.patch('twister2.device.hardware_adapter.shutil.which')
+def test_if_get_command_raise_exception_if_west_is_not_installed(patched_which, device) -> None:
+    patched_which.return_value = None
+    with pytest.raises(TwisterFlashException, match='west not found'):
+        device.generate_command('src')
+
+
+@mock.patch('twister2.device.hardware_adapter.shutil.which')
 def test_if_get_command_returns_proper_string_3(patched_which, device) -> None:
     patched_which.return_value = 'west'
     device.hardware_map.runner = 'nrfjprog'
@@ -105,6 +112,19 @@ def test_if_get_command_returns_proper_string_7(patched_which, device) -> None:
     assert device.command == [
         'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'stm32cubeprogrammer',
         '--tool-opt=sn=p_id'
+    ]
+
+
+@mock.patch('twister2.device.hardware_adapter.shutil.which')
+def test_if_get_command_returns_proper_string_8(patched_which, device) -> None:
+    patched_which.return_value = 'west'
+    device.hardware_map.runner = 'openocd'
+    device.hardware_map.product = 'STLINK-V3'
+    device.generate_command('src')
+    assert isinstance(device.command, list)
+    assert device.command == [
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src',
+        '--runner', 'openocd', '--', '--cmd-pre-init', 'hla_serial test'
     ]
 
 

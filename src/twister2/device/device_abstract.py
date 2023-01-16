@@ -31,19 +31,19 @@ class DeviceAbstract(abc.ABC):
 
     @abc.abstractmethod
     def connect(self, timeout: float = 1) -> None:
-        pass
+        """Connect with the device (e.g. via UART)"""
 
     @abc.abstractmethod
     def disconnect(self) -> None:
-        pass
+        """Close a connection with the device"""
 
+    @abc.abstractmethod
     def generate_command(self, build_dir: Path | str) -> None:
         """
         Generate command which will be used during flashing or running device.
 
         :param build_dir: path to directory with built application
         """
-        pass
 
     def flash_and_run(self, timeout: float = 60.0) -> None:
         """
