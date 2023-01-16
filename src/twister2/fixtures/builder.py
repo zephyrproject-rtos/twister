@@ -21,6 +21,7 @@ def fixture_build_manager(
         request: pytest.FixtureRequest, setup_manager: TestSetupManager
 ) -> Generator[BuildManager, None, None]:
     """Build manager"""
+    platform = setup_manager.platform
     spec = setup_manager.specification
     twister_config = setup_manager.twister_config
 
@@ -31,7 +32,8 @@ def fixture_build_manager(
     build_config = BuildConfig(
         zephyr_base=setup_manager.twister_config.zephyr_base,
         source_dir=spec.source_dir,
-        platform=spec.platform,
+        platform_arch=platform.arch,
+        platform_name=platform.identifier,
         build_dir=spec.build_dir,
         scenario=spec.scenario,
         extra_configs=spec.extra_configs,

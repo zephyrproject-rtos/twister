@@ -118,7 +118,7 @@ class BuildManager:
 
     def _build(self, builder: BuilderAbstract) -> None:
         try:
-            builder.run_cmake_and_build(self.build_config)
+            builder.build(self.build_config)
         except Exception:
             self.update_status(BuildStatus.FAILED)
             raise

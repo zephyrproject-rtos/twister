@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import logging
+import pytest
 import shutil
 import subprocess
 
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
+from twister2.builder.kconfig_dts_filter import KconfigDtsFilter
 from twister2.exceptions import TwisterBuildException
 from twister2.helper import log_command
 
@@ -13,65 +15,31 @@ logger = logging.getLogger(__name__)
 
 class WestBuilder(BuilderAbstract):
 
-    def run_cmake_and_build(self, build_config: BuildConfig) -> None:
+    def build(self, build_config: BuildConfig) -> None:
         """
         Build Zephyr application with `west`.
         """
+
+        cmake_extra_args = self._prepare_cmake_args(build_config)
+
+        if build_config.kconfig_dts_filter:
+            self._run_cmake_helper(build_config, cmake_extra_args)
+            self._apply_kconfig_and_dts_filtration(build_config)
+
         if (west := shutil.which('west')) is None:
             raise TwisterBuildException('west not found')
 
-        self.run_cmake(west, build_config)
-        self.apply_kconfig_and_dts_filtration(build_config)
-        self.run_build(west, build_config)
-
-    def run_cmake(self, west: str, build_config: BuildConfig):
         command = [
             west,
             'build',
             str(build_config.source_dir),
             '--pristine', 'always',
-            '--cmake-only',
-            '--board', build_config.platform,
+            '--board', build_config.platform_name,
         ]
         if build_config.build_dir:
             command.extend(['--build-dir', str(build_config.build_dir)])
-        if cmake_args := self._prepare_cmake_args(build_config):
-            command.extend(['--'] + cmake_args)
-
-        logger.info('Running CMake for Zephyr application')
-        log_command(logger, 'CMake command', command, level=logging.INFO)
-        try:
-            process = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-        except subprocess.CalledProcessError as e:
-            logger.exception(
-                'An exception has been raised for CMake subprocess: %s for %s',
-                build_config.source_dir, build_config.platform
-            )
-            raise TwisterBuildException('CMake error') from e
-        else:
-            if process.returncode == 0:
-                self._log_output(process.stdout, logging.DEBUG)
-                logger.info('Finished running CMake on %s for %s', build_config.source_dir, build_config.platform)
-            else:
-                self._log_output(process.stdout, logging.INFO)
-                msg = f'Failed running CMake on {build_config.source_dir} for platform: {build_config.platform}'
-                logger.error(msg)
-                raise TwisterBuildException(msg)
-
-    def apply_kconfig_and_dts_filtration(self, build_config: BuildConfig):
-        pass
-
-    def run_build(self, west: str, build_config: BuildConfig):
-        command = [
-            west,
-            'build',
-        ]
-        if build_config.build_dir:
-            command.extend(['--build-dir', str(build_config.build_dir)])
+        if cmake_extra_args:
+            command.extend(['--'] + cmake_extra_args)
 
         logger.info('Building Zephyr application')
         log_command(logger, 'Build command', command, level=logging.INFO)
@@ -84,16 +52,16 @@ class WestBuilder(BuilderAbstract):
         except subprocess.CalledProcessError as e:
             logger.exception(
                 'An exception has been raised for build subprocess: %s for %s',
-                build_config.source_dir, build_config.platform
+                build_config.source_dir, build_config.platform_name
             )
             raise TwisterBuildException('Building error') from e
         else:
             if process.returncode == 0:
                 self._log_output(process.stdout, logging.DEBUG)
-                logger.info('Finished building %s for %s', build_config.source_dir, build_config.platform)
+                logger.info('Finished building %s for %s', build_config.source_dir, build_config.platform_name)
             else:
                 self._log_output(process.stdout, logging.INFO)
-                msg = f'Failed building {build_config.source_dir} for platform: {build_config.platform}'
+                msg = f'Failed building {build_config.source_dir} for platform: {build_config.platform_name}'
                 logger.error(msg)
                 raise TwisterBuildException(msg)
 
@@ -107,11 +75,71 @@ class WestBuilder(BuilderAbstract):
         """
         cmake_args = []
 
+        ldflags = "-Wl,--fatal-warnings"
+        cflags = "-Werror"
+        aflags = "-Werror -Wa,--fatal-warnings"
+        gen_defines_args = "--edtlib-Werror"
+
+        cmake_args += [
+            f'-DEXTRA_CFLAGS={cflags}',
+            f'-DEXTRA_AFLAGS={aflags}',
+            f'-DEXTRA_LDFLAGS={ldflags}',
+            f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
+        ]
+
         cmake_args += (self._prepare_extra_configs(build_config.extra_configs))
         cmake_args += (self._prepare_args(build_config.extra_args_spec))
         cmake_args += (self._prepare_args(build_config.extra_args_cli))
 
         return cmake_args
+
+    def _run_cmake_helper(self, build_config: BuildConfig, cmake_extra_args: list[str]):
+        if (cmake := shutil.which('cmake')) is None:
+            raise TwisterBuildException('cmake not found')
+
+        command = [
+            cmake,
+            f'-S{build_config.source_dir}',
+            f'-B{build_config.build_dir}',
+            f'-DBOARD={build_config.platform_name}',
+            *cmake_extra_args,
+            '-DMODULES=dts,kconfig',
+            f'-P{build_config.zephyr_base}/cmake/package_helper.cmake',
+        ]
+
+        # command += cmake_extra_args
+
+        logger.info('Run CMake package helper')
+        log_command(logger, 'CMake package helper', command, level=logging.INFO)
+        try:
+            process = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception(
+                'An exception has been raised for CMake: %s for %s',
+                build_config.source_dir, build_config.platform_name
+            )
+            raise TwisterBuildException('CMake error') from e
+        else:
+            if process.returncode == 0:
+                self._log_output(process.stdout, logging.DEBUG)
+                logger.info('Finished running CMake on %s for %s', build_config.source_dir, build_config.platform_name)
+            else:
+                self._log_output(process.stdout, logging.INFO)
+                msg = f'Failed running CMake {build_config.source_dir} for platform: {build_config.platform_name}'
+                logger.error(msg)
+                raise TwisterBuildException(msg)
+
+    def _apply_kconfig_and_dts_filtration(self, build_config: BuildConfig) -> None:
+        kconfig_dts_filter = KconfigDtsFilter(build_config.zephyr_base, build_config.build_dir,
+                                              build_config.platform_arch, build_config.platform_name,
+                                              build_config.kconfig_dts_filter)
+        result = kconfig_dts_filter.filter()
+        if not result:
+            pytest.skip("Kconfig or dts filtration")
 
     @staticmethod
     def _prepare_args(args: list[str]) -> list[str]:
