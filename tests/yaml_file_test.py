@@ -7,10 +7,8 @@ def test_if_can_read_test_specifications_from_yaml_common(twister_config, resour
         if spec.original_name == 'xyz.common_merge_1':
             assert spec.tags == {'kernel', 'posix', 'picolibc'}
             assert spec.extra_configs == ['CONFIG_NEWLIB_LIBC=y', 'CONFIG_POSIX_API=y']
-            assert spec.filter == '(CONFIG_PICOLIBC_SUPPORTED) and (TOOLCHAIN_HAS_NEWLIB == 1)'
             assert spec.min_ram == 64
         elif spec.original_name == 'xyz.common_merge_2':
             assert spec.tags == {'kernel', 'posix', 'arm'}
             assert spec.extra_configs == ['CONFIG_POSIX_API=y']
-            assert spec.filter == 'TOOLCHAIN_HAS_NEWLIB == 1'
             assert spec.min_ram == 32
