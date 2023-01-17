@@ -12,17 +12,18 @@ def request_mock():
 
 
 @pytest.mark.parametrize(
-    'build_only, device_testing, runnable, platform_type, expected',
+    'build_only, device_testing, runnable, platform_type, platform_sim, expected',
     [
-        (True, False, False, 'any', False),
-        (False, True, False, 'any', False),
-        (False, True, False, 'mcu', False),
-        (False, False, True, 'mcu', False),
-        (False, False, True, 'any', True),
+        (True, False, False, 'any', 'na', False),
+        (False, True, False, 'any', 'na', False),
+        (False, True, False, 'mcu', 'na', False),
+        (False, False, True, 'mcu', 'na', False),
+        (False, False, True, 'mcu', 'qemu', True),
+        (False, False, True, 'any', 'na', True),
     ]
 )
-def test_if_test_should_be_skipped(build_only, device_testing, runnable, platform_type, expected):
-    result = SetupTestManager.should_be_executed(build_only, device_testing, runnable, platform_type)
+def test_if_test_should_be_skipped(build_only, device_testing, runnable, platform_type, platform_sim, expected):
+    result = SetupTestManager.should_be_executed(build_only, device_testing, runnable, platform_type, platform_sim)
     assert result.should_run == expected
 
 

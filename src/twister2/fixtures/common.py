@@ -43,11 +43,12 @@ class SetupTestManager:
         self.device_testing: bool = self.twister_config.device_testing
         self.runnable: bool = self.specification.runnable
         self.is_executable: State = self.should_be_executed(
-            self.build_only, self.device_testing, self.runnable, self.platform.type
+            self.build_only, self.device_testing, self.runnable, self.platform.type, self.platform.simulation
         )
 
     @staticmethod
-    def should_be_executed(build_only: bool, device_testing: bool, runnable: bool, platform_type: str) -> State:
+    def should_be_executed(build_only: bool, device_testing: bool, runnable: bool, platform_type: str,
+                           platform_sim: str) -> State:
         """Verify if test should be executed based on provided factors"""
         if build_only:
             return State(
@@ -55,7 +56,7 @@ class SetupTestManager:
                 'Skipping test after building due to build-only being selected',
                 'Built but not executed due to build-only being selected'
             )
-        if platform_type == 'mcu' and device_testing is False:
+        if platform_type == 'mcu' and device_testing is False and platform_sim == 'na':
             return State(
                 False,
                 'Skipping test after building because platform type is "mcu", '
@@ -71,14 +72,17 @@ class SetupTestManager:
         return State(True)
 
     def get_device_type(self) -> str:
-        if self.platform.simulation != 'na':
-            if self.platform.type == 'qemu':
-                return 'qemu'
-            elif self.platform.type == 'native':
-                return 'native'
+        if self.platform.type == 'mcu':
+            if not self.device_testing and self.platform.simulation != 'na':
+                # if device_testing was not chosen but simulation is accessible then try to run on simulator
+                pass
             else:
-                return 'custom'
-        elif self.platform.type == 'mcu':
-            return 'hardware'
+                return 'hardware'
+        if self.platform.simulation == 'native':
+            return 'native'
+        elif self.platform.simulation == 'qemu':
+            return 'qemu'
+        elif self.platform.simulation != 'na':
+            return 'custom'
         else:
             return ''
