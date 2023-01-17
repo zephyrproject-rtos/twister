@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     name: Tests
-    needs: lint
+    needs: [lint, mypy]
     strategy:
       matrix:
-        name: [ "3.8", "3.9", "3.10" ]
+        name: [ "3.8", "3.9", "3.10", "3.11" ]
         include:
         - name: "3.8"
           python: "3.8"
@@ -29,6 +29,9 @@ jobs:
           python: "3.10"
           tox_env: "py310"
           use_coverage: true
+        - name: "3.11"
+          python: "3.11"
+          tox_env: "py311"
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
@@ -68,3 +71,17 @@ jobs:
         run: pip install -U tox
       - name: Run flake8
         run: tox -e flake8
+
+  mypy:
+    runs-on: ubuntu-latest
+    name: mypy
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Install packages
+        run: pip install -U tox
+      - name: Run mypy
+        run: tox -e mypy
