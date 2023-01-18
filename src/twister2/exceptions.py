@@ -22,6 +22,14 @@ class TwisterBuildException(TwisterException):
     """Any exception during building."""
 
 
+class TwisterBuildSkipException(TwisterException):
+    """Raised when test was skipped during building"""
+
+
+class TwisterMemoryOverflowException(TwisterException):
+    """Raised when memory overflow appeared during building."""
+
+
 class TwisterFlashException(TwisterException):
     """Any exception during flashing."""
 

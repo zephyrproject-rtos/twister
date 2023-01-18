@@ -155,6 +155,12 @@ def pytest_addoption(parser: pytest.Parser):
              'will be translated to '
              'cmake -DUSE_CCACHE=0'
     )
+    twister_group.addoption(
+        '--overflow-as-errors',
+        default=False,
+        action='store_true',
+        help='Treat memory overflows as errors.'
+    )
 
 
 def pytest_configure(config: pytest.Config):

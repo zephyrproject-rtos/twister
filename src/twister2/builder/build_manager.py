@@ -11,7 +11,11 @@ from pathlib import Path
 from filelock import BaseFileLock, FileLock
 
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
-from twister2.exceptions import TwisterBuildException
+from twister2.exceptions import (
+    TwisterBuildException,
+    TwisterBuildSkipException,
+    TwisterMemoryOverflowException,
+)
 
 _TMP_DIR: str = tempfile.gettempdir()
 BUILD_STATUS_FILE_NAME: str = 'twister_builder.json'
@@ -22,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class BuildStatus(str, Enum):
     NOT_DONE = 'NOT_DONE'
+    SKIPPED = 'SKIPPED'
     IN_PROGRESS = 'IN_PROGRESS'
     DONE = 'DONE'
     FAILED = 'FAILED'
@@ -110,6 +115,11 @@ class BuildManager:
         if status == BuildStatus.DONE:
             logger.info('Already build in %s', self.build_config.build_dir)
             return
+        if status == BuildStatus.SKIPPED:
+            msg = f'Found in {self._status_file} the build status is set as {BuildStatus.SKIPPED} ' \
+                  f'for: {self.build_config.build_dir}'
+            logger.info(msg)
+            raise TwisterBuildSkipException(msg)
         if status == BuildStatus.FAILED:
             msg = f'Found in {self._status_file} the build status is set as {BuildStatus.FAILED} ' \
                   f'for: {self.build_config.build_dir}'
@@ -119,6 +129,14 @@ class BuildManager:
     def _build(self, builder: BuilderAbstract) -> None:
         try:
             builder.build(self.build_config)
+        except TwisterMemoryOverflowException as overflow_exception:
+            if self.build_config.overflow_as_errors:
+                self.update_status(BuildStatus.FAILED)
+                logger.error(overflow_exception)
+            else:
+                self.update_status(BuildStatus.SKIPPED)
+                logger.info(overflow_exception)
+            raise
         except Exception:
             self.update_status(BuildStatus.FAILED)
             raise

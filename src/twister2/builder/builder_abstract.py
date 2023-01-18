@@ -18,6 +18,7 @@ class BuildConfig:
     extra_configs: list[str] = field(default_factory=list)
     extra_args_spec: list[str] = field(default_factory=list)
     extra_args_cli: list[str] = field(default_factory=list)
+    overflow_as_errors: bool = field(default_factory=bool)
 
 
 class BuilderAbstract(abc.ABC):
