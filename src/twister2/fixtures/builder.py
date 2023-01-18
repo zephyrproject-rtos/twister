@@ -10,6 +10,10 @@ import pytest
 from twister2.builder.build_manager import BuildManager
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.builder.factory import BuilderFactory
+from twister2.exceptions import (
+    TwisterBuildSkipException,
+    TwisterMemoryOverflowException,
+)
 from twister2.fixtures.common import SetupTestManager
 from twister2.yaml_test_function import YamlTestCase
 
@@ -40,7 +44,8 @@ def fixture_build_manager(
         scenario=spec.scenario,
         extra_configs=spec.extra_configs,
         extra_args_spec=spec.extra_args,
-        extra_args_cli=twister_config.extra_args_cli
+        extra_args_cli=twister_config.extra_args_cli,
+        overflow_as_errors=twister_config.overflow_as_errors
     )
     build_manager = BuildManager(request.config.option.output_dir, build_config, builder)
     yield build_manager
@@ -53,7 +58,15 @@ def fixture_builder(
     """Build hex files for test suite."""
     setup = SetupTestManager(request)
 
-    build_manager.build()
+    try:
+        build_manager.build()
+    except TwisterMemoryOverflowException as overflow_exception:
+        if setup.twister_config.overflow_as_errors:
+            raise
+        else:
+            pytest.skip(str(overflow_exception))
+    except TwisterBuildSkipException as skip_exception:
+        pytest.skip(str(skip_exception))
 
     if not isinstance(request.function, YamlTestCase):
         # skip regular tests

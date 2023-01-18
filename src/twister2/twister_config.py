@@ -26,6 +26,7 @@ class TwisterConfig:
     device_testing: bool = False
     fixtures: list[str] = field(default_factory=list, repr=False)
     extra_args_cli: list = field(default_factory=list)
+    overflow_as_errors: bool = False
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -44,6 +45,7 @@ class TwisterConfig:
         device_testing: bool = config.option.device_testing
         fixtures: list[str] = config.option.fixtures
         extra_args_cli: list[str] = config.getoption('--extra-args')
+        overflow_as_errors: bool = config.option.overflow_as_errors
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:
@@ -68,6 +70,7 @@ class TwisterConfig:
             device_testing=device_testing,
             fixtures=fixtures,
             extra_args_cli=extra_args_cli,
+            overflow_as_errors=overflow_as_errors
         )
         return cls(**data)
 
