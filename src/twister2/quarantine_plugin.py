@@ -32,7 +32,7 @@ class QuarantinePlugin:
     ):
         for item in items:
             if qelem := self.quarantine.get_matched_quarantine(item):
-                item.add_marker(pytest.mark.quarantine(qelem.comment))
+                item.add_marker(pytest.mark.quarantine('Quarantine: ' + qelem.comment))
                 # do not mark tests to be skipped if want to verify quarantined tests
                 if not self.quarantine_verify:
                     item.add_marker(pytest.mark.skip('under quarantine'))
@@ -45,7 +45,7 @@ class QuarantineElement:
     platforms: list[str] = field(default_factory=list)
     architectures: list[str] = field(default_factory=list)
     simulations: list[str] = field(default_factory=list)
-    comment: str = 'under quarantine'
+    comment: str = 'NA'
 
     def __post_init__(self):
         # If there is no entry in filters then take all possible values.
