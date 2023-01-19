@@ -5,7 +5,7 @@ import pytest
 
 from twister2.builder.builder_abstract import BuildConfig
 from twister2.builder.west_builder import WestBuilder
-from twister2.exceptions import TwisterBuildException
+from twister2.exceptions import TwisterBuildException, TwisterMemoryOverflowException
 
 
 @pytest.fixture(name='west_builder')
@@ -56,6 +56,7 @@ def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_retu
 ):
     mocked_process = mock.MagicMock()
     mocked_process.returncode = 1
+    mocked_process.stdout = 'fake build output'.encode()
     patched_run.return_value = mocked_process
     with pytest.raises(TwisterBuildException, match='Failed building source for platform: native_posix'):
         west_builder.build(build_config)
@@ -76,3 +77,21 @@ def test_it_west_builder_raises_exception_when_west_was_not_found(
 ):
     with pytest.raises(TwisterBuildException, match='west not found'):
         west_builder.build(build_config)
+
+
+def test_if_overflow_exception_is_raised_when_memory_overflow_occurs(
+        west_builder: WestBuilder, build_config: BuildConfig
+):
+    build_output = 'region `FLASH\' overflowed by'.encode()
+    exception_msg = 'Memory overflow during building source for platform: native_posix'
+    with pytest.raises(TwisterMemoryOverflowException, match=exception_msg):
+        west_builder._check_memory_overflow(build_config, build_output)
+
+
+def test_if_overflow_exception_is_raised_when_imgtool_memory_overflow_occurs(
+        west_builder: WestBuilder, build_config: BuildConfig
+):
+    build_output = 'Error: Image size (32) + trailer (2) exceeds requested size'.encode()
+    exception_msg = 'Imgtool memory overflow during building source for platform: native_posix'
+    with pytest.raises(TwisterMemoryOverflowException, match=exception_msg):
+        west_builder._check_memory_overflow(build_config, build_output)

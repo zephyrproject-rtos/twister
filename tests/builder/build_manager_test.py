@@ -7,7 +7,11 @@ from unittest import mock
 import pytest
 
 from twister2.builder.build_manager import BuildManager, BuildStatus
-from twister2.exceptions import TwisterBuildException
+from twister2.exceptions import (
+    TwisterBuildException,
+    TwisterBuildSkipException,
+    TwisterMemoryOverflowException,
+)
 
 
 class MockBuilder(mock.Mock):
@@ -45,6 +49,31 @@ def test_if_status_was_updated_after_build(build_manager):
 
     build_manager.build()
     assert build_manager.get_status() == BuildStatus.DONE
+
+
+def test_if_status_was_set_as_skipped_after_build_memory_overflow(build_manager):
+    build_manager.update_status(BuildStatus.NOT_DONE)
+
+    def mocked_build(build_config):
+        raise TwisterMemoryOverflowException
+
+    build_manager.builder.build = mocked_build
+    with pytest.raises(TwisterMemoryOverflowException):
+        build_manager.build()
+    assert build_manager.get_status() == BuildStatus.SKIPPED
+
+
+def test_if_status_was_set_as_failed_after_build_memory_overflow(build_manager):
+    build_manager.update_status(BuildStatus.NOT_DONE)
+
+    def mocked_build(build_config):
+        raise TwisterMemoryOverflowException
+
+    build_manager.builder.build = mocked_build
+    build_manager.build_config.overflow_as_errors = True
+    with pytest.raises(TwisterMemoryOverflowException):
+        build_manager.build()
+    assert build_manager.get_status() == BuildStatus.FAILED
 
 
 def test_if_build_manager_is_waiting_for_finish_another_build(build_manager, monkeypatch):
@@ -130,6 +159,21 @@ def test_if_build_manager_waits_until_status_is_changed_to_failed(build_manager)
         with pytest.raises(TwisterBuildException, match=expected_msg):
             build_manager.build()
     assert build_manager.get_status() == BuildStatus.FAILED
+
+
+def test_if_build_manager_waits_until_status_is_changed_to_skip(build_manager):
+    build_manager.update_status(BuildStatus.IN_PROGRESS)
+
+    def update_status():
+        time.sleep(0.1)
+        build_manager.update_status(BuildStatus.SKIPPED)
+
+    expected_msg = f'Found in .*twister_builder.json the build status is set as ' \
+                   f'{BuildStatus.SKIPPED} for: {build_manager.build_config.build_dir}'
+    with run_job_in_thread(update_status):
+        with pytest.raises(TwisterBuildSkipException, match=expected_msg):
+            build_manager.build()
+    assert build_manager.get_status() == BuildStatus.SKIPPED
 
 
 def test_if_build_manager_waits_until_timed_out(build_manager):
