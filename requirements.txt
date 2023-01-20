@@ -1,5 +1,6 @@
 filelock==3.9.0
 marshmallow==3.19.0
+ply==3.11
 psutil==5.9.4
 pyserial==3.5
 pytest==7.2.0

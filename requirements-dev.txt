@@ -2,5 +2,6 @@ flake8
 isort
 mypy==0.991
 pytest-cov
+tox
 types-PyYAML
 types-tabulate
