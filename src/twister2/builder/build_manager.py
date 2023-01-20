@@ -10,9 +10,11 @@ from pathlib import Path
 
 from filelock import BaseFileLock, FileLock
 
+from twister2.builder.build_filter_processor import BuildFilterProcessor
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.exceptions import (
     TwisterBuildException,
+    TwisterBuildFiltrationException,
     TwisterBuildSkipException,
     TwisterMemoryOverflowException,
 )
@@ -41,14 +43,21 @@ class BuildManager:
     _lock: BaseFileLock = FileLock(BUILD_LOCK_FILE_PATH, timeout=1)
 
     def __init__(self,
-                 output_dir: str | Path,
                  build_config: BuildConfig,
                  builder: BuilderAbstract,
+                 build_filter_processor: BuildFilterProcessor | None = None,
                  wait_build_timeout: int = 600) -> None:
-        self._status_file: Path = Path(output_dir) / BUILD_STATUS_FILE_NAME
+        """
+        :param build_config: build configuration
+        :param builder: builder instance
+        :param build_filter_processor: build filter processor instance
+        :param wait_build_timeout: timeout for building before it will be cancelled
+        """
+        self._status_file: Path = Path(build_config.output_dir) / BUILD_STATUS_FILE_NAME
         self.wait_build_timeout: int = wait_build_timeout  # seconds
         self.build_config: BuildConfig = build_config
         self.builder: BuilderAbstract = builder
+        self.build_filter_processor = build_filter_processor
         self.initialize()
 
     def initialize(self):
@@ -127,8 +136,10 @@ class BuildManager:
             raise TwisterBuildException(msg)
 
     def _build(self, builder: BuilderAbstract) -> None:
+        if self.build_filter_processor:
+            self.build_filter_processor.process()
         try:
-            builder.build(self.build_config)
+            builder.build()
         except TwisterMemoryOverflowException as overflow_exception:
             if self.build_config.overflow_as_errors:
                 self.update_status(BuildStatus.FAILED)
@@ -136,6 +147,9 @@ class BuildManager:
             else:
                 self.update_status(BuildStatus.SKIPPED)
                 logger.info(overflow_exception)
+            raise
+        except TwisterBuildFiltrationException:
+            self.update_status(BuildStatus.SKIPPED)
             raise
         except Exception:
             self.update_status(BuildStatus.FAILED)

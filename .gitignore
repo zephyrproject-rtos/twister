@@ -73,3 +73,6 @@ twister-out*
 
 # Sphinx documentation
 docs/.apidoc/
+
+# KConfig DTS filtration
+*parsetab.py

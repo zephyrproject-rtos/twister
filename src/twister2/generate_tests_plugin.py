@@ -66,7 +66,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc):
         platform for platform in twister_config.platforms
         if platform.identifier in twister_config.selected_platforms
     ]
-    spec_file_path: Path = Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME
+    spec_file_path: Path = Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME  # type: ignore[attr-defined]
     scenarios = get_scenarios_from_fixture(metafunc)
     assert spec_file_path.exists(), f'There is no specification file for the test: {spec_file_path}'
     if not scenarios:

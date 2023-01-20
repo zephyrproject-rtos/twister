@@ -133,7 +133,7 @@ def pytest_addoption(parser: pytest.Parser):
         dest='builder',
         action='store',
         default='west',
-        choices=('west',),
+        choices=('west', 'cmake'),
         help='Select builder type (default=%(default)s)'
     )
     twister_group.addoption(

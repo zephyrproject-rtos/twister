@@ -3,23 +3,15 @@ class TwisterException(Exception):
 
 
 class TwisterConfigurationException(TwisterException):
-    """Exception for all configuration errors."""
-
-
-class YamlException(TwisterException):
-    """Custom exception for error reporting."""
+    """Raised when any error appeared for plugin configuration."""
 
 
 class TwisterFatalError(TwisterException):
-    """Twister fatal error exception."""
-
-
-class ProjectExecutionFailed(TwisterException):
-    """Project execution failed exception."""
+    """Raised when Zephyr fatal error was found in parsed output from Zephyr."""
 
 
 class TwisterBuildException(TwisterException):
-    """Any exception during building."""
+    """Raised when any error appeared during building."""
 
 
 class TwisterBuildSkipException(TwisterException):
@@ -31,16 +23,20 @@ class TwisterMemoryOverflowException(TwisterException):
 
 
 class TwisterFlashException(TwisterException):
-    """Any exception during flashing."""
+    """Raised when any error appeared during flashing."""
 
 
 class TwisterRunException(TwisterException):
-    """Any exception during executing."""
+    """Raised when any error appeared during execution."""
 
 
 class TwisterTimeoutExpired(TwisterException):
-    """Subprocess ended due to timeout."""
+    """Raised when subprocess ended due to timeout."""
 
 
 class TwisterHarnessParserException(TwisterException):
-    """Harness parser exception."""
+    """Raised when any error appeared in Harness parser."""
+
+
+class TwisterBuildFiltrationException(TwisterException):
+    """Raised when Kconfig or DTS filtration should be applied for test."""
