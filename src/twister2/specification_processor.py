@@ -194,7 +194,6 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         should_skip_for_pytest_harness(test_spec, platform),
         should_skip_for_tag(test_spec, platform),
         should_skip_for_toolchain(test_spec, platform),
-        should_skip_for_filter_option(test_spec, platform),
     ]):
         return True
     return False
@@ -278,18 +277,6 @@ def should_skip_for_depends_on(test_spec: YamlTestSpecification, platform: Platf
     if not_supported_dependencies:
         reason = f'"{_join_strings(not_supported_dependencies)}" not occur in the "supported" section in the ' \
                  'platform definition yaml'
-        _log_test_skip(test_spec, platform, reason)
-        return True
-    return False
-
-
-def should_skip_for_filter_option(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
-    """
-    TODO: This function should be removed when Kconfig and DTS filtering will be implemented correctly:
-    https://github.com/zephyrproject-rtos/twister/issues/14
-    """
-    if test_spec.filter != '':
-        reason = 'Kconfig and DTS filtering from yaml "filter option" is not implemented yet'
         _log_test_skip(test_spec, platform, reason)
         return True
     return False
