@@ -4,6 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# TODO: this file was copied 1:1 from Twister v1 and requires some refactoring in the future
+# TODO: unit tests concerns this file/functionalities should be added
+
 import copy
 import logging
 import os

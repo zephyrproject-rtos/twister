@@ -4,7 +4,7 @@ import logging
 from typing import Type
 
 from twister2.builder.builder_abstract import BuilderAbstract
-from twister2.builder.cmake_builder import CmakeBuilder
+from twister2.builder.cmake_builder import CMakeBuilder
 from twister2.builder.west_builder import WestBuilder
 
 logger = logging.getLogger(__name__)
@@ -46,5 +46,5 @@ class BuilderFactory:
         return cls.get_builder(name)(*args, **kwargs)
 
 
-BuilderFactory.register_builder_class('cmake', CmakeBuilder)
+BuilderFactory.register_builder_class('cmake', CMakeBuilder)
 BuilderFactory.register_builder_class('west', WestBuilder)

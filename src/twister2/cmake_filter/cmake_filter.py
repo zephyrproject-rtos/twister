@@ -1,3 +1,6 @@
+# TODO: this file was copied 1:1 from Twister v1 and requires some refactoring in the future
+# TODO: unit tests concerns this file/functionalities should be added
+
 from __future__ import annotations
 
 import logging
@@ -7,13 +10,13 @@ import re
 import sys
 from pathlib import Path
 
-from twister2.kconfig_dts_filter import expr_parser
-from twister2.kconfig_dts_filter.cmakecache import CMakeCache
+from twister2.cmake_filter import expr_parser
+from twister2.cmake_filter.cmakecache import CMakeCache
 
 logger = logging.getLogger(__name__)
 
 
-class KconfigDtsFilter:
+class CMakeFilter:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -105,7 +108,7 @@ class KconfigDtsFilter:
 
         except (ValueError, SyntaxError) as se:
             sys.stderr.write(
-                f'Failed processing kconfig and dts for {self.build_dir}\n')
+                f'Failed processing CMake output for {self.build_dir}\n')
             raise se
 
         return result
