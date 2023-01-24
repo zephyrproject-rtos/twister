@@ -39,4 +39,4 @@ class TwisterHarnessParserException(TwisterException):
 
 
 class TwisterBuildFiltrationException(TwisterException):
-    """Raised when Kconfig or DTS filtration should be applied for test."""
+    """Raised when CMake filtration should be applied for test."""

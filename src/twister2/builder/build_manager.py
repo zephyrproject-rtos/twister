@@ -45,19 +45,16 @@ class BuildManager:
     def __init__(self,
                  build_config: BuildConfig,
                  builder: BuilderAbstract,
-                 build_filter_processor: BuildFilterProcessor | None = None,
                  wait_build_timeout: int = 600) -> None:
         """
         :param build_config: build configuration
         :param builder: builder instance
-        :param build_filter_processor: build filter processor instance
         :param wait_build_timeout: timeout for building before it will be cancelled
         """
         self._status_file: Path = Path(build_config.output_dir) / BUILD_STATUS_FILE_NAME
         self.wait_build_timeout: int = wait_build_timeout  # seconds
         self.build_config: BuildConfig = build_config
         self.builder: BuilderAbstract = builder
-        self.build_filter_processor = build_filter_processor
         self.initialize()
 
     def initialize(self):
@@ -136,10 +133,11 @@ class BuildManager:
             raise TwisterBuildException(msg)
 
     def _build(self, builder: BuilderAbstract) -> None:
-        if self.build_filter_processor:
-            self.build_filter_processor.process()
         try:
-            builder.build()
+            builder.run_cmake_stage()
+            if self.build_config.cmake_filter:
+                BuildFilterProcessor.apply_cmake_filtration(self.build_config)
+            builder.run_build_generator()
         except TwisterMemoryOverflowException as overflow_exception:
             if self.build_config.overflow_as_errors:
                 self.update_status(BuildStatus.FAILED)

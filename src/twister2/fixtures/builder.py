@@ -9,10 +9,8 @@ from typing import Generator
 
 import pytest
 
-from twister2.builder.build_filter_processor import BuildFilterProcessor
 from twister2.builder.build_manager import BuildManager
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
-from twister2.builder.cmake_builder import CmakeBuilder
 from twister2.builder.factory import BuilderFactory
 from twister2.exceptions import (
     TwisterBuildFiltrationException,
@@ -51,16 +49,12 @@ def fixture_build_manager(
         extra_args_spec=spec.extra_args,
         extra_args_cli=twister_config.extra_args_cli,
         overflow_as_errors=twister_config.overflow_as_errors,
-        kconfig_dts_filter=spec.filter,
+        cmake_filter=spec.filter,
     )
-    if spec.filter:
-        build_filer_processor = BuildFilterProcessor(CmakeBuilder(build_config))
-    else:
-        build_filer_processor = None
 
     builder_type: str = request.config.option.builder
     builder = BuilderFactory.create_instance(builder_type, build_config)
-    build_manager = BuildManager(build_config, builder, build_filer_processor)
+    build_manager = BuildManager(build_config, builder)
     yield build_manager
 
 
@@ -78,10 +72,10 @@ def fixture_builder(
             raise
         else:
             pytest.skip(str(overflow_exception))
+    except TwisterBuildFiltrationException as filtration_exception:
+        pytest.skip(str(filtration_exception))
     except TwisterBuildSkipException as skip_exception:
         pytest.skip(str(skip_exception))
-    except TwisterBuildFiltrationException:
-        pytest.skip('Kconfig or dts filtration')
 
     if not isinstance(request.function, YamlTestCase):
         # skip regular tests
