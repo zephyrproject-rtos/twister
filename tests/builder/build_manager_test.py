@@ -8,6 +8,7 @@ import pytest
 
 from twister2.builder.build_filter_processor import BuildFilterProcessor
 from twister2.builder.build_manager import BuildManager, BuildStatus
+from twister2.builder.builder_abstract import BuildConfig
 from twister2.exceptions import (
     TwisterBuildException,
     TwisterBuildSkipException,
@@ -16,12 +17,12 @@ from twister2.exceptions import (
 
 
 class MockBuilder(mock.Mock):
-    def build(self, cmake_helper=False):
+    def build(self):
         return
 
 
 class MockBuildFilterProcessor(BuildFilterProcessor):
-    def process(self):
+    def apply_cmake_filtration(self, build_config: BuildConfig):
         pass
 
 
@@ -32,8 +33,7 @@ def mocked_builder():
 
 @pytest.fixture
 def build_manager(build_config, mocked_builder) -> BuildManager:
-    config_processor = MockBuildFilterProcessor(mocked_builder)
-    build_manager = BuildManager(build_config, mocked_builder, config_processor, wait_build_timeout=2)
+    build_manager = BuildManager(build_config, mocked_builder, wait_build_timeout=2)
     return build_manager
 
 
@@ -61,10 +61,10 @@ def test_if_status_was_updated_after_build(build_manager):
 def test_if_status_was_set_as_skipped_after_build_memory_overflow(build_manager):
     build_manager.update_status(BuildStatus.NOT_DONE)
 
-    def mocked_build():
+    def mocked_build_generator():
         raise TwisterMemoryOverflowException
 
-    build_manager.builder.build = mocked_build
+    build_manager.builder.run_build_generator = mocked_build_generator
     with pytest.raises(TwisterMemoryOverflowException):
         build_manager.build()
     assert build_manager.get_status() == BuildStatus.SKIPPED
@@ -73,10 +73,10 @@ def test_if_status_was_set_as_skipped_after_build_memory_overflow(build_manager)
 def test_if_status_was_set_as_failed_after_build_memory_overflow(build_manager):
     build_manager.update_status(BuildStatus.NOT_DONE)
 
-    def mocked_build():
+    def mocked_build_generator():
         raise TwisterMemoryOverflowException
 
-    build_manager.builder.build = mocked_build
+    build_manager.builder.run_build_generator = mocked_build_generator
     build_manager.build_config.overflow_as_errors = True
     with pytest.raises(TwisterMemoryOverflowException):
         build_manager.build()
