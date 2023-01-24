@@ -1,7 +1,7 @@
 import pytest
 
 from twister2.builder.builder_abstract import BuildConfig
-from twister2.builder.cmake_builder import CmakeBuilder
+from twister2.builder.cmake_builder import CMakeBuilder
 from twister2.builder.west_builder import WestBuilder
 
 
@@ -16,7 +16,7 @@ def build_config(tmp_path) -> BuildConfig:
         platform_name='native_posix',
         platform_arch='',  # TODO:
         scenario='bt',
-        kconfig_dts_filter='',
+        cmake_filter='',
         extra_args_spec=['CONF_FILE=prj_single.conf']
     )
 
@@ -28,6 +28,6 @@ def west_builder(build_config) -> WestBuilder:
 
 
 @pytest.fixture
-def cmake_builder(build_config) -> CmakeBuilder:
-    """Return CmakeBuilder"""
-    return CmakeBuilder(build_config)
+def cmake_builder(build_config) -> CMakeBuilder:
+    """Return CMakeBuilder"""
+    return CMakeBuilder(build_config)

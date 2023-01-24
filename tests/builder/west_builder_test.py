@@ -7,7 +7,7 @@ import pytest
 
 from twister2.builder.builder_abstract import BuildConfig
 from twister2.builder.west_builder import WestBuilder
-from twister2.exceptions import TwisterBuildException, TwisterMemoryOverflowException
+from twister2.exceptions import TwisterBuildException
 
 DEFAULT_CMAKE_ARGS: list[str] = [
     '-DEXTRA_CFLAGS=-Werror',
@@ -46,8 +46,9 @@ def test_if_west_builder_builds_code_from_source_without_errors(
     patched_run.return_value = mocked_process
     west_builder.build()
     patched_run.assert_called_with(
-        ['west', build_config.build_dir, build_config.source_dir, '--pristine', 'always',
-         '--board', build_config.platform_name, '--build-dir', build_config.build_dir,
+        ['west', 'build', '--pristine', 'always',
+         '--board', build_config.platform_name,
+         '--build-dir', build_config.build_dir, build_config.source_dir,
          '--'] + DEFAULT_CMAKE_ARGS + ['-DCONF_FILE=prj_single.conf'],
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
@@ -62,7 +63,7 @@ def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_retu
     mocked_process.returncode = 1
     mocked_process.stdout = 'fake build output'.encode()
     patched_run.return_value = mocked_process
-    with pytest.raises(TwisterBuildException, match='Failed building source for platform: native_posix'):
+    with pytest.raises(TwisterBuildException, match='Failed west building source for platform: native_posix'):
         west_builder.build()
 
 
@@ -71,7 +72,7 @@ def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_retu
 def test_if_west_builder_raises_exception_when_subprocess_raised_exception(
         patched_run, patched_which, west_builder: WestBuilder
 ):
-    with pytest.raises(TwisterBuildException, match='Building error'):
+    with pytest.raises(TwisterBuildException, match='west building error'):
         west_builder.build()
 
 
@@ -81,21 +82,3 @@ def test_it_west_builder_raises_exception_when_west_was_not_found(
 ):
     with pytest.raises(TwisterBuildException, match='west not found'):
         west_builder.build()
-
-
-def test_if_overflow_exception_is_raised_when_memory_overflow_occurs(
-        west_builder: WestBuilder, build_config: BuildConfig
-):
-    build_output = 'region `FLASH\' overflowed by'.encode()
-    exception_msg = 'Memory overflow during building source for platform: native_posix'
-    with pytest.raises(TwisterMemoryOverflowException, match=exception_msg):
-        west_builder._check_memory_overflow(build_config, build_output)
-
-
-def test_if_overflow_exception_is_raised_when_imgtool_memory_overflow_occurs(
-        west_builder: WestBuilder, build_config: BuildConfig
-):
-    build_output = 'Error: Image size (32) + trailer (2) exceeds requested size'.encode()
-    exception_msg = 'Imgtool memory overflow during building source for platform: native_posix'
-    with pytest.raises(TwisterMemoryOverflowException, match=exception_msg):
-        west_builder._check_memory_overflow(build_config, build_output)
