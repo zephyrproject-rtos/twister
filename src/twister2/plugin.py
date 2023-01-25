@@ -120,7 +120,7 @@ def pytest_addoption(parser: pytest.Parser):
         '--clear',
         dest='clear',
         action='store',
-        default='no',
+        default='archive',
         choices=('no', 'delete', 'archive'),
         help='Clear twister artifacts. '
              '"no" - use previous artifacts, '
