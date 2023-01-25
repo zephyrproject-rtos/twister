@@ -1,0 +1,124 @@
+name: Run tests with twister V2
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'A scope to scan for tests'
+        default: 'tests/kernel/common'
+        required: false
+        type: string
+      args_raw:
+        description: 'Raw string of args added to twister call'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      scope:
+        description: 'A scope to scan for tests'
+        default: 'tests/kernel/common'
+        required: true
+        type: string
+      args_raw:
+        description: 'Raw string of args added to twister call'
+        required: false
+        type: string
+
+jobs:
+  twisterV2:
+    runs-on: ubuntu-latest
+    name: Run tests with twisterv2
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.24.6
+      options: '--entrypoint /bin/bash'
+    strategy:
+      fail-fast: false
+      matrix:
+        subset: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    env:
+      MATRIX_SIZE: 10
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.15.2
+      BASE_REF: ${{ github.base_ref }}
+      ZEPHYR_BASE: ""
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Checkout Zephyr
+        uses: actions/checkout@v3
+        with:
+          repository: 'zephyrproject-rtos/zephyr'
+          path: 'zephyr'
+
+      - name: Checkout Twister
+        uses: actions/checkout@v3
+        with:
+          path: twisterV2
+
+      - name: Install twister
+        working-directory: twisterV2
+        run: |
+          pip install -r requirements.txt -r requirements-tests.txt -r requirements-dev.txt
+          pip install pytest-split
+          pip install pytest-rerunfailures
+          pip install .
+
+      - name: Configure environment
+        working-directory: zephyr
+        run: |
+          echo "ZEPHYR_BASE=$PWD" >> $GITHUB_ENV
+          west init -l . || true
+          west update --narrow
+          # FIXME: quick fix to remove not working pytests tests
+          rm -rf samples/modules/tflite-micro
+          # FIXME: quick fix to remove wrong yaml files
+          rm samples/drivers/i2s/litex/sample.yaml
+          rm samples/net/sockets/tcp/sample.yaml
+          # FIXME: v1 "pytest" tests, need rework
+          rm -rf samples/subsys/testsuite/pytest
+          # FIXME: remove slow tests
+          rm -rf tests/kernel/fpu_sharing/generic/testcase.yaml
+          rm -rf tests/kernel/timer/cycle64/testcase.yaml
+          rm -rf kernel/timer/starve/testcase.yaml
+
+      - name: Run twister
+        working-directory: zephyr
+        run: |
+          echo "Running scope: ${{ inputs.scope }}"
+          echo "Extra args: ${{ inputs.args_raw }}"
+          pytest ${{ inputs.scope }} --zephyr-base=$ZEPHYR_BASE ${{ inputs.args_raw }} -v --results-json=twister-out/results_${{matrix.subset}}.json -n auto --splits=${MATRIX_SIZE} --group=${{ matrix.subset }} --reruns 3 --reruns-delay 10 --rerun-except TwisterBuildException --rerun-except TwisterMemoryOverflowException -k "not kernel.timer.starve"
+
+      - name: Copy results
+        if: ${{ always() }}
+        working-directory: zephyr
+        run: |
+          # Add unique name to the build locks and skip reports for the purpouse of uploading
+          echo "copy build locks"
+          cp twister-out/twister_builder.json twister-out/twister_builder_${{ matrix.subset }}.json
+          cp twister-out/testcases_creation.log twister-out/testcases_creation_${{ matrix.subset }}.log
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: report_twisterV2
+          path: zephyr/twister-out/results_${{ matrix.subset }}.json
+
+      - name: Upload build locks
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: buildlock_twisterV2
+          path: zephyr/twister-out/twister_builder_${{ matrix.subset }}.json
+
+      - name: Upload skip logs
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: logs_twisterV2
+          path: zephyr/twister-out/testcases_creation_${{ matrix.subset }}.log
