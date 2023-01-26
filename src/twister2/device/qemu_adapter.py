@@ -32,9 +32,9 @@ class QemuAdapter(DeviceAbstract):
         self._process: subprocess.Popen | None = None
         self._process_ended_with_timeout: bool = False
         self.queue: Queue = Queue()
-        self._stop_job: bool = False
         self._exc: Exception | None = None  #: store any exception which appeared running this thread
         self._thread: threading.Thread | None = None
+        self._emulation_was_finished: bool = False
         self.connection = FifoHandler(Path(build_dir).joinpath(QEMU_FIFO_FILE_NAME))
         self.command: list[str] = []
         self.timeout: float = 60  # running timeout in seconds
@@ -107,6 +107,8 @@ class QemuAdapter(DeviceAbstract):
                 logger.warning('Running simulation finished with return code %s', return_code)
                 for line in stdout.decode('utf-8').split('\n'):
                     logger.info(line)
+        finally:
+            self._emulation_was_finished = True
 
     def disconnect(self):
         logger.debug('Closing connection')
@@ -114,7 +116,6 @@ class QemuAdapter(DeviceAbstract):
 
     def stop(self) -> None:
         """Stop device."""
-        self._stop_job = True
         time.sleep(0.1)  # give a time to end while loop in running simulation
         if self._process is not None and self._process.returncode is None:
             logger.debug('Stopping all running processes for PID %s', self._process.pid)
@@ -135,9 +136,15 @@ class QemuAdapter(DeviceAbstract):
         for _ in range(int(self.booting_timeout_in_ms / 10) or 1):
             if self.connection.is_open:
                 break
+            elif self._emulation_was_finished:
+                msg = 'Problem with starting QEMU'
+                logger.error(msg)
+                raise TwisterException(msg)
             time.sleep(0.1)
         else:
-            raise TwisterException('Fifo file may be not created yet')
+            msg = 'Problem with starting QEMU - fifo file was not created yet'
+            logger.error(msg)
+            raise TwisterException(msg)
 
     @property
     def iter_stdout(self) -> Generator[str, None, None]:
