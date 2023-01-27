@@ -102,7 +102,7 @@ class QemuAdapter(DeviceAbstract):
             if return_code == 0:
                 logger.info('Running simulation finished with return code %s', return_code)
             elif return_code == -15:
-                logger.info('Running simulation stopped interrupted by user')
+                logger.info('Running simulation terminated')
             else:
                 logger.warning('Running simulation finished with return code %s', return_code)
                 for line in stdout.decode('utf-8').split('\n'):
