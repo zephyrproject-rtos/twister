@@ -1,0 +1,118 @@
+name: Dispatch and compare tests run with twister V1 and  V2
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        args:
+          description: 'Test scope'
+          required: true
+          default: "tests/kernel/common"
+          type: string
+      args_raw:
+        args:
+          description: 'Raw string of args added to twister call'
+          required: false
+          type: string
+
+jobs:
+  call-v1-passing-data:
+    uses: ./.github/workflows/comparison_v1.yaml
+    with:
+      scope: ${{ inputs.scope }}
+      args_raw: ${{ inputs.args_raw }}
+  call-v2-passing-data:
+    uses: ./.github/workflows/comparison_v2.yaml
+    with:
+      scope: ${{ inputs.scope }}
+      args_raw: ${{ inputs.args_raw }}
+
+  handle-v1-reports:
+    runs-on: ubuntu-latest
+    name: Prepare v1 report
+    if: ${{ always() }}
+    needs: [call-v1-passing-data]
+    steps:
+      - name: Download artifacts v1
+        uses: actions/download-artifact@v3
+        with:
+          path: results/resv1
+          name: report_twisterV1
+
+      - name: Checkout Twister
+        uses: actions/checkout@v3
+        with:
+          path: twisterV2
+
+      - name: Merge v1 reports
+        run: |
+          python ./twisterV2/src/twister2/scripts/merge_twister_json.py --v1-reports=results/resv1 
+
+      - name: Upload results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: report_merged_twisterV1
+          path: results/resv1/results_v1_merged.json
+
+  handle-v2-reports:
+    runs-on: ubuntu-latest
+    name: Prepare v2 report
+    if: ${{ always() }}
+    needs: [call-v2-passing-data]
+    steps:
+      - name: Download artifacts v2
+        uses: actions/download-artifact@v3
+        with:
+          path: results/resv2
+          name: report_twisterV2
+
+      - name: Checkout Twister
+        uses: actions/checkout@v3
+        with:
+          path: twisterV2
+
+      - name: Merge v2 reports
+        run: |
+          python ./twisterV2/src/twister2/scripts/merge_twister_json.py --v2-reports=results/resv2 
+
+      - name: Upload results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: report_merged_twisterV2
+          path: results/resv2/results_v2_merged.json
+
+  compare-reports:
+    runs-on: ubuntu-latest
+    name: Prepare comparison report
+    if: ${{ always() }}
+    needs: [handle-v1-reports, handle-v2-reports]
+    steps:
+      - name: Download artifacts v1
+        uses: actions/download-artifact@v3
+        with:
+          path: results
+          name: report_merged_twisterV1
+      - name: Download artifacts v2
+        uses: actions/download-artifact@v3
+        with:
+          path: results
+          name: report_merged_twisterV2
+
+      - name: Checkout Twister
+        uses: actions/checkout@v3
+        with:
+          path: twisterV2
+
+      - name: Compare reports
+        run: |
+          touch results/comparison_report.txt
+          python ./twisterV2/src/twister2/scripts/compare_set.py --v1=results/results_v1_merged.json --v2=results/results_v2_merged.json >> results/comparison_report.txt
+
+      - name: Upload results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: comparison_report
+          path: results/comparison_report.txt
