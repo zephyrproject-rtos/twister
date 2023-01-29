@@ -27,6 +27,9 @@ class TwisterConfig:
     fixtures: list[str] = field(default_factory=list, repr=False)
     extra_args_cli: list = field(default_factory=list)
     overflow_as_errors: bool = False
+    integration_mode: bool = False
+    emulation_only: bool = False
+    architectures: list[str] = field(default_factory=list, repr=False)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -37,7 +40,6 @@ class TwisterConfig:
             or os.environ.get('ZEPHYR_BASE', '')
         )
         build_only: bool = config.option.build_only
-        selected_platforms: list[str] = config.option.platform
         board_root: list[str] = config.option.board_root or config.getini('board_root')
         platforms: list[PlatformSpecification] = config._platforms  # type: ignore
         output_dir: str = config.option.output_dir
@@ -46,18 +48,38 @@ class TwisterConfig:
         fixtures: list[str] = config.option.fixtures
         extra_args_cli: list[str] = config.getoption('--extra-args')
         overflow_as_errors: bool = config.option.overflow_as_errors
+        integration_mode: bool = config.option.integration
+        emulation_only: bool = config.option.emulation_only
+        architectures: list[str] = config.option.arch
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:
             hardware_map_list = HardwareMap.read_from_file(filename=hardware_map_file)
+            if not config.option.platform:
+                config.option.platform = [p.platform for p in hardware_map_list if p.connected]
 
-        if not selected_platforms:
+        selected_platforms: list[str] = []
+        if config.option.all:
+            selected_platforms = [
+                platform.identifier for platform in platforms
+            ]
+        elif config.option.platform:
+            selected_platforms = list(set(config.option.platform))
+        elif emulation_only:
+            selected_platforms = [
+                platform.identifier for platform in platforms
+                if platform.simulation != 'na'
+            ]
+        elif architectures:
+            selected_platforms = [
+                platform.identifier for platform in platforms
+                if platform.arch in architectures
+            ]
+        else:
             selected_platforms = [
                 platform.identifier for platform in platforms
                 if platform.testing.default
             ]
-        else:
-            selected_platforms = list(set(selected_platforms))  # remove duplicates
 
         data: dict[str, Any] = dict(
             zephyr_base=zephyr_base,
@@ -70,7 +92,10 @@ class TwisterConfig:
             device_testing=device_testing,
             fixtures=fixtures,
             extra_args_cli=extra_args_cli,
-            overflow_as_errors=overflow_as_errors
+            overflow_as_errors=overflow_as_errors,
+            integration_mode=integration_mode,
+            emulation_only=emulation_only,
+            architectures=architectures
         )
         return cls(**data)
 
