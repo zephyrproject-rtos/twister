@@ -52,6 +52,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='build tests for specific platforms'
     )
     twister_group.addoption(
+        '--all',
+        action='store_true',
+        help='Build/test on all platforms. Any --platform arguments ignored'
+    )
+    twister_group.addoption(
         '--board-root',
         metavar='PATH',
         action='append',
@@ -94,6 +99,21 @@ def pytest_addoption(parser: pytest.Parser):
         '--hardware-map',
         metavar='PATH',
         help='load hardware map from a file',
+    )
+    twister_group.addoption(
+        '-G', '--integration',
+        action='store_true',
+        help='Run integration tests',
+    )
+    twister_group.addoption(
+        '--emulation-only',
+        action='store_true',
+        help='Only build and run emulation platforms',
+    )
+    twister_group.addoption(
+        '--arch',
+        action='append',
+        help='Arch filter for testing'
     )
     twister_group.addoption(
         '--tags',
