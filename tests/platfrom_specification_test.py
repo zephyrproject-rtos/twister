@@ -30,15 +30,19 @@ def test_if_platform_specification_can_be_load_from_yaml_file(resources):
 def test_if_discover_platforms_discovers_all_defined_platforms_in_directory(resources: Path):
     boards_dir = resources / 'boards'
     platforms = list(discover_platforms(boards_dir))
-    assert len(platforms) == 3
-    assert {platform.identifier for platform in platforms} == {'qemu_cortex_m3', 'mps2_an521_remote', 'native_posix'}
+    assert len(platforms) == 4
+    assert {platform.identifier for platform in platforms} == {
+        'qemu_cortex_m3', 'mps2_an521_remote', 'native_posix', 'altera_max10'
+    }
 
 
 def test_if_search_platforms_discovers_all_defined_platforms(resources: Path):
     zephyr_base = str(resources)
     platforms = search_platforms(zephyr_base=zephyr_base)
-    assert len(platforms) == 3
-    assert {platform.identifier for platform in platforms} == {'qemu_cortex_m3', 'mps2_an521_remote', 'native_posix'}
+    assert len(platforms) == 4
+    assert {platform.identifier for platform in platforms} == {
+        'qemu_cortex_m3', 'mps2_an521_remote', 'native_posix', 'altera_max10'
+    }
 
 
 def test_if_validate_platforms_list_raises_exception_for_duplicated_platform():

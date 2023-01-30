@@ -101,11 +101,6 @@ def pytest_addoption(parser: pytest.Parser):
         help='load hardware map from a file',
     )
     twister_group.addoption(
-        '-G', '--integration',
-        action='store_true',
-        help='Run integration tests',
-    )
-    twister_group.addoption(
         '--emulation-only',
         action='store_true',
         help='Only build and run emulation platforms',

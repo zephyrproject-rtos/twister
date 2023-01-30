@@ -18,7 +18,10 @@ def test_twister_help(pytester):
         '*Clear twister artifacts*',
         '*--extra-args=EXTRA_ARGS*',
         '*Extra CMake arguments*',
-        '*--overflow-as-errors*'
+        '*--overflow-as-errors*',
+        '*--emulation-only*',
+        '*--arch=ARCH*',
+        '*--all*'
     ])
 
 
