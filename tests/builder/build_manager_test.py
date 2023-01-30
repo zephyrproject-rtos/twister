@@ -6,9 +6,7 @@ from unittest import mock
 
 import pytest
 
-from twister2.builder.build_filter_processor import BuildFilterProcessor
 from twister2.builder.build_manager import BuildManager, BuildStatus
-from twister2.builder.builder_abstract import BuildConfig
 from twister2.exceptions import (
     TwisterBuildException,
     TwisterBuildSkipException,
@@ -19,11 +17,6 @@ from twister2.exceptions import (
 class MockBuilder(mock.Mock):
     def build(self):
         return
-
-
-class MockBuildFilterProcessor(BuildFilterProcessor):
-    def apply_cmake_filtration(self, build_config: BuildConfig):
-        pass
 
 
 @pytest.fixture

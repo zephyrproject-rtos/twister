@@ -26,6 +26,7 @@ class YamlTestSpecification:
     build_name: str = ''  #: name of build configuration from yaml
     output_dir: Path = Path('.')  #: path to dir with build results
     runnable: bool = True
+    run_id: str = ''  # unique id passed to building process and verified during ztest test output analysis
     tags: set[str] = field(default_factory=set)
     type: str = 'integration'
     filter: str = ''

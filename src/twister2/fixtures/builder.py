@@ -9,6 +9,7 @@ from typing import Generator
 
 import pytest
 
+from twister2.builder.build_helper import CMakeExtraArgsConfig, CMakeExtraArgsGenerator
 from twister2.builder.build_manager import BuildManager
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.builder.factory import BuilderFactory
@@ -34,8 +35,20 @@ def fixture_build_manager(
 
     spec.output_dir = Path(twister_config.output_dir).resolve()
 
-    if setup_manager.get_device_type() == 'qemu':
-        spec.extra_args.append(f'QEMU_PIPE={spec.fifo_file}')
+    cmake_args_config = CMakeExtraArgsConfig(
+        run_id=spec.run_id,
+        extra_args_spec=spec.extra_args,
+        extra_configs=spec.extra_configs,
+        build_dir=spec.build_dir,
+        fifo_file=spec.fifo_file,
+        device_type=setup_manager.get_device_type(),
+        extra_args_cli=twister_config.extra_args_cli,
+        platform_arch=platform.arch,
+        platform_name=platform.identifier,
+    )
+
+    args_generator = CMakeExtraArgsGenerator(cmake_args_config)
+    cmake_extra_args = args_generator.generate()
 
     build_config = BuildConfig(
         zephyr_base=setup_manager.twister_config.zephyr_base,
@@ -45,9 +58,7 @@ def fixture_build_manager(
         build_dir=spec.build_dir,
         output_dir=request.config.option.output_dir,
         scenario=spec.scenario,
-        extra_configs=spec.extra_configs,
-        extra_args_spec=spec.extra_args,
-        extra_args_cli=twister_config.extra_args_cli,
+        cmake_extra_args=cmake_extra_args,
         overflow_as_errors=twister_config.overflow_as_errors,
         cmake_filter=spec.filter,
     )

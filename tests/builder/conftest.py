@@ -17,7 +17,7 @@ def build_config(tmp_path) -> BuildConfig:
         platform_arch='',  # TODO:
         scenario='bt',
         cmake_filter='',
-        extra_args_spec=['CONF_FILE=prj_single.conf']
+        cmake_extra_args=['-DCONF_FILE=prj_single.conf']
     )
 
 

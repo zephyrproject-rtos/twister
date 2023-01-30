@@ -10,7 +10,7 @@ from pathlib import Path
 
 from filelock import BaseFileLock, FileLock
 
-from twister2.builder.build_filter_processor import BuildFilterProcessor
+from twister2.builder.build_helper import BuildFilterProcessor
 from twister2.builder.builder_abstract import BuildConfig, BuilderAbstract
 from twister2.exceptions import (
     TwisterBuildException,

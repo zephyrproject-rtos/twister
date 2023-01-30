@@ -35,8 +35,8 @@ class CMakeBuilder(BuilderAbstract):
             f'-DBOARD={self.build_config.platform_name}',
         ]
 
-        if cmake_args := self._prepare_cmake_args(self.build_config):
-            command.extend(cmake_args)
+        if self.build_config.cmake_extra_args:
+            command.extend(self.build_config.cmake_extra_args)
 
         if cmake_helper:
             command.extend(

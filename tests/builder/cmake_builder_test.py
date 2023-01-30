@@ -18,9 +18,7 @@ def test_if_run_cmake_stage_calls_run_command_in_subprocess_with_proper_argument
 ):
     expected_command = [
         'cmake', f'-S{build_config.source_dir}', f'-B{build_config.build_dir}', '-GNinja',
-        f'-DBOARD={build_config.platform_name}', '-DEXTRA_CFLAGS=-Werror',
-        '-DEXTRA_AFLAGS=-Werror -Wa,--fatal-warnings', '-DEXTRA_LDFLAGS=-Wl,--fatal-warnings',
-        '-DEXTRA_GEN_DEFINES_ARGS=--edtlib-Werror', '-DCONF_FILE=prj_single.conf',
+        f'-DBOARD={build_config.platform_name}', '-DCONF_FILE=prj_single.conf',
     ]
 
     cmake_builder.run_cmake_stage(cmake_helper=False)
@@ -33,9 +31,7 @@ def test_if_run_cmake_stage_calls_run_command_in_subprocess_with_proper_argument
 ):
     expected_command = [
         'cmake', f'-S{build_config.source_dir}', f'-B{build_config.build_dir}', '-GNinja',
-        f'-DBOARD={build_config.platform_name}', '-DEXTRA_CFLAGS=-Werror',
-        '-DEXTRA_AFLAGS=-Werror -Wa,--fatal-warnings', '-DEXTRA_LDFLAGS=-Wl,--fatal-warnings',
-        '-DEXTRA_GEN_DEFINES_ARGS=--edtlib-Werror', '-DCONF_FILE=prj_single.conf',
+        f'-DBOARD={build_config.platform_name}', '-DCONF_FILE=prj_single.conf',
         '-DMODULES=dts,kconfig', '-Pzephyr/cmake/package_helper.cmake'
     ]
 

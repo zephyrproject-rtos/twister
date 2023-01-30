@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import abc
+import hashlib
 import logging
 import math
 import os
+import random
 import shutil
 from pathlib import Path
 
@@ -39,7 +41,18 @@ class SpecificationProcessor(abc.ABC):
         test_spec = YamlTestSpecification(**test_spec_dict)
         test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
         test_spec.runnable = is_runnable(test_spec, platform, self.twister_config.fixtures)
+        test_spec.run_id = self._generate_run_id(test_spec.rel_to_base_path, test_spec.original_name)
         return test_spec
+
+    @staticmethod
+    def _generate_run_id(test_rel_path: Path, test_scenario_name: str) -> str:
+        """Generate run id from test unique identifier and a random number."""
+        test_name_id = str(test_rel_path / test_scenario_name)  # this id should be uniqueness
+        hash_object = hashlib.md5(test_name_id.encode())
+        random_str = f'{random.getrandbits(64)}'.encode()
+        hash_object.update(random_str)
+        run_id = hash_object.hexdigest()
+        return run_id
 
 
 class YamlSpecificationProcessor(SpecificationProcessor):
@@ -70,7 +83,7 @@ class YamlSpecificationProcessor(SpecificationProcessor):
             test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.zephyr_base)
         except ValueError:
             # Test not in zephyr tree
-            test_spec_dict['rel_to_base_path'] = 'out_of_tree'
+            test_spec_dict['rel_to_base_path'] = Path('out_of_tree')
 
         return test_spec_dict
 

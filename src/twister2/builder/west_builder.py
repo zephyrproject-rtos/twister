@@ -60,8 +60,8 @@ class WestBuilder(BuilderAbstract):
             str(self.build_config.source_dir),
         ]
 
-        if cmake_args := self._prepare_cmake_args(self.build_config):
-            command.extend(['--'] + cmake_args)
+        if self.build_config.cmake_extra_args:
+            command.extend(['--'] + self.build_config.cmake_extra_args)
 
         return command
 
