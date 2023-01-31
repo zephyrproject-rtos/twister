@@ -278,9 +278,10 @@ def should_skip_for_spec_type_unit(test_spec: YamlTestSpecification, platform: P
 
 
 def should_skip_for_depends_on(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    parsed_platform_supported = _parse_raw_platform_supported(platform.supported)
     not_supported_dependencies = []
     for dependency in test_spec.depends_on:
-        if dependency not in platform.supported:
+        if dependency not in parsed_platform_supported:
             not_supported_dependencies.append(dependency)
     if not_supported_dependencies:
         reason = f'"{_join_strings(not_supported_dependencies)}" not occur in the "supported" section in the ' \
@@ -288,6 +289,18 @@ def should_skip_for_depends_on(test_spec: YamlTestSpecification, platform: Platf
         _log_test_skip(test_spec, platform, reason)
         return True
     return False
+
+
+def _parse_raw_platform_supported(raw_supported: set) -> set:
+    """
+    Parse platform supported features and extract single features, for example:
+    {'netif:eth} -> {'netif', 'eth'}
+    """
+    supported = set()
+    for raw_feature in raw_supported:
+        for feature in raw_feature.split(':'):
+            supported.add(feature)
+    return supported
 
 
 def _join_filters(args: list[str]) -> str:
