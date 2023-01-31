@@ -48,6 +48,7 @@ class YamlTestSpecification:
     ignore_qemu_crash: bool = False
     platform_allow: set[str] = field(default_factory=set)
     platform_exclude: set[str] = field(default_factory=set)
+    platform_key: list[str] = field(default_factory=list)
     platform_type: list[str] = field(default_factory=list)
     harness_config: dict = field(default_factory=dict)
     toolchain_exclude: set[str] = field(default_factory=set)
@@ -122,6 +123,7 @@ class TestSchema(Schema):
     modules = fields.List(fields.Str())
     platform_exclude = fields.Str()
     platform_allow = fields.Str()
+    platform_key = fields.List(fields.Str())
     platform_type = fields.List(fields.Str())
     tags = fields.Str()
     timeout = fields.Int()
