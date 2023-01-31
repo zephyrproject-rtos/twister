@@ -36,12 +36,12 @@ def testcase() -> YamlTestSpecification:
 
 
 def test_should_skip_for_spec_type_unit_positive(testcase, platform):
-    testcase.type = "unit"
+    testcase.type = 'unit'
     assert should_skip_for_spec_type_unit(testcase, platform)
 
 
 def test_should_skip_for_spec_type_unit_negative(testcase, platform):
-    testcase.type = ""
+    testcase.type = ''
     assert should_skip_for_spec_type_unit(testcase, platform) is False
 
 
@@ -189,13 +189,13 @@ def test_should_skip_for_min_flash_positive(testcase, platform):
 
 def test_should_skip_for_depends_on_negative(testcase, platform):
     testcase.depends_on = {'spi'}
-    platform.supported = {'gpio'}
+    platform.supported = {'gpio', 'netif:eth'}
     assert should_skip_for_depends_on(testcase, platform)
 
 
 def test_should_skip_for_depends_on_positive(testcase, platform):
-    testcase.depends_on = {'spi'}
-    platform.supported = {'gpio', 'spi'}
+    testcase.depends_on = {'netif'}
+    platform.supported = {'gpio', 'netif:eth'}
     assert should_skip_for_depends_on(testcase, platform) is False
 
 
