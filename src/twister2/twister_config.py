@@ -30,6 +30,9 @@ class TwisterConfig:
     integration_mode: bool = False
     emulation_only: bool = False
     architectures: list[str] = field(default_factory=list, repr=False)
+    default_platforms: bool = False
+    # platform filter provided by user via --platform argument in CLI or via hardware map file
+    user_platform_filter: list[str] = field(default_factory=list, repr=False)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -57,28 +60,18 @@ class TwisterConfig:
             if not config.option.platform:
                 config.option.platform = [p.platform for p in hardware_map_list if p.connected]
 
-        selected_platforms: list[str] = []
         if config.option.all:
-            selected_platforms = [
-                platform.identifier for platform in platforms
-            ]
-        elif config.option.platform:
-            selected_platforms = list(set(config.option.platform))
-        elif emulation_only:
-            selected_platforms = [
-                platform.identifier for platform in platforms
-                if platform.simulation != 'na'
-            ]
-        elif architectures:
-            selected_platforms = [
-                platform.identifier for platform in platforms
-                if platform.arch in architectures
-            ]
-        else:
-            selected_platforms = [
-                platform.identifier for platform in platforms
-                if platform.testing.default
-            ]
+            # When --all used, any --platform arguments ignored
+            config.option.platform = []
+
+        # just to keep compatibility with TwisterV1
+        # default_platforms will be used to update filered architectures (--arch keyword)
+        default_platforms: bool = not (
+            config.option.all or config.option.platform or config.option.emulation_only
+        )
+        user_platform_filter: list[str] = config.option.platform
+
+        selected_platforms = _get_selected_platforms(config)
 
         data: dict[str, Any] = dict(
             zephyr_base=zephyr_base,
@@ -93,7 +86,9 @@ class TwisterConfig:
             extra_args_cli=extra_args_cli,
             overflow_as_errors=overflow_as_errors,
             emulation_only=emulation_only,
-            architectures=architectures
+            architectures=architectures,
+            default_platforms=default_platforms,
+            user_platform_filter=user_platform_filter
         )
         return cls(**data)
 
@@ -125,3 +120,38 @@ class TwisterConfig:
             if platform.identifier == name:
                 return platform
         raise KeyError(f'There is not platform with identifier: {name}')
+
+
+def _get_selected_platforms(config: pytest.Config) -> list[str]:
+    """Return list of selected platforms"""
+    platforms: list[PlatformSpecification] = config._platforms  # type: ignore
+    emulation_only: bool = config.option.emulation_only
+    architectures: list[str] = config.option.arch
+    all_filter: bool = config.option.all
+    platform_filter: list[str] = config.option.platform
+
+    selected_platforms: list[str] = []
+    if platform_filter:
+        # TODO: verify_platforms_existence
+        selected_platforms = list(set(platform_filter))
+    elif emulation_only:
+        selected_platforms = [
+            platform.identifier for platform in platforms
+            if platform.simulation != 'na'
+        ]
+    elif architectures:
+        selected_platforms = [
+            platform.identifier for platform in platforms
+            if platform.arch in architectures
+        ]
+    elif all_filter:
+        selected_platforms = [
+            platform.identifier for platform in platforms
+        ]
+    else:
+        selected_platforms = [
+            platform.identifier for platform in platforms
+            if platform.testing.default
+        ]
+
+    return selected_platforms

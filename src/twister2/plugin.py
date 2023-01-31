@@ -54,7 +54,8 @@ def pytest_addoption(parser: pytest.Parser):
     twister_group.addoption(
         '--all',
         action='store_true',
-        help='Build/test on all platforms. Any --platform arguments ignored'
+        help='Build/test on all platforms. Any --platform arguments '
+             'will be ignored'
     )
     twister_group.addoption(
         '--board-root',
