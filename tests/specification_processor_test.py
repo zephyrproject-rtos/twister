@@ -17,6 +17,7 @@ from twister2.specification_processor import (
     should_skip_for_platform,
     should_skip_for_platform_type,
     should_skip_for_pytest_harness,
+    should_skip_for_spec_type_unit,
     should_skip_for_tag,
     should_skip_for_toolchain,
 )
@@ -32,6 +33,16 @@ def testcase() -> YamlTestSpecification:
         platform='platform',
         source_dir=Path('dummy_path')
     )
+
+
+def test_should_skip_for_spec_type_unit_positive(testcase, platform):
+    testcase.type = "unit"
+    assert should_skip_for_spec_type_unit(testcase, platform)
+
+
+def test_should_skip_for_spec_type_unit_negative(testcase, platform):
+    testcase.type = ""
+    assert should_skip_for_spec_type_unit(testcase, platform) is False
 
 
 def test_should_skip_for_tag_for_only_tags_positive(testcase, platform):
