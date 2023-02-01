@@ -53,6 +53,7 @@ class TwisterConfig:
         fixtures: list[str] = config.option.fixtures
         extra_args_cli: list[str] = config.getoption('--extra-args')
         overflow_as_errors: bool = config.option.overflow_as_errors
+        integration_mode: bool = config.option.integration
         emulation_only: bool = config.option.emulation_only
         architectures: list[str] = config.option.arch
 
@@ -89,6 +90,7 @@ class TwisterConfig:
             fixtures=fixtures,
             extra_args_cli=extra_args_cli,
             overflow_as_errors=overflow_as_errors,
+            integration_mode=integration_mode,
             emulation_only=emulation_only,
             architectures=architectures,
             default_platforms=default_platforms,
