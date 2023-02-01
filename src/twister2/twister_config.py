@@ -9,7 +9,10 @@ import pytest
 
 from twister2.device.hardware_map import HardwareMap
 from twister2.environment.environment import get_toolchain_version
-from twister2.platform_specification import PlatformSpecification
+from twister2.platform_specification import (
+    PlatformSpecification,
+    is_simulation_platform_available,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -156,9 +159,14 @@ def _get_selected_platforms(config: pytest.Config) -> list[str]:
             platform.identifier for platform in platforms
         ]
     else:
-        selected_platforms = [
-            platform.identifier for platform in platforms
-            if platform.testing.default
-        ]
+        for platform in platforms:
+            if not platform.testing.default:
+                continue
+            # default platforms that can't be run are dropped from the list of
+            # the default platforms list. Default platforms should always be runnable
+            if platform.simulation \
+               and not is_simulation_platform_available(platform.simulation_exec):
+                continue
+            selected_platforms.append(platform.identifier)
 
     return selected_platforms

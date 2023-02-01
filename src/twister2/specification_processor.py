@@ -14,7 +14,10 @@ import pytest
 
 from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import safe_load_yaml
-from twister2.platform_specification import PlatformSpecification
+from twister2.platform_specification import (
+    PlatformSpecification,
+    is_simulation_platform_available,
+)
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import add_markers_from_specification
 from twister2.yaml_test_specification import (
@@ -418,9 +421,8 @@ def is_runnable(
         return False
 
     for sim in ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native']:
-        if platform.simulation == sim and platform.simulation_exec and platform.simulation_exec != 'na':
-            if shutil.which(platform.simulation_exec) is None:
-                logger.debug(f'{platform.simulation_exec} not found.')
+        if platform.simulation == sim:
+            if not is_simulation_platform_available(platform.simulation_exec):
                 return False
 
     if fixtures is None:

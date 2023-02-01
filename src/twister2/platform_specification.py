@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from dataclasses import dataclass, field
 from os import getenv
 from pathlib import Path
@@ -168,3 +169,12 @@ def search_platforms(
             platforms.append(platform_config)
     validate_platforms_list(platforms)
     return platforms
+
+
+def is_simulation_platform_available(simulation_exec: str | None) -> bool:
+    """Check if simulation program is available on the test setup"""
+    if simulation_exec and simulation_exec != 'na':
+        if shutil.which(simulation_exec) is None:
+            logger.debug(f'{simulation_exec} not found.')
+            return False
+    return True
