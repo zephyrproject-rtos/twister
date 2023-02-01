@@ -8,6 +8,7 @@ import os
 import random
 import shutil
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -59,7 +60,7 @@ class SpecificationProcessor(abc.ABC):
 class YamlSpecificationProcessor(SpecificationProcessor):
     """Specification processor class for twister tests."""
 
-    def __init__(self, twister_config, filepath: Path) -> None:
+    def __init__(self, twister_config: TwisterConfig, filepath: Path) -> None:
         super().__init__(twister_config)
         self.spec_file_path = filepath
         self.zephyr_base: str = self.twister_config.zephyr_base
@@ -97,11 +98,45 @@ class YamlSpecificationProcessor(SpecificationProcessor):
             logger.debug('Generated test %s for platform %s', scenario, platform.identifier)
             return test_spec
 
+    def get_test_variants(self) -> Generator[tuple[PlatformSpecification, str], None, None]:
+        for scenario, test in self.tests.items():
+            platform_scope: list[PlatformSpecification] = []
+            tc_build_on_all: bool = test.get('build_on_all')
+            tc_integration_platforms: list[str] = test.get('integration_platforms', [])
+            tc_platform_allow: list[str] = test.get('platform_allow', [])
+
+            if tc_build_on_all and not self.twister_config.user_platform_filter:
+                platform_scope = self.twister_config.platforms
+            elif tc_integration_platforms and self.twister_config.integration_mode:
+                # TODO verify_platforms_existence
+                platform_scope = [
+                    platform for platform in self.twister_config.platforms
+                    if platform.identifier in tc_integration_platforms
+                ]
+            else:
+                platform_scope = [
+                    platform for platform in self.twister_config.platforms
+                    if platform.identifier in self.twister_config.selected_platforms
+                ]
+                # If there isn't any overlap between the platform_allow list and the platform_scope
+                # we set the scope to the platform_allow list
+                if tc_platform_allow and not self.twister_config.user_platform_filter:
+                    # TODO verify_platforms_existence
+                    platform_allow = [
+                        platform for platform in self.twister_config.platforms
+                        if platform.identifier in tc_platform_allow
+                    ]
+                    if not set(platform_scope).intersection(platform_allow):
+                        platform_scope = platform_allow
+
+            for platform in platform_scope:
+                yield (platform, scenario)
+
 
 class RegularSpecificationProcessor(SpecificationProcessor):
     """Specification processor class for regular pytest tests."""
 
-    def __init__(self, twister_config, item: pytest.Item) -> None:
+    def __init__(self, twister_config: TwisterConfig, item: pytest.Item) -> None:
         super().__init__(twister_config)
         self.item = item
         self.config = self.item.config

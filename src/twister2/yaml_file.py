@@ -6,7 +6,6 @@ https://github.com/pytest-dev/pytest/issues/3639
 """
 from __future__ import annotations
 
-import itertools
 import logging
 from pathlib import Path
 from typing import Generator
@@ -45,12 +44,6 @@ def read_test_specifications_from_yaml(
     """
     processor = YamlSpecificationProcessor(twister_config, filepath)
 
-    platforms = (
-        platform for platform in twister_config.platforms
-        if platform.identifier in twister_config.selected_platforms
-    )
-    scenarios: list[str] = processor.scenarios
-
-    for platform, scenario in itertools.product(platforms, scenarios):
+    for platform, scenario in processor.get_test_variants():
         if test_spec := processor.process(platform, scenario):
             yield test_spec

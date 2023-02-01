@@ -19,6 +19,7 @@ def test_twister_help(pytester):
         '*--extra-args=EXTRA_ARGS*',
         '*Extra CMake arguments*',
         '*--overflow-as-errors*',
+        '*--integration*',
         '*--emulation-only*',
         '*--arch=ARCH*',
         '*--all*'
