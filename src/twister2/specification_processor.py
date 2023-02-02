@@ -111,7 +111,7 @@ class YamlSpecificationProcessor(SpecificationProcessor):
             if tc_build_on_all and not self.twister_config.user_platform_filter:
                 platform_scope = self.twister_config.platforms
             elif tc_integration_platforms and self.twister_config.integration_mode:
-                # TODO verify_platforms_existence
+                self.twister_config.verify_platforms_existence(tc_integration_platforms)
                 platform_scope = [
                     platform for platform in self.twister_config.platforms
                     if platform.identifier in tc_integration_platforms
@@ -124,7 +124,7 @@ class YamlSpecificationProcessor(SpecificationProcessor):
                 # If there isn't any overlap between the platform_allow list and the platform_scope
                 # we set the scope to the platform_allow list
                 if tc_platform_allow and not self.twister_config.user_platform_filter:
-                    # TODO verify_platforms_existence
+                    self.twister_config.verify_platforms_existence(tc_platform_allow)
                     platform_allow = [
                         platform for platform in self.twister_config.platforms
                         if platform.identifier in tc_platform_allow
@@ -237,11 +237,12 @@ def should_be_skip(
 
     :param test_spec: test specification
     :param platform: platform specification
+    :param twister_config: twister configuration
     :return: True is the specification should be skipped
     """
     # TODO: Implement #1 #13
     if any([
-        should_skip_for_arch(test_spec, platform),
+        should_skip_for_arch(test_spec, platform, twister_config.architectures),
         should_skip_for_depends_on(test_spec, platform),
         should_skip_for_min_flash(test_spec, platform),
         should_skip_for_min_ram(test_spec, platform),
@@ -252,7 +253,20 @@ def should_be_skip(
         should_skip_for_tag(test_spec, platform),
         should_skip_for_toolchain(test_spec, platform, twister_config.used_toolchain_version),
         should_skip_for_env(test_spec, platform),
+        should_skip_for_integration_mode(test_spec, platform, twister_config.integration_mode),
     ]):
+        return True
+    return False
+
+
+def should_skip_for_integration_mode(
+    test_spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    integration_mode: bool
+) -> bool:
+    if integration_mode and test_spec.integration_platforms \
+       and platform.identifier not in test_spec.integration_platforms:
+        _log_test_skip(test_spec, platform, 'not part of integration platforms')
         return True
     return False
 
@@ -287,7 +301,14 @@ def should_skip_for_tag(test_spec: YamlTestSpecification, platform: PlatformSpec
     return False
 
 
-def should_skip_for_arch(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+def should_skip_for_arch(
+    test_spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    arch_from_cli: list[str] = []
+) -> bool:
+    if arch_from_cli and platform.arch not in arch_from_cli:
+        _log_test_skip(test_spec, platform, 'command line arch filter')
+        return True
     if test_spec.arch_allow and platform.arch not in test_spec.arch_allow:
         _log_test_skip(test_spec, platform, 'platform.arch not in testcase.arch_allow')
         return True
