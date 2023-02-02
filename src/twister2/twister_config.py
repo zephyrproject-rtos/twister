@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from twister2.device.hardware_map import HardwareMap
+from twister2.exceptions import TwisterConfigurationException
 from twister2.environment.environment import get_toolchain_version
 from twister2.platform_specification import (
     PlatformSpecification,
@@ -131,6 +132,9 @@ class TwisterConfig:
                 return platform
         raise KeyError(f'There is not platform with identifier: {name}')
 
+    def verify_platforms_existence(self, platform_names: list[str]):
+        _verify_platforms_existence(platform_names, self.platforms)
+
 
 def _get_selected_platforms(config: pytest.Config) -> list[str]:
     """Return list of selected platforms"""
@@ -142,8 +146,8 @@ def _get_selected_platforms(config: pytest.Config) -> list[str]:
 
     selected_platforms: list[str] = []
     if platform_filter:
-        # TODO: verify_platforms_existence
         selected_platforms = list(set(platform_filter))
+        _verify_platforms_existence(selected_platforms, platforms)
     elif emulation_only:
         selected_platforms = [
             platform.identifier for platform in platforms
@@ -170,3 +174,16 @@ def _get_selected_platforms(config: pytest.Config) -> list[str]:
             selected_platforms.append(platform.identifier)
 
     return selected_platforms
+
+
+def _verify_platforms_existence(
+    platform_names_to_verify: list[str],
+    platforms: list[PlatformSpecification]
+) -> None:
+    """Verify if platform names are correct, if not - raise exception"""
+    platform_names = [p.identifier for p in platforms]
+    for platform in platform_names_to_verify:
+        if platform not in platform_names:
+            msg = f'Unrecognized platform - {platform}.'
+            logger.error(msg)
+            raise TwisterConfigurationException(msg)
