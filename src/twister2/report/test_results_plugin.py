@@ -3,12 +3,16 @@ Plugin to generate custom report for twister.
 """
 from __future__ import annotations
 
+import os
 import platform
 import time
+from datetime import datetime, timezone
 from collections import Counter
+from os import getenv
 from typing import Sequence
 
 import pytest
+from git.repo import Repo
 from pytest_subtests import SubTestReport
 
 from twister2.report.base_report_writer import BaseReportWriter
@@ -114,7 +118,7 @@ class TestResultsPlugin:
                 dict(
                     name=report.context.msg,
                     status=outcome,
-                    duration=report.duration,
+                    duration=round(report.duration, 2),
                 )
             )
 
@@ -187,18 +191,12 @@ class TestResultsPlugin:
                 status=result.status,
                 message=result.message,
                 quarantine=get_item_quarantine(item),
-                duration=result.duration,
-                execution_time=result.call_duration,
+                duration=round(result.duration, 2),
+                execution_time=round(result.call_duration, 2),
                 subtests=result.subtests,
             )
             tests_list.append(test)
 
-        duration = self.session_finish_time - self.session_start_time
-        environment = dict(
-            report_time=time.strftime('%H:%M:%S %d-%m-%Y'),
-            pc_name=platform.node() or 'N/A',
-            duration=duration,
-        )
         summary = dict(self.counter)
         summary['total'] = sum(self.counter.values())
         summary['subtests_total'] = subtests_total
@@ -207,11 +205,26 @@ class TestResultsPlugin:
         summary['subtests_skipped'] = subtests_skip_count
 
         return dict(
-            environment=environment,
+            environment=self._get_environment(),
             configuration=self.config.twister_config.asdict(),  # type: ignore
             summary=summary,
             tests=tests_list,
         )
+
+    def _get_environment(self) -> dict:
+        duration = self.session_finish_time - self.session_start_time
+        repo = Repo(getenv('ZEPHYR_BASE'))
+
+        # TODO: Add `toolchain`
+        environment = dict(
+            os=os.name,
+            zephyr_version=repo.head.commit.hexsha[:12],
+            commit_date=repo.head.commit.authored_datetime.isoformat(timespec='seconds'),
+            run_date=datetime.now(timezone.utc).isoformat(timespec='seconds'),
+            pc_name=platform.node() or 'N/A',
+            duration=round(duration, 2),
+        )
+        return environment
 
     def _save_report(self, data: dict) -> None:
         for writer in self.writers:
