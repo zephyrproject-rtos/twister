@@ -9,6 +9,7 @@ from twister2.device.qemu_adapter import QemuAdapter
 from twister2.device.simulator_adapter import (
     CustomSimulatorAdapter,
     NativeSimulatorAdapter,
+    UnitSimulatorAdapter,
 )
 from twister2.exceptions import TwisterRunException
 
@@ -39,5 +40,6 @@ class DeviceFactory:
 
 DeviceFactory.register_device_class('custom', CustomSimulatorAdapter)
 DeviceFactory.register_device_class('native', NativeSimulatorAdapter)
+DeviceFactory.register_device_class('unit', UnitSimulatorAdapter)
 DeviceFactory.register_device_class('hardware', HardwareAdapter)
 DeviceFactory.register_device_class('qemu', QemuAdapter)

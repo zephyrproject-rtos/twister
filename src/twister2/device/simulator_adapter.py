@@ -181,6 +181,19 @@ class NativeSimulatorAdapter(SimulatorAdapterBase):
         self.command = [str((Path(build_dir) / 'zephyr' / 'zephyr.exe').resolve())]
 
 
+class UnitSimulatorAdapter(SimulatorAdapterBase):
+    """Simulator adapter to run unit tests"""
+
+    def generate_command(self, build_dir: Path | str) -> None:
+        """
+        Return command to run.
+
+        :param build_dir: build directory
+        :return: command to run
+        """
+        self.command = [str((Path(build_dir) / 'testbinary').resolve())]
+
+
 class CustomSimulatorAdapter(SimulatorAdapterBase):
 
     def generate_command(self, build_dir: Path | str) -> None:

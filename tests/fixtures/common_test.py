@@ -34,6 +34,7 @@ def test_if_test_should_be_skipped(build_only, device_testing, runnable, platfor
         ('integration', 'native', 'native', 'native'),
         ('integration', 'sim', 'nsim', 'custom'),
         ('integration', 'mcu', 'na', 'hardware'),
+        ('integration', 'unit', 'na', 'unit'),
     ]
 )
 def test_if_get_device_type_returns_proper_device(

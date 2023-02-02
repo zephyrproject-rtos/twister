@@ -271,8 +271,7 @@ def should_skip_for_pytest_harness(test_spec: YamlTestSpecification, platform: P
 
 
 def should_skip_for_spec_type_unit(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
-    # TODO: Align unit type workflow with V1. Currently it is not supported in V2.
-    if test_spec.type == 'unit':
+    if (platform.type == 'unit') != (test_spec.type == 'unit'):
         _log_test_skip(test_spec, platform, 'Unit type tests cannot be executed on regular platforms')
         return True
     return False
