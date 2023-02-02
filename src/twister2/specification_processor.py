@@ -213,11 +213,11 @@ def should_skip_for_toolchain(test_spec: YamlTestSpecification, platform: Platfo
 
 
 def should_skip_for_tag(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
-    if platform.only_tags and not set(platform.only_tags) & test_spec.tags:
-        _log_test_skip(test_spec, platform, 'testcase.tag not in platform.only_tags')
+    if platform.testing.only_tags and not set(platform.testing.only_tags) & test_spec.tags:
+        _log_test_skip(test_spec, platform, 'testcase.tag not in platform.testing.only_tags')
         return True
-    if platform.ignore_tags and set(platform.ignore_tags) & test_spec.tags:
-        _log_test_skip(test_spec, platform, 'testcase.tag in platform.ignore_tags')
+    if platform.testing.ignore_tags and set(platform.testing.ignore_tags) & test_spec.tags:
+        _log_test_skip(test_spec, platform, 'testcase.tag in platform.testing.ignore_tags')
         return True
     return False
 

@@ -35,8 +35,6 @@ class PlatformSpecification:
     twister: bool = True
     ram: int = 128  # in kilobytes
     flash: int = 512  # in kilobytes
-    ignore_tags: list[str] = field(default_factory=list)
-    only_tags: list[str] = field(default_factory=list)
     default: bool = False
     supported: set = field(default_factory=set)
     arch: str = ''
@@ -96,8 +94,6 @@ class PlatformSchema(Schema):
     twister = fields.Bool()
     ram = fields.Int()
     flash = fields.Int()
-    ignore_tags = fields.List(fields.Str())
-    only_tags = fields.List(fields.Str())
     default = fields.Bool()
     supported = fields.List(fields.Str())
     arch = fields.Str()

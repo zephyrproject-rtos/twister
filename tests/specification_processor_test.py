@@ -47,25 +47,25 @@ def test_should_skip_for_spec_type_unit_negative(testcase, platform):
 
 def test_should_skip_for_tag_for_only_tags_positive(testcase, platform):
     testcase.tags = {'tag1', 'tag2'}
-    platform.only_tags = ['tag3', 'tag4']
+    platform.testing.only_tags = ['tag3', 'tag4']
     assert should_skip_for_tag(testcase, platform)
 
 
 def test_should_skip_for_tag_for_only_tags_negative(testcase, platform):
     testcase.tags = {'tag1', 'tag2'}
-    platform.only_tags = ['tag1', 'tag4']
+    platform.testing.only_tags = ['tag1', 'tag4']
     assert should_skip_for_tag(testcase, platform) is False
 
 
 def test_should_skip_for_tag_for_ignore_tags_positive(testcase, platform):
     testcase.tags = {'tag1', 'tag2'}
-    platform.ignore_tags = ['tag1', 'tag4']
+    platform.testing.ignore_tags = ['tag1', 'tag4']
     assert should_skip_for_tag(testcase, platform)
 
 
 def test_should_skip_for_tag_for_ignore_tags_negative(testcase, platform):
     testcase.tags = {'tag1', 'tag2'}
-    platform.ignore_tags = ['tag3', 'tag4']
+    platform.testing.ignore_tags = ['tag3', 'tag4']
     assert should_skip_for_tag(testcase, platform) is False
 
 

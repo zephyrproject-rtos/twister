@@ -9,18 +9,18 @@ import pytest
     [
         (
             '--all',
-            ['*native_posix*', '*qemu_cortex_m3*', '*altera_max10*', '*mps2_an521_remote*'],
-            []
+            ['*native_posix*', '*qemu_cortex_m3*', '*altera_max10*'],
+            ['*mps2_an521_remote*']
         ),
         (
             '--emulation-only',
-            ['*native_posix*', '*qemu_cortex_m3*', '*mps2_an521_remote*'],
-            ['*altera_max10*']
+            ['*native_posix*', '*qemu_cortex_m3*'],
+            ['*altera_max10*', '*mps2_an521_remote*']
         ),
         (
             '--arch=arm',
-            ['*qemu_cortex_m3*', '*mps2_an521_remote*'],
-            ['*native_posix*', '*altera_max10*']
+            ['*qemu_cortex_m3*'],
+            ['*native_posix*', '*altera_max10*', '*mps2_an521_remote*']
         ),
         (
             '--arch=posix --arch=nios2',
@@ -29,8 +29,8 @@ import pytest
         ),
         (
             '',
-            ['*native_posix*', '*mps2_an521_remote*'],
-            ['*qemu_cortex_m3*', '*altera_max10*']
+            ['*native_posix*'],
+            ['*qemu_cortex_m3*', '*altera_max10*', '*mps2_an521_remote*']
         )
     ],
     ids=[
@@ -75,8 +75,8 @@ def test_if_selected_proper_platforms(
         ),
         (
             '--all',
-            ['*native_posix*', '*qemu_cortex_m3*', '*altera_max10*', '*mps2_an521_remote*'],
-            []
+            ['*native_posix*', '*qemu_cortex_m3*', '*altera_max10*'],
+            ['*mps2_an521_remote*']
         )
     ],
     ids=[
