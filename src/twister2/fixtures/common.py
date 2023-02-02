@@ -84,5 +84,7 @@ class SetupTestManager:
             return 'qemu'
         elif self.platform.simulation != 'na':
             return 'custom'
+        elif self.platform.type == 'unit':
+            return 'unit'
         else:
             return ''

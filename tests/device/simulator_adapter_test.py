@@ -6,6 +6,7 @@ import pytest
 from twister2.device.simulator_adapter import (
     CustomSimulatorAdapter,
     NativeSimulatorAdapter,
+    UnitSimulatorAdapter,
 )
 from twister2.exceptions import TwisterRunException
 from twister2.twister_config import TwisterConfig
@@ -107,3 +108,10 @@ def test_if_custom_simulator_adapter_get_command_returns_empty_string(patched_wh
     device.generate_command('build_dir')
     assert isinstance(device.command, list)
     assert device.command == []
+
+
+def test_if_unit_simulator_adapter_get_command_returns_proper_string(resources) -> None:
+    device = UnitSimulatorAdapter(TwisterConfig(zephyr_base='zephyr'))
+    device.generate_command(resources)
+    assert isinstance(device.command, list)
+    assert device.command == [str(resources.joinpath('testbinary'))]
