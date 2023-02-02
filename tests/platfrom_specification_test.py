@@ -18,7 +18,7 @@ def test_if_platform_specification_can_be_load_from_yaml_file(resources):
     board_file = resources.joinpath('boards', 'arm', 'mps2_an521', 'mps2_an521_remote.yaml')
     platform = PlatformSpecification.load_from_yaml(board_file)
     assert isinstance(platform, PlatformSpecification)
-    assert isinstance(platform.default, bool)
+    assert isinstance(platform.testing.default, bool)
     assert isinstance(platform.ram, int)
     assert platform.ram == 4096
     assert platform.identifier == 'mps2_an521_remote'

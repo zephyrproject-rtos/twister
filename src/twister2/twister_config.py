@@ -35,7 +35,7 @@ class TwisterConfig:
     integration_mode: bool = False
     emulation_only: bool = False
     architectures: list[str] = field(default_factory=list, repr=False)
-    default_platforms: bool = False
+    default_platforms_only: bool = False
     # platform filter provided by user via --platform argument in CLI or via hardware map file
     user_platform_filter: list[str] = field(default_factory=list, repr=False)
     used_toolchain_version: str = ''
@@ -73,7 +73,7 @@ class TwisterConfig:
 
         # just to keep compatibility with TwisterV1
         # default_platforms will be used to update filered architectures (--arch keyword)
-        default_platforms: bool = not (
+        default_platforms_only: bool = not (
             config.option.all or config.option.platform or config.option.emulation_only
         )
         user_platform_filter: list[str] = config.option.platform
@@ -97,7 +97,7 @@ class TwisterConfig:
             integration_mode=integration_mode,
             emulation_only=emulation_only,
             architectures=architectures,
-            default_platforms=default_platforms,
+            default_platforms_only=default_platforms_only,
             user_platform_filter=user_platform_filter,
             used_toolchain_version=used_toolchain_version,
         )
