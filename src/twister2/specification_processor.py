@@ -6,14 +6,13 @@ import logging
 import math
 import os
 import random
-import shutil
 from pathlib import Path
 from typing import Generator
 
 import pytest
 
 from twister2.exceptions import TwisterConfigurationException
-from twister2.helper import safe_load_yaml
+from twister2.helper import safe_load_yaml, string_to_list
 from twister2.platform_specification import (
     PlatformSpecification,
     is_simulation_platform_available,
@@ -105,8 +104,8 @@ class YamlSpecificationProcessor(SpecificationProcessor):
         for scenario, test in self.tests.items():
             platform_scope: list[PlatformSpecification] = []
             tc_build_on_all: bool = test.get('build_on_all')
-            tc_integration_platforms: list[str] = test.get('integration_platforms', [])
-            tc_platform_allow: list[str] = test.get('platform_allow', [])
+            tc_integration_platforms: list[str] = string_to_list(test.get('integration_platforms', ''))
+            tc_platform_allow: list[str] = string_to_list(test.get('platform_allow', ''))
 
             if tc_build_on_all and not self.twister_config.user_platform_filter:
                 platform_scope = self.twister_config.platforms
@@ -125,12 +124,12 @@ class YamlSpecificationProcessor(SpecificationProcessor):
                 # we set the scope to the platform_allow list
                 if tc_platform_allow and not self.twister_config.user_platform_filter:
                     self.twister_config.verify_platforms_existence(tc_platform_allow)
-                    platform_allow = [
-                        platform for platform in self.twister_config.platforms
-                        if platform.identifier in tc_platform_allow
-                    ]
-                    if not set(platform_scope).intersection(platform_allow):
-                        platform_scope = platform_allow
+                    platform_scope_names = [platform.identifier for platform in platform_scope]
+                    if not set(platform_scope_names).intersection(tc_platform_allow):
+                        platform_scope = [
+                            platform for platform in self.twister_config.platforms
+                            if platform.identifier in tc_platform_allow
+                        ]
 
             for platform in platform_scope:
                 yield (platform, scenario)
@@ -253,20 +252,8 @@ def should_be_skip(
         should_skip_for_tag(test_spec, platform),
         should_skip_for_toolchain(test_spec, platform, twister_config.used_toolchain_version),
         should_skip_for_env(test_spec, platform),
-        should_skip_for_integration_mode(test_spec, platform, twister_config.integration_mode),
+        should_skip_related_with_platform_scope_updates(test_spec, platform, twister_config),
     ]):
-        return True
-    return False
-
-
-def should_skip_for_integration_mode(
-    test_spec: YamlTestSpecification,
-    platform: PlatformSpecification,
-    integration_mode: bool
-) -> bool:
-    if integration_mode and test_spec.integration_platforms \
-       and platform.identifier not in test_spec.integration_platforms:
-        _log_test_skip(test_spec, platform, 'not part of integration platforms')
         return True
     return False
 
@@ -382,6 +369,27 @@ def should_skip_for_depends_on(test_spec: YamlTestSpecification, platform: Platf
                  'platform definition yaml'
         _log_test_skip(test_spec, platform, reason)
         return True
+    return False
+
+
+def should_skip_related_with_platform_scope_updates(
+    test_spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    twister_config: TwisterConfig
+) -> bool:
+    integration = twister_config.integration_mode and test_spec.integration_platforms
+    if twister_config.default_platforms_only and not test_spec.build_on_all and not integration:
+        if not test_spec.platform_allow and not platform.testing.default:
+            _log_test_skip(test_spec, platform, 'not a default platform')
+            return True
+    elif integration:
+        if platform.identifier not in test_spec.integration_platforms:
+            _log_test_skip(test_spec, platform, 'not part of integration platforms')
+            return True
+    elif twister_config.emulation_only:
+        if platform.simulation == 'na':
+            _log_test_skip(test_spec, platform, 'not an emulated platform')
+            return True
     return False
 
 

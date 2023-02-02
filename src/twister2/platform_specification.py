@@ -37,7 +37,6 @@ class PlatformSpecification:
     twister: bool = True
     ram: int = 128  # in kilobytes
     flash: int = 512  # in kilobytes
-    default: bool = False
     supported: set = field(default_factory=set)
     arch: str = ''
     type: str = 'na'  # mcu, qemu, sim, unit, native

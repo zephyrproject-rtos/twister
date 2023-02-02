@@ -21,6 +21,7 @@ from twister2.specification_processor import (
     should_skip_for_spec_type_unit,
     should_skip_for_tag,
     should_skip_for_toolchain,
+    should_skip_related_with_platform_scope_updates,
 )
 from twister2.yaml_test_specification import YamlTestSpecification
 
@@ -307,3 +308,71 @@ def test_if_test_is_not_runnable(spec, platform, fixtures):
 def test_if_test_is_not_runnable_on_windows():
     with mock.patch('os.name', 'nt'):
         assert is_runnable(MockSpecification(), MockPlatform(), []) is False  # type: ignore
+
+
+@pytest.mark.parametrize(
+    ('integration_platforms, expected_result'),
+    [
+        (['platform1'], False),
+        (['platformA'], True),
+    ],
+    ids=[
+        'matched-platform',
+        'not-matched-platform'
+    ]
+)
+def test_should_skip_for_unclear_with_integration(
+    testcase, platform, twister_config, integration_platforms, expected_result
+):
+    twister_config.integration_mode = True
+    platform.identifier = 'platform1'
+    testcase.integration_platforms = integration_platforms
+    assert should_skip_related_with_platform_scope_updates(
+        testcase, platform, twister_config) is expected_result
+
+
+@pytest.mark.parametrize(
+    ('is_default, build_an_all, platform_allow, expected_result'),
+    [
+        (True, False, ['platform1'], False),
+        (False, True, [], False),
+        (False, False, [], True),
+        (True, True, [], False),
+    ],
+    ids=[
+        'with-platform-allow',
+        'with-build-on-all',
+        'not-default-platform',
+        'default-platform'
+    ]
+)
+def test_should_skip_for_unclear_with_default_platforms(
+    testcase, platform, twister_config, is_default, build_an_all, platform_allow, expected_result
+):
+    twister_config.default_platforms_only = True
+    platform.testing.default = is_default
+    testcase.platform_allow = platform_allow
+    testcase.build_on_all = build_an_all
+
+    assert should_skip_related_with_platform_scope_updates(
+        testcase, platform, twister_config) is expected_result
+
+
+@pytest.mark.parametrize(
+    ('simulation, expected_result'),
+    [
+        ('na', True),
+        ('qemu', False)
+    ],
+    ids=[
+        'emu-platform',
+        'not-emu-platform'
+    ]
+)
+def test_should_skip_for_unclear_with_emulation(
+    testcase, platform, twister_config, simulation, expected_result
+):
+    twister_config.emulation_only = True
+    platform.simulation = simulation
+    assert should_skip_related_with_platform_scope_updates(
+        testcase, platform, twister_config) is expected_result
