@@ -6,7 +6,6 @@ from unittest import mock
 import pytest
 
 
-
 @pytest.fixture
 def mock_report():
     # we need to mock TestResultsPlugin._get_environment
