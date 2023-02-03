@@ -18,7 +18,7 @@ def test_if_pytest_use_quarantine_file(pytester, resources) -> None:
     """
     pytester.copy_example(str(resources))
     quarantine_file: Path = resources / 'quarantine' / 'helloworld_native.yml'
-    output_testplan: Path = pytester.path / 'tesplan.json'
+    output_testplan: Path = pytester.path / 'testplan.json'
     pytester.runpytest(
         f'--zephyr-base={str(pytester.path)}',
         '--platform=native_posix',
@@ -45,7 +45,7 @@ def test_if_pytest_use_regex_in_quarantine_files(pytester, resources) -> None:
     """
     pytester.copy_example(str(resources))
     quarantine_file: Path = resources / 'quarantine' / 'regex_example.yml'
-    output_testplan: Path = pytester.path / 'tesplan.json'
+    output_testplan: Path = pytester.path / 'testplan.json'
     pytester.runpytest(
         f'--zephyr-base={str(pytester.path)}',
         '--platform=native_posix',
@@ -72,7 +72,7 @@ def test_if_pytest_use_two_quarantine_files(pytester, resources) -> None:
     pytester.copy_example(str(resources))
     quarantine_file1: Path = resources / 'quarantine' / 'helloworld_native.yml'
     quarantine_file2: Path = resources / 'quarantine' / 'filter_arch_and_plat.yml'
-    output_testplan: Path = pytester.path / 'tesplan.json'
+    output_testplan: Path = pytester.path / 'testplan.json'
     pytester.runpytest(
         f'--zephyr-base={str(pytester.path)}',
         '--platform=native_posix',

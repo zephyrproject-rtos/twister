@@ -14,6 +14,7 @@ import pytest
 from twister2.exceptions import TwisterConfigurationException
 from twister2.helper import safe_load_yaml
 from twister2.platform_specification import PlatformSpecification
+from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import add_markers_from_specification
 from twister2.yaml_test_specification import (
     SUPPORTED_HARNESSES,
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 class SpecificationProcessor(abc.ABC):
     """Prepars specification for test"""
 
-    def __init__(self, twister_config):
+    def __init__(self, twister_config: TwisterConfig) -> None:
         self.twister_config = twister_config
 
     @abc.abstractmethod
@@ -92,7 +93,7 @@ class YamlSpecificationProcessor(SpecificationProcessor):
     ) -> YamlTestSpecification | None:
         test_spec_dict = self.prepare_spec_dict(platform, scenario)
         test_spec = self.create_spec_from_dict(test_spec_dict, platform)
-        if not should_be_skip(test_spec, platform):
+        if not should_be_skip(test_spec, platform, self.twister_config):
             logger.debug('Generated test %s for platform %s', scenario, platform.identifier)
             return test_spec
 
@@ -115,7 +116,7 @@ class RegularSpecificationProcessor(SpecificationProcessor):
         test_spec_dict = self.prepare_spec_dict(platform, scenario)
         test_spec = self.create_spec_from_dict(test_spec_dict, platform)
         add_markers_from_specification(self.item, test_spec)
-        if should_be_skip(test_spec, platform):
+        if should_be_skip(test_spec, platform, self.twister_config):
             self.item.add_marker(pytest.mark.skip('Does not match requirements'))
 
         return test_spec
@@ -188,7 +189,11 @@ def _log_test_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
     )
 
 
-def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+def should_be_skip(
+    test_spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    twister_config: TwisterConfig
+) -> bool:
     """
     Return True if given test spec should be skipped for the platform.
 
@@ -207,14 +212,16 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         should_skip_for_pytest_harness(test_spec, platform),
         should_skip_for_spec_type_unit(test_spec, platform),
         should_skip_for_tag(test_spec, platform),
-        should_skip_for_toolchain(test_spec, platform),
+        should_skip_for_toolchain(test_spec, platform, twister_config.used_toolchain_version),
         should_skip_for_env(test_spec, platform),
     ]):
         return True
     return False
 
 
-def should_skip_for_toolchain(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+def should_skip_for_toolchain(
+    test_spec: YamlTestSpecification, platform: PlatformSpecification, used_toolchain_version: str
+) -> bool:
     if not platform.toolchain:
         return False
     if test_spec.toolchain_allow and not test_spec.toolchain_allow & set(platform.toolchain):
@@ -222,6 +229,12 @@ def should_skip_for_toolchain(test_spec: YamlTestSpecification, platform: Platfo
         return True
     if test_spec.toolchain_exclude and test_spec.toolchain_exclude & set(platform.toolchain):
         _log_test_skip(test_spec, platform, 'platform.toolchain in testcase.toolchain_exclude')
+        return True
+    if (used_toolchain_version not in platform.toolchain) \
+            and ('host' not in platform.toolchain) \
+            and (test_spec.type != 'unit'):
+        msg = f'platform.toolchain not supported by currently used toolchain "{used_toolchain_version}"'
+        _log_test_skip(test_spec, platform, msg)
         return True
     return False
 

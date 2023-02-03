@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -36,3 +37,15 @@ def copy_example(pytester) -> Path:
     resources_dir = Path(__file__).parent / 'data'
     pytester.copy_example(str(resources_dir))
     return pytester.path
+
+
+@pytest.fixture(scope='function', autouse=True)
+def mock_get_toolchain_version():
+    """
+    we need to mock
+    twister2.environment.environment._get_toolchain_version_from_cmake_script
+    because in unit tests we don't have Zephyr repo to call this script
+    """
+    with mock.patch('twister2.environment.environment._get_toolchain_version_from_cmake_script') as mocked_object:
+        mocked_object.return_value = 'zephyr'
+        yield mocked_object

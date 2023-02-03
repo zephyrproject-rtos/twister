@@ -6,7 +6,7 @@ import pytest
 
 
 def test_if_pytest_generate_testplan_json(pytester, copy_example) -> None:
-    output_testplan: Path = pytester.path / 'tesplan.json'
+    output_testplan: Path = pytester.path / 'testplan.json'
     result = pytester.runpytest(
         str(copy_example),
         f'--zephyr-base={str(copy_example)}',
@@ -16,13 +16,13 @@ def test_if_pytest_generate_testplan_json(pytester, copy_example) -> None:
     )
     assert output_testplan.is_file()
     result.stdout.fnmatch_lines_random([
-        '*generated*results*report*file:*tesplan.json*'
+        '*generated*results*report*file:*testplan.json*'
     ])
 
 
 @pytest.mark.parametrize('extra_args', ['-n 0', '-n 2'], ids=['no_xdist', 'xdist'])
 def test_if_pytest_generate_testplan_csv(pytester, copy_example, extra_args) -> None:
-    output_testplan: Path = pytester.path / 'tesplan.csv'
+    output_testplan: Path = pytester.path / 'testplan.csv'
     result = pytester.runpytest(
         str(copy_example),
         f'--zephyr-base={str(copy_example)}',
@@ -33,7 +33,7 @@ def test_if_pytest_generate_testplan_csv(pytester, copy_example, extra_args) -> 
     )
     assert output_testplan.is_file()
     result.stdout.fnmatch_lines_random([
-        '*generated*results*report*file:*tesplan.csv*'
+        '*generated*results*report*file:*testplan.csv*'
     ])
 
 
