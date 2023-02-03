@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from twister2.device.hardware_map import HardwareMap
+from twister2.environment.environment import get_toolchain_version
 from twister2.platform_specification import PlatformSpecification
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class TwisterConfig:
     default_platforms: bool = False
     # platform filter provided by user via --platform argument in CLI or via hardware map file
     user_platform_filter: list[str] = field(default_factory=list, repr=False)
+    used_toolchain_version: str = ''
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -73,6 +75,8 @@ class TwisterConfig:
 
         selected_platforms = _get_selected_platforms(config)
 
+        used_toolchain_version = get_toolchain_version(output_dir, zephyr_base)
+
         data: dict[str, Any] = dict(
             zephyr_base=zephyr_base,
             build_only=build_only,
@@ -88,7 +92,8 @@ class TwisterConfig:
             emulation_only=emulation_only,
             architectures=architectures,
             default_platforms=default_platforms,
-            user_platform_filter=user_platform_filter
+            user_platform_filter=user_platform_filter,
+            used_toolchain_version=used_toolchain_version,
         )
         return cls(**data)
 

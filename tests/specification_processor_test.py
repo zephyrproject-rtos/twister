@@ -97,25 +97,54 @@ def test_should_skip_for_arch_for_arch_exclude_negative(testcase, platform):
 def test_should_skip_for_toolchain_for_toolchain_allow_positive(testcase, platform):
     testcase.toolchain_allow = {'toolchain1'}
     platform.toolchain = ['toolchain2']
-    assert should_skip_for_toolchain(testcase, platform)
+    used_toolchain_version = 'toolchain2'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version)
 
 
 def test_should_skip_for_toolchain_for_toolchain_allow_negative(testcase, platform):
     testcase.toolchain_allow = {'toolchain1'}
     platform.toolchain = ['toolchain1']
-    assert should_skip_for_toolchain(testcase, platform) is False
+    used_toolchain_version = 'toolchain1'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
 
 
 def test_should_skip_for_toolchain_for_toolchain_exclude_positive(testcase, platform):
     testcase.toolchain_exclude = {'toolchain1', 'toolchain2'}
     platform.toolchain = ['toolchain2']
-    assert should_skip_for_toolchain(testcase, platform)
+    used_toolchain_version = 'toolchain2'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version)
 
 
 def test_should_skip_for_toolchain_for_toolchain_exclude_negative(testcase, platform):
     testcase.toolchain_exclude = {'toolchain2'}
     platform.toolchain = ['toolchain1']
-    assert should_skip_for_toolchain(testcase, platform) is False
+    used_toolchain_version = 'toolchain1'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
+
+
+def test_should_skip_for_toolchain_for_used_toolchain_positive(testcase, platform):
+    platform.toolchain = ['toolchain1']
+    used_toolchain_version = 'toolchain2'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version)
+
+
+def test_should_skip_for_toolchain_for_used_toolchain_negative(testcase, platform):
+    platform.toolchain = ['toolchain1']
+    used_toolchain_version = 'toolchain1'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
+
+
+def test_should_skip_for_toolchain_for_used_toolchain_host_negative(testcase, platform):
+    platform.toolchain = ['host']
+    used_toolchain_version = 'toolchain1'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
+
+
+def test_should_skip_for_toolchain_for_used_toolchain_unit_negative(testcase, platform):
+    testcase.type = 'unit'
+    platform.toolchain = ['toolchain1']
+    used_toolchain_version = 'toolchain2'
+    assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
 
 
 def test_should_skip_for_platform_positive(testcase, platform):
