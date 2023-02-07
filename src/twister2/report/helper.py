@@ -49,16 +49,16 @@ def get_item_platform(item: pytest.Item) -> str:
 
 def get_item_platform_allow(item: pytest.Item) -> str:
     """Return allowed platforms."""
-    if hasattr(item.session, 'specification'):
-        if spec := item.session.specification.get(item.nodeid):
+    if hasattr(item.session, 'specifications'):
+        if spec := item.session.specifications.get(item.nodeid):
             return ' '.join(spec.platform_allow)
     return ''
 
 
 def get_item_runnable_status(item: pytest.Item) -> bool:
     """Return runnable status."""
-    if hasattr(item.session, 'specification'):
-        if spec := item.session.specification.get(item.nodeid):
+    if hasattr(item.session, 'specifications'):
+        if spec := item.session.specifications.get(item.nodeid):
             return spec.runnable
     return True
 

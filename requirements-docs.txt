@@ -1,4 +1,4 @@
 sphinx
-sphinx-rtd-theme
-sphinx-docstring-typing
 sphinx-autodoc-typehints
+sphinx-docstring-typing
+sphinx-rtd-theme

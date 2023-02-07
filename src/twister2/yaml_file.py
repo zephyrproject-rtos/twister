@@ -44,6 +44,6 @@ def read_test_specifications_from_yaml(
     """
     processor = YamlSpecificationProcessor(twister_config, filepath)
 
-    for platform, scenario in processor.get_test_variants():
+    for platform, scenario in processor.get_test_configurations():
         if test_spec := processor.process(platform, scenario):
             yield test_spec
