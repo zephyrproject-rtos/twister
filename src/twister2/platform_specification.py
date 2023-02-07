@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from os import getenv
 from pathlib import Path
 from typing import Generator
 
@@ -49,6 +50,9 @@ class PlatformSpecification:
 
     def __post_init__(self):
         self.supported = set(self.supported)
+        for env in self.env:
+            if not getenv(env, None):
+                self.env_satisfied = False
         if isinstance(self.testing, dict):
             self.testing = Testing(**self.testing)
 

@@ -12,6 +12,7 @@ from twister2.specification_processor import (
     is_runnable,
     should_skip_for_arch,
     should_skip_for_depends_on,
+    should_skip_for_env,
     should_skip_for_min_flash,
     should_skip_for_min_ram,
     should_skip_for_platform,
@@ -197,6 +198,11 @@ def test_should_skip_for_depends_on_positive(testcase, platform):
     testcase.depends_on = {'netif'}
     platform.supported = {'gpio', 'netif:eth'}
     assert should_skip_for_depends_on(testcase, platform) is False
+
+
+def test_should_skip_for_env(testcase, platform):
+    platform.env_satisfied = False
+    assert should_skip_for_env(testcase, platform)
 
 
 @pytest.mark.parametrize('in_put,out_put', [
