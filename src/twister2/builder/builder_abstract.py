@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from twister2.exceptions import TwisterBuildException, TwisterMemoryOverflowException
+from twister2.log_file.build_log_file import BuildLogFile
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class BuilderAbstract(abc.ABC):
 
     def __init__(self, build_config: BuildConfig) -> None:
         self.build_config = build_config
+        self.build_log_file = BuildLogFile(build_dir=self.build_config.build_dir)
 
     def __repr__(self):
         return f'{self.__class__.__name__}()'
@@ -83,12 +85,14 @@ class BuilderAbstract(abc.ABC):
                 stderr=subprocess.STDOUT,
             )
         except subprocess.CalledProcessError as e:
+            self.build_log_file.handle(e.cmd)
             logger.exception(
                 'An exception has been raised for %s: %s for %s',
                 action, self.build_config.source_dir, self.build_config.platform_name
             )
             raise TwisterBuildException(f'{action} error') from e
         else:
+            self.build_log_file.handle(process.stdout)
             if process.returncode == 0:
                 self._log_output(process.stdout, logging.DEBUG)
                 logger.info(

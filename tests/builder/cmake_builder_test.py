@@ -1,3 +1,4 @@
+import os
 import subprocess
 from unittest import mock
 
@@ -60,18 +61,24 @@ def test_if_get_cmake_raises_exception_when_cmake_is_not_installed(patched_which
         cmake_builder._get_cmake()
 
 
-@mock.patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'error message'))
+@mock.patch('subprocess.run', side_effect=subprocess.CalledProcessError(returncode=1, cmd='error message'))
 def test_if_run_command_in_subprocess_handles_subprocess_process_error(patched_run, cmake_builder):
     with pytest.raises(TwisterBuildException, match='building error'):
         cmake_builder._run_command_in_subprocess(['dummie'], 'building')
+    assert os.path.exists(cmake_builder.build_log_file.filename)
+    with open(cmake_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "error message"
 
 
 @mock.patch('subprocess.run')
 def test_if_run_command_in_subprocess_handles_subprocess_return_code_zero_without_errors(
         patched_run, cmake_builder
 ):
-    patched_run.return_value = mock.MagicMock(returncode=0)
+    patched_run.return_value = mock.MagicMock(returncode=0, stdout="built successful".encode())
     cmake_builder._run_command_in_subprocess(['dummie'], 'building')
+    assert os.path.exists(cmake_builder.build_log_file.filename)
+    with open(cmake_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "built successful"
 
 
 @mock.patch('subprocess.run')
@@ -83,6 +90,9 @@ def test_if_run_command_in_subprocess_handles_subprocess_non_zero_return_code(pa
     )
     with pytest.raises(TwisterBuildException, match=msg):
         cmake_builder._run_command_in_subprocess(['dummie'], 'building')
+    assert os.path.exists(cmake_builder.build_log_file.filename)
+    with open(cmake_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "fake build output"
 
 
 def test_if_overflow_exception_is_raised_when_memory_overflow_occurs(cmake_builder):
