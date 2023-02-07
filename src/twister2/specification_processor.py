@@ -100,7 +100,16 @@ class YamlSpecificationProcessor(SpecificationProcessor):
             logger.debug('Generated test %s for platform %s', scenario, platform.identifier)
             return test_spec
 
-    def get_test_variants(self) -> Generator[tuple[PlatformSpecification, str], None, None]:
+    def get_test_configurations(self) -> Generator[tuple[PlatformSpecification, str], None, None]:
+        """
+        Generate test configurations: product of selected platforms and scenarios.
+        This method applies filtration of platforms per testcase scenario.
+        First phase of selecting platforms is done durng twister_config creation,
+        where some user cli arguments are taken. Here, platform scope can be
+        modified, if in specification scenario are used keys like: build_on_all,
+        integration_platforms or platform_allow.
+        This logic is based on Twister V1 implementation.
+        """
         for scenario, test in self.tests.items():
             platform_scope: list[PlatformSpecification] = []
             tc_build_on_all: bool = test.get('build_on_all')
@@ -291,7 +300,7 @@ def should_skip_for_tag(test_spec: YamlTestSpecification, platform: PlatformSpec
 def should_skip_for_arch(
     test_spec: YamlTestSpecification,
     platform: PlatformSpecification,
-    arch_from_cli: list[str] = []
+    arch_from_cli: None | list[str] = None
 ) -> bool:
     if arch_from_cli and platform.arch not in arch_from_cli:
         _log_test_skip(test_spec, platform, 'command line arch filter')
@@ -435,6 +444,9 @@ def is_runnable(
     """
     if os.name == 'nt' and platform.simulation != 'na':
         logger.debug('Simulators not supported on Windows')
+        return False
+
+    if spec.build_only:
         return False
 
     if spec.harness not in SUPPORTED_HARNESSES:
