@@ -6,13 +6,13 @@ from twister2.builder.west_builder import WestBuilder
 
 
 @pytest.fixture
-def build_config(tmp_path) -> BuildConfig:
+def build_config(tmpdir_factory) -> BuildConfig:
     """Return BuildConfig"""
     return BuildConfig(
         zephyr_base='zephyr',
         source_dir='source',
-        build_dir='build',
-        output_dir=tmp_path,
+        build_dir=tmpdir_factory.mktemp('build'),
+        output_dir=tmpdir_factory.mktemp('output'),
         platform_name='native_posix',
         platform_arch='',  # TODO:
         scenario='bt',

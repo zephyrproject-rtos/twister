@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 from unittest import mock
 
@@ -17,6 +18,7 @@ def test_if_west_builder_builds_code_from_source_without_errors(
 ):
     mocked_process = mock.MagicMock()
     mocked_process.returncode = 0
+    mocked_process.stdout = "built successful".encode()
     patched_run.return_value = mocked_process
     west_builder.build()
     patched_run.assert_called_with(
@@ -26,6 +28,9 @@ def test_if_west_builder_builds_code_from_source_without_errors(
          '--'] + build_config.cmake_extra_args,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
+    assert os.path.exists(west_builder.build_log_file.filename)
+    with open(west_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "built successful"
 
 
 @mock.patch('shutil.which', return_value='west')
@@ -39,15 +44,21 @@ def test_if_west_builder_raises_exception_when_subprocess_returned_not_zero_retu
     patched_run.return_value = mocked_process
     with pytest.raises(TwisterBuildException, match='Failed west building source for platform: native_posix'):
         west_builder.build()
+    assert os.path.exists(west_builder.build_log_file.filename)
+    with open(west_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "fake build output"
 
 
 @mock.patch('shutil.which', return_value='west')
-@mock.patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'test'))
+@mock.patch('subprocess.run', side_effect=subprocess.CalledProcessError(returncode=1, cmd='error message'))
 def test_if_west_builder_raises_exception_when_subprocess_raised_exception(
         patched_run, patched_which, west_builder: WestBuilder
 ):
     with pytest.raises(TwisterBuildException, match='west building error'):
         west_builder.build()
+    assert os.path.exists(west_builder.build_log_file.filename)
+    with open(west_builder.build_log_file.filename, 'r') as file:
+        assert file.readline() == "error message"
 
 
 @mock.patch('shutil.which', return_value=None)
