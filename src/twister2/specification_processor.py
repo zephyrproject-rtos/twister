@@ -208,6 +208,7 @@ def should_be_skip(test_spec: YamlTestSpecification, platform: PlatformSpecifica
         should_skip_for_spec_type_unit(test_spec, platform),
         should_skip_for_tag(test_spec, platform),
         should_skip_for_toolchain(test_spec, platform),
+        should_skip_for_env(test_spec, platform),
     ]):
         return True
     return False
@@ -286,6 +287,14 @@ def should_skip_for_pytest_harness(test_spec: YamlTestSpecification, platform: P
 def should_skip_for_spec_type_unit(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
     if (platform.type == 'unit') != (test_spec.type == 'unit'):
         _log_test_skip(test_spec, platform, 'Unit type tests cannot be executed on regular platforms')
+        return True
+    return False
+
+
+def should_skip_for_env(test_spec: YamlTestSpecification, platform: PlatformSpecification) -> bool:
+    if not platform.env_satisfied:
+        _log_test_skip(test_spec, platform, 'environment variable(s) ({}) not set'.format(
+            ', '.join(platform.env)))
         return True
     return False
 
