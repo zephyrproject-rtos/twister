@@ -7,8 +7,10 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+from typing import NamedTuple
 
 import pytest
+from git.repo import Repo
 
 from twister2.exceptions import TwisterException
 from twister2.helper import log_command
@@ -118,3 +120,14 @@ def _run_cmake_script(script: str | Path, cmake_extra_args: list[str] | None = N
         results = {'returncode': p.returncode, 'returnmsg': out}
 
     return results
+
+
+def get_zephyr_repo_info() -> tuple[str, str]:
+    class RepoInfo(NamedTuple):
+        zephyr_version: str
+        commit_date: str
+
+    repo = Repo(os.getenv('ZEPHYR_BASE'))
+    zephyr_version = repo.head.commit.hexsha[:12]
+    commit_date = repo.head.commit.authored_datetime.isoformat(timespec='seconds')
+    return RepoInfo(zephyr_version, commit_date)

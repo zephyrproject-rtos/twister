@@ -6,15 +6,14 @@ from __future__ import annotations
 import os
 import platform
 import time
-from datetime import datetime, timezone
 from collections import Counter
-from os import getenv
+from datetime import datetime, timezone
 from typing import Sequence
 
 import pytest
-from git.repo import Repo
 from pytest_subtests import SubTestReport
 
+from twister2.environment.environment import get_toolchain_version, get_zephyr_repo_info
 from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
     get_item_build_only_status,
@@ -213,13 +212,14 @@ class TestResultsPlugin:
 
     def _get_environment(self) -> dict:
         duration = self.session_finish_time - self.session_start_time
-        repo = Repo(getenv('ZEPHYR_BASE'))
+        repo_info = get_zephyr_repo_info()
+        toolchain = get_toolchain_version(self.config.twister_config.output_dir, self.config.twister_config.zephyr_base)
 
-        # TODO: Add `toolchain`
         environment = dict(
             os=os.name,
-            zephyr_version=repo.head.commit.hexsha[:12],
-            commit_date=repo.head.commit.authored_datetime.isoformat(timespec='seconds'),
+            zephyr_version=repo_info.zephyr_version,  # type: ignore[attr-defined]
+            commit_date=repo_info.commit_date,  # type: ignore[attr-defined]
+            toolchain=toolchain,
             run_date=datetime.now(timezone.utc).isoformat(timespec='seconds'),
             pc_name=platform.node() or 'N/A',
             duration=round(duration, 2),
