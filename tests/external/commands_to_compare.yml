@@ -1,0 +1,89 @@
+- name: 'hello_integration'
+  t1_cmd: 'scripts/twister -T samples/hello_world --dry-run -G'
+  t2_cmd: 'pytest samples/hello_world --collect-only -G'
+
+- name: 'common_with_arch_posix'
+  t1_cmd: 'scripts/twister -T tests/kernel/common --dry-run -G --arch posix'
+  t2_cmd: 'pytest tests/kernel/common --collect-only -G --arch=posix'
+
+- name: 'bluetooth_with_enable_slow'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only'
+
+# 'slow' tests are not included in T2, in T1 are included and built
+- name: 'bluetooth_default'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --dry-run'
+  t2_cmd: 'pytest tests/bluetooth --collect-only'
+
+- name: 'bluetooth_integration'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run -G'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only -G'
+
+- name: 'bluetooth_arm_default'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run --arch arm --arch posix'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only --arch=arm --arch=posix'
+
+- name: 'bluetooth_arm_all'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run --all --arch arm'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only --all --arch=arm'
+
+- name: 'bluetooth_emu'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run --emulation-only'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only --emulation-only'
+
+# not supported platform revisions
+# platform_key in tests/subsys/rtio
+- name: 'integration_tests'
+  t1_cmd: 'scripts/twister -T tests --enable-slow --dry-run -G'
+  t2_cmd: 'pytest tests --enable-slow --collect-only -G'
+  compare_only_status: true
+
+# modules not filtered - in samples/subsys/tracing
+- name: 'integration_samples'
+  t1_cmd: 'scripts/twister -T samples --enable-slow --dry-run -G'
+  t2_cmd: 'pytest samples --enable-slow --collect-only -G --ignore=samples/modules/tflite-micro/magic_wand/train --ignore=samples/drivers/i2s/litex --ignore=samples/net/sockets/tcp --ignore=samples/subsys/testsuite/pytest/pytest'
+  compare_only_status: true
+
+# platform_key in tests/subsys/rtio/rtio_api and tests/subsys/logging/log_api
+- name: 'default_tests'
+  t1_cmd: 'scripts/twister -T tests --enable-slow --dry-run'
+  t2_cmd: 'pytest tests --enable-slow --collect-only --ignore=tests/subsys/rtio/rtio_api --ignore=tests/subsys/logging/log_api'
+  compare_only_status: true
+
+
+- name: 'default_samples'
+  t1_cmd: 'scripts/twister -T samples --enable-slow --dry-run'
+  t2_cmd: 'pytest samples --enable-slow --collect-only --ignore=samples/modules/tflite-micro/magic_wand/train --ignore=samples/drivers/i2s/litex --ignore=samples/net/sockets/tcp --ignore=samples/subsys/testsuite/pytest/pytest'
+  compare_only_status: true
+
+
+# # only revisions in differences
+# - name: 'all_samples'
+#   t1_cmd: 'scripts/twister -T samples --enable-slow --all --dry-run'
+#   t2_cmd: 'pytest samples --enable-slow --collect-only --all --ignore=samples/modules/tflite-micro/magic_wand/train --ignore=samples/drivers/i2s/litex --ignore=samples/net/sockets/tcp --ignore=samples/subsys/testsuite/pytest/pytest'
+#   compare_only_status: true
+
+- name: 'integration_tests_with_tags'
+  t1_cmd: 'scripts/twister -T tests --enable-slow -G --tag bluetooth --tag uart --dry-run'
+  t2_cmd: 'pytest tests --enable-slow -G --tags=bluetooth,uart --collect-only'
+  compare_only_status: true
+
+
+- name: 'bluetooth_with_quarantine'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run --quarantine-list {currdir}/quarantine.yml'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only --quarantine-list={currdir}/quarantine.yml'
+
+- name: 'bluetooth_with_quarantine_verify'
+  t1_cmd: 'scripts/twister -T tests/bluetooth --enable-slow --dry-run --quarantine-list {currdir}/quarantine.yml --quarantine-verify'
+  t2_cmd: 'pytest tests/bluetooth --enable-slow --collect-only --quarantine-list={currdir}/quarantine.yml --quarantine-verify'
+
+
+#### RUN
+
+- name: 'basic_run'
+  t1_cmd: 'scripts/twister -T samples/hello_world -c -G'
+  t2_cmd: 'pytest samples/hello_world -G'
+
+- name: 'picolib_subtests_run'
+  t1_cmd: 'scripts/twister -T tests/kernel/common -s tests/kernel/common/kernel.common.picolibc --platform=qemu_x86'
+  t2_cmd: 'pytest tests/kernel/common -k picolibc --platform=qemu_x86'

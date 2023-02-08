@@ -1,0 +1,24 @@
+- scenarios:
+  - bluetooth.controller.*
+  comment: "quarantine bluetooth.controller"
+
+- platforms:
+  - unit_testing
+  comment: "quarantine unit_testing platform"
+
+- scenarios:
+  - bluetooth.init.test_(4|5|6)
+  platforms:
+  - qemu_cortex_m3
+  comment: "quarantine bluetooth.init.test 4,5,6 for qemu_cortex_m3 platform"
+
+- scenarios:
+  - bluetooth.shell.audio
+  - bluetooth.audio_shell.*
+  architectures:
+  - posix
+  comment: "quarantine posix on some bluetooth audio shell"
+
+- simulations:
+  - qemu
+  comment: "quarantine all qemu simulation"
