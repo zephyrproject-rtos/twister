@@ -223,11 +223,7 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('tags'):
         filter_plugin.add_filter(TagFilter(config))
 
-    if not xdist_worker:
-        config.pluginmanager.register(
-            plugin=filter_plugin,
-            name='filter_tests'
-        )
+    config.pluginmanager.register(plugin=filter_plugin, name='filter_tests')
 
     if config.getoption('quarantine_list_path'):
         quarantine_plugin = QuarantinePlugin(config)

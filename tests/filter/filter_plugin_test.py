@@ -1,7 +1,10 @@
 import textwrap
 
+import pytest
 
-def test_filter_plugin(pytester):
+
+@pytest.mark.parametrize('extra_args', ['', '-n 2'], ids=['no_xdist', 'xdist'])
+def test_if_all_filters_are_correctly_applied(pytester, extra_args):
     pytester.makepyfile(
         textwrap.dedent(
             """\
@@ -32,11 +35,38 @@ def test_filter_plugin(pytester):
         '--tags=@tag1',
         '--tags=~@tag3',
         '-v',
-        '--zephyr-base=.'
+        '--zephyr-base=.',
+        extra_args
     )
     assert result.ret == 0
-    result.assert_outcomes(passed=2, deselected=3)
+    result.assert_outcomes(passed=2, failed=0, errors=0, skipped=0)
     result.stdout.fnmatch_lines([
-        '*test_filter_plugin.py::test_tag1 PASSED*',
-        '*test_filter_plugin.py::test_tag1_tag2 PASSED*',
+        '*test_if_all_filters_are_correctly_applied.py::test_tag1*',
+        '*test_if_all_filters_are_correctly_applied.py::test_tag1_tag2*',
+    ])
+    result.stdout.no_fnmatch_line('*test_if_all_filters_are_correctly_applied.py::test_slow*')
+
+
+@pytest.mark.parametrize('extra_args', ['', '-n 2'], ids=['no_xdist', 'xdist'])
+def test_if_slow_test_is_not_filtered(pytester, extra_args):
+    pytester.makepyfile(
+        textwrap.dedent(
+            """\
+            import pytest
+
+            @pytest.mark.slow
+            def test_slow():
+                assert True
+            """)
+    )
+    result = pytester.runpytest(
+        '-v',
+        '--zephyr-base=.',
+        '--enable-slow',
+        extra_args
+    )
+    assert result.ret == 0
+    result.assert_outcomes(passed=1)
+    result.stdout.fnmatch_lines([
+        '*test_if_slow_test_is_not_filtered.py::test_slow*',
     ])
