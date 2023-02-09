@@ -222,13 +222,13 @@ def should_be_skip(
 def should_skip_for_toolchain(
     test_spec: YamlTestSpecification, platform: PlatformSpecification, used_toolchain_version: str
 ) -> bool:
-    if not platform.toolchain:
-        return False
-    if test_spec.toolchain_allow and not test_spec.toolchain_allow & set(platform.toolchain):
-        _log_test_skip(test_spec, platform, 'platform.toolchain not in testcase.toolchain_allow')
+    if test_spec.toolchain_allow and used_toolchain_version not in test_spec.toolchain_allow:
+        msg = f'currently used toolchain "{used_toolchain_version}" not in testcase.toolchain_allow'
+        _log_test_skip(test_spec, platform, msg)
         return True
-    if test_spec.toolchain_exclude and test_spec.toolchain_exclude & set(platform.toolchain):
-        _log_test_skip(test_spec, platform, 'platform.toolchain in testcase.toolchain_exclude')
+    if test_spec.toolchain_exclude and used_toolchain_version in test_spec.toolchain_exclude:
+        msg = f'currently used toolchain "{used_toolchain_version}" in testcase.toolchain_exclude'
+        _log_test_skip(test_spec, platform, msg)
         return True
     if (used_toolchain_version not in platform.toolchain) \
             and ('host' not in platform.toolchain) \

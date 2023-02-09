@@ -109,16 +109,16 @@ def test_should_skip_for_toolchain_for_toolchain_allow_negative(testcase, platfo
 
 
 def test_should_skip_for_toolchain_for_toolchain_exclude_positive(testcase, platform):
-    testcase.toolchain_exclude = {'toolchain1', 'toolchain2'}
-    platform.toolchain = ['toolchain2']
-    used_toolchain_version = 'toolchain2'
+    testcase.toolchain_exclude = {'toolchain1'}
+    platform.toolchain = ['toolchain1']
+    used_toolchain_version = 'toolchain1'
     assert should_skip_for_toolchain(testcase, platform, used_toolchain_version)
 
 
 def test_should_skip_for_toolchain_for_toolchain_exclude_negative(testcase, platform):
-    testcase.toolchain_exclude = {'toolchain2'}
-    platform.toolchain = ['toolchain1']
-    used_toolchain_version = 'toolchain1'
+    testcase.toolchain_exclude = {'toolchain1'}
+    platform.toolchain = ['toolchain2']
+    used_toolchain_version = 'toolchain2'
     assert should_skip_for_toolchain(testcase, platform, used_toolchain_version) is False
 
 
