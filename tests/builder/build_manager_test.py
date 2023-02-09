@@ -1,4 +1,5 @@
 import copy
+import os
 import threading
 import time
 from contextlib import contextmanager
@@ -28,6 +29,76 @@ def mocked_builder():
 def build_manager(build_config, mocked_builder) -> BuildManager:
     build_manager = BuildManager(build_config, mocked_builder, wait_build_timeout=2)
     return build_manager
+
+
+@pytest.fixture
+def generate_output_files(build_manager):
+    build_dir = build_manager.build_config.build_dir
+
+    base_dirs: list[str] = [
+        'app',
+        'CMakeFiles',
+        'Kconfig',
+        'modules',
+        'twister',
+        'zephyr'
+    ]
+
+    for base_dir in base_dirs:
+        os.mkdir(build_dir / base_dir)
+
+    files_to_create: list[str] = []
+
+    base_files: list[str] = [
+        'handler.log',
+        'build.log',
+        'build.ninja',
+        'CMakeCache.txt',
+        'cmake_install.cmake',
+        'compile_commands.json',
+        'device.log',
+        'Makefile',
+        'recording.csv',
+        'zephyr_modules.txt',
+        'zephyr_settings.txt',
+    ]
+    files_to_create += base_files
+
+    cmakefiles_files: list[str] = [
+        'CMakeOutput.log',
+        'rules.ninja'
+    ]
+    cmakefiles_files = [os.path.join('CMakeFiles', file) for file in cmakefiles_files]
+    files_to_create += cmakefiles_files
+
+    files_to_create += [os.path.join('twister', 'testsuite_extra.conf')]
+
+    zephyr_files: list[str] = [
+        'cmake_install.cmake',
+        'dev_handles.c',
+        'dts.cmake',
+        'edt.pickle',
+        'libzephyr.a',
+        'linker_zephyr_pre0.cmd',
+        'linker_zephyr_pre0.cmd.dep',
+        'linker_zephyr_pre1.cmd',
+        'linker_zephyr_pre1.cmd.dep',
+        'zephyr.bin',
+        'zephyr.dts',
+        'zephyr.elf',
+        'zephyr.exe',
+        'zephyr.hex',
+        'zephyr.lst',
+        'zephyr.map',
+        'zephyr.stat',
+        '.config'
+    ]
+    zephyr_files = [os.path.join('zephyr', file) for file in zephyr_files]
+    files_to_create += zephyr_files
+
+    for file_name in files_to_create:
+        with open(build_dir / file_name, 'a'):
+            pass
 
 
 @contextmanager
@@ -183,3 +254,62 @@ def test_if_build_manager_waits_until_timed_out(build_manager):
                    f'{build_manager.build_config.build_dir}'
     with pytest.raises(TwisterBuildException, match=expected_msg):
         build_manager.build()
+
+
+@pytest.mark.parametrize(
+    ('cleanup_method, additional_files_to_keep'),
+    [
+        (
+            'cleanup_artifacts',
+            [],
+        ),
+        (
+            'prepare_device_testing_artifacts',
+            [
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+                os.path.join('zephyr', 'zephyr.hex'),
+            ],
+        ),
+    ],
+    ids=[
+        'basic_cleanup',
+        'prepare_device_testing_artifacts',
+    ]
+)
+def test_if_cleanup_artifacts_remove_files_properly(
+        build_manager, generate_output_files, cleanup_method, additional_files_to_keep
+):
+    build_dir = build_manager.build_config.build_dir
+    cleanup_method = getattr(build_manager, cleanup_method)
+    cleanup_method()
+    expected_files_to_keep = build_manager._basic_files_to_keep.copy()
+    expected_files_to_keep += additional_files_to_keep
+    expected_files_to_keep = [os.path.join(build_dir, file) for file in expected_files_to_keep]
+    expected_files_to_keep = set(expected_files_to_keep)
+
+    for dirpath, dirnames, filenames in os.walk(build_dir, topdown=False):
+        for name in filenames:
+            path = os.path.join(dirpath, name)
+            assert path in expected_files_to_keep
+            expected_files_to_keep.remove(path)
+
+        for dir in dirnames:
+            path = os.path.join(dirpath, dir)
+            assert os.listdir(path)
+
+    assert len(expected_files_to_keep) == 0
+
+
+def test_if_sanitize_output_paths_works_properly(build_manager):
+    file_to_sanitize = os.path.join(build_manager.build_config.build_dir, 'to_sanitize.txt')
+    path_to_keep = os.path.join('samples', 'hello_world')
+    full_path = os.path.join(build_manager.build_config.zephyr_base, path_to_keep)
+    with open(file_to_sanitize, 'w') as file:
+        file.write(full_path)
+
+    files_to_sanitize = [file_to_sanitize]
+    build_manager._sanitize_output_paths(files_to_sanitize)
+
+    with open(file_to_sanitize, 'r') as file:
+        assert file.read() == path_to_keep

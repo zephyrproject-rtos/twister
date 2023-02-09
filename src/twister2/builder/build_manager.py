@@ -42,6 +42,19 @@ class BuildManager:
     """
     _lock: BaseFileLock = FileLock(BUILD_LOCK_FILE_PATH, timeout=1)
 
+    _basic_files_to_keep: list[str] = [
+        os.path.join('zephyr', '.config'),
+        'handler.log',
+        'build.log',
+        'device.log',
+        'recording.csv',
+        # below ones are needed to make --test-only work as well
+        'Makefile',
+        'CMakeCache.txt',
+        'build.ninja',
+        os.path.join('CMakeFiles', 'rules.ninja')
+    ]
+
     def __init__(self,
                  build_config: BuildConfig,
                  builder: BuilderAbstract,
@@ -164,3 +177,89 @@ class BuildManager:
                 msg = f'Timed out waiting for another thread to finish building: {self.build_config.build_dir}'
                 logger.error(msg)
                 raise TwisterBuildException(msg)
+
+    def cleanup_artifacts(self, cleanup_version: str = '', additional_keep: list[str] | None = None) -> None:
+        """
+        Remove build output files to reduce memory consumption. Leave only this
+        files which can be important to analyzing how the build was performed
+        (mostly log files). For 'cleanup_version' set as 'all', keep additionally
+        twister/testsuite_extra.conf file. By passing list of 'additional_keep'
+        there is possibility to keep other files.
+        """
+        if additional_keep is None:
+            additional_keep = []
+
+        logger.debug('Cleaning up %s', self.build_config.build_dir)
+
+        files_to_keep: list[str] = self._basic_files_to_keep.copy()
+
+        if cleanup_version == 'all':
+            files_to_keep += [os.path.join('twister', 'testsuite_extra.conf')]
+
+        files_to_keep += additional_keep
+
+        files_to_keep = [os.path.join(self.build_config.build_dir, file) for file in files_to_keep]
+
+        for dirpath, dirnames, filenames in os.walk(self.build_config.build_dir, topdown=False):
+            for name in filenames:
+                path = os.path.join(dirpath, name)
+                if path not in files_to_keep:
+                    os.remove(path)
+            # Remove empty directories and symbolic links to directories
+            for dir in dirnames:
+                path = os.path.join(dirpath, dir)
+                if os.path.islink(path):
+                    os.remove(path)
+                elif not os.listdir(path):
+                    os.rmdir(path)
+
+    def prepare_device_testing_artifacts(self, binaries: list[str] | None = None) -> None:
+        """
+        Remove build output files to reduce memory consumption and keep only
+        this files, which are necessary to reproduce test. By default
+        'zephyr.hex', 'zephyr.bin' and 'zephyr.elf' files should be stored, but
+        there is possibility to indicate other files by passing list them in
+        'binaries' argument. Additionally local paths in 'CMakeCache.txt' and
+        'zephyr/runners.yaml' files are removed to be able to make it possible
+        to reuse them on different host/computer/server.
+        """
+        if binaries is None:
+            binaries = []
+
+        logger.debug('Cleaning up for Device Testing %d', self.build_config.build_dir)
+
+        files_to_keep: list[str] = []
+        if binaries:
+            for binary in binaries:
+                files_to_keep.append(os.path.join('zephyr', binary))
+        else:
+            files_to_keep = [
+                os.path.join('zephyr', 'zephyr.hex'),
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+            ]
+
+        files_to_sanitize: list[str] = [
+            'CMakeCache.txt',
+            os.path.join('zephyr', 'runners.yaml'),
+        ]
+
+        files_to_keep += files_to_sanitize
+
+        self.cleanup_artifacts(additional_keep=files_to_keep)
+        self._sanitize_output_paths(files_to_sanitize)
+
+    def _sanitize_output_paths(self, files_to_sanitize: list[str]) -> None:
+        """
+        Sanitize files content to remove local Zephyr base paths.
+        """
+        for file in files_to_sanitize:
+            file = os.path.join(self.build_config.build_dir, file)
+
+            if os.path.isfile(file):
+                with open(file, 'rt') as fin:
+                    data = fin.read()
+                    data = data.replace(str(self.build_config.zephyr_base) + os.path.sep, '')
+
+                with open(file, 'wt') as fin:
+                    fin.write(data)

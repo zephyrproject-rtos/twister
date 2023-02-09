@@ -66,7 +66,15 @@ def fixture_build_manager(
     builder_type: str = request.config.option.builder
     builder = BuilderFactory.create_instance(builder_type, build_config)
     build_manager = BuildManager(build_config, builder)
+
     yield build_manager
+
+    if request.config.option.prep_artifacts_for_testing:
+        build_manager.prepare_device_testing_artifacts(list(platform.testing.binaries))
+    elif (cleanup_version := request.config.option.runtime_artifact_cleanup) is not None:
+        test_failed = getattr(request.node, '_test_failed', False)
+        if cleanup_version == 'all' or (cleanup_version == 'pass' and not test_failed):
+            build_manager.cleanup_artifacts(cleanup_version=cleanup_version)
 
 
 @pytest.fixture(name='builder', scope='function')
