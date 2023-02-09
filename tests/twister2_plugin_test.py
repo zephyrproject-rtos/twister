@@ -22,7 +22,9 @@ def test_twister_help(pytester):
         '*--integration*',
         '*--emulation-only*',
         '*--arch=ARCH*',
-        '*--all*'
+        '*--all*',
+        '*-M {pass,all}, --runtime-artifact-cleanup={pass,all}*',
+        '*--prep-artifacts-for-testing*'
     ])
 
 

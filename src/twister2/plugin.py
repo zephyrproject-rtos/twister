@@ -184,6 +184,23 @@ def pytest_addoption(parser: pytest.Parser):
         action='store_true',
         help='Treat memory overflows as errors.'
     )
+    twister_group.addoption(
+        '-M', '--runtime-artifact-cleanup',
+        choices=('pass', 'all'),
+        help='Cleanup test artifacts. "pass" option only removes artifacts of '
+             'passing or skipping tests. If you wish to remove all artifacts '
+             'including those of failed tests, use "all".'
+    )
+    twister_group.addoption(
+        '--prep-artifacts-for-testing',
+        default=False,
+        action='store_true',
+        help='Prepare artifacts for testing - remove unnecessary files after '
+             'application building and keep only this one which are crucial to '
+             'run tests. Additionally sanitize those files from local Zephyr '
+             'base paths to be able to use those artifacts on another host/'
+             'computer/server.'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -284,3 +301,17 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
         item.user_properties.append(('tags', ' '.join(marker.args)))
     if marker := item.get_closest_marker('platform'):
         item.user_properties.append(('platform', marker.args[0]))
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    """
+    Hook used to store information about failed test, which can be used in
+    fixture's teardown. Example of use in fixture:
+    test_failed = getattr(request.node, '_test_failed', False)
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if report.failed:
+        setattr(item, '_test_failed', True)
+    return report
