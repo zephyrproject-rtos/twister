@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import copy
 import logging
+import os
+import re
 import shutil
 from dataclasses import dataclass, field
 from os import getenv
@@ -113,12 +116,44 @@ class PlatformSchema(Schema):
 
 def discover_platforms(directory: Path) -> Generator[PlatformSpecification, None, None]:
     """Return platforms from given directory"""
-    for file in directory.glob('*/*/*.yaml'):
+    for spec_file in directory.glob('*/*/*.yaml'):
         try:
-            yield PlatformSpecification.load_from_yaml(str(file))
+            platform = PlatformSpecification.load_from_yaml(str(spec_file))
         except Exception as e:
             logger.exception('Cannot read platform definition from yaml: %s', e)
             raise
+        yield platform
+        if '@' not in platform.identifier:
+            yield from discover_platform_revisions(platform, spec_file.parent)
+
+
+def discover_platform_revisions(
+    platform: PlatformSpecification, directory: Path
+) -> Generator[PlatformSpecification, None, None]:
+    """
+    Return all revisions for platform specification in the directory.
+
+    :param platform: platform specification
+    :param directory: directory to search revision in
+    :return: all revisions for given platform
+    """
+    # Revision pattern is created according to the documentation
+    # https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html#multiple-board-revisions
+    revision_pattern: str = '([A-Z]|[0-9]+_?[0-9]?_?[0-9]*)'
+    files_list: list[str] = os.listdir(directory)
+    for file in files_list:
+        # Need to make sure the revision matches
+        # the permitted patterns as described in
+        # cmake/modules/extensions.cmake.
+        pattern_to_match = r'{}_(?P<revision>{})\.conf'.format(platform.identifier, revision_pattern)
+        if match := re.match(pattern_to_match, file):
+            revision: str = match.group('revision')
+            if f'{platform.identifier}_{revision}.yaml' not in files_list:
+                platform_revision = copy.deepcopy(platform)
+                revision = revision.replace('_', '.')
+                platform_revision.identifier = f'{platform.identifier}@{revision}'
+                platform_revision.testing.default = False
+                yield platform_revision
 
 
 def validate_platforms_list(platforms: list[PlatformSpecification]) -> None:
