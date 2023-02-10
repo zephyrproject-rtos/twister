@@ -17,6 +17,7 @@ from twister2.platform_specification import (
     PlatformSpecification,
     is_simulation_platform_available,
 )
+from twister2.quarantine import QuarantineElement, get_matched_quarantine
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import add_markers_from_specification
 from twister2.yaml_test_specification import (
@@ -279,6 +280,7 @@ def should_be_skip(
         should_skip_for_env(test_spec, platform),
         should_skip_for_skip(test_spec, platform),
         should_skip_for_integration_or_emulation(test_spec, platform, twister_config),
+        should_skip_for_quarantine(test_spec, platform, twister_config),
     ]):
         return True
     return False
@@ -417,6 +419,24 @@ def should_skip_for_integration_or_emulation(
     elif twister_config.emulation_only:
         if platform.simulation == 'na':
             _log_test_skip(test_spec, platform, 'not an emulated platform')
+            return True
+    return False
+
+
+def should_skip_for_quarantine(
+    test_spec: YamlTestSpecification,
+    platform: PlatformSpecification,
+    twister_config: TwisterConfig
+) -> bool:
+    if twister_config.quarantine:
+        qelem: QuarantineElement | None = get_matched_quarantine(
+            twister_config.quarantine, test_spec.original_name, platform
+        )
+        if qelem and not twister_config.quarantine_verify:
+            _log_test_skip(test_spec, platform, 'Quarantine: ' + qelem.comment)
+            return True
+        if not qelem and twister_config.quarantine_verify:
+            _log_test_skip(test_spec, platform, 'Not under quarantine')
             return True
     return False
 

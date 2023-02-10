@@ -14,6 +14,7 @@ from twister2.platform_specification import (
     PlatformSpecification,
     is_simulation_platform_available,
 )
+from twister2.quarantine import QuarantineData
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,8 @@ class TwisterConfig:
     selected_platforms: list[str] = field(default_factory=list, repr=False)
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
+    quarantine: None | QuarantineData = None
+    quarantine_verify: bool = False
     device_testing: bool = False
     fixtures: list[str] = field(default_factory=list, repr=False)
     extra_args_cli: list = field(default_factory=list)
@@ -62,6 +65,7 @@ class TwisterConfig:
         integration_mode: bool = config.option.integration
         emulation_only: bool = config.option.emulation_only
         architectures: list[str] = config.option.arch
+        quarantine_verify: bool = config.option.quarantine_verify
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:
@@ -79,6 +83,11 @@ class TwisterConfig:
 
         used_toolchain_version = get_toolchain_version(output_dir, zephyr_base)
 
+        quarantine = QuarantineData()
+        if config.option.quarantine_list_path:
+            for quarantine_file in config.option.quarantine_list_path:
+                quarantine.extend(QuarantineData.load_data_from_yaml(filename=quarantine_file))
+
         data: dict[str, Any] = dict(
             zephyr_base=zephyr_base,
             build_only=build_only,
@@ -87,6 +96,8 @@ class TwisterConfig:
             board_root=board_root,
             output_dir=output_dir,
             hardware_map_list=hardware_map_list,
+            quarantine=quarantine,
+            quarantine_verify=quarantine_verify,
             device_testing=device_testing,
             fixtures=fixtures,
             extra_args_cli=extra_args_cli,

@@ -14,10 +14,7 @@ from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
     get_item_build_only_status,
     get_item_platform,
-    get_item_platform_allow,
-    get_item_quarantine,
     get_item_runnable_status,
-    get_item_tags,
     get_item_type,
     get_suite_name,
     get_test_name,
@@ -51,12 +48,9 @@ class TestPlanPlugin:
             test_name=get_test_name(item),
             path=get_test_path(item),
             platform=get_item_platform(item),
-            tags=get_item_tags(item),
             type=get_item_type(item),
             build_only=get_item_build_only_status(item),
             runnable=get_item_runnable_status(item),
-            platform_allow=get_item_platform_allow(item),
-            quarantine=get_item_quarantine(item),
         )
 
     def generate(self, items: List[pytest.Item]) -> dict:
