@@ -12,7 +12,6 @@ from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
-from twister2.quarantine_plugin import QuarantinePlugin
 from twister2.twister_config import TwisterConfig
 from twister2.yaml_file import YamlModule
 
@@ -133,9 +132,12 @@ def pytest_addoption(parser: pytest.Parser):
         metavar='FILENAME',
         action='append',
         help='Load list of test scenarios under quarantine. These scenarios '
-             'will be skipped with quarantine as the reason. '
-             'To verify their current status, one can run only quarantined tests '
-             'using mark: -m quarantine'
+             'will be skipped with quarantine as the reason.'
+    )
+    twister_group.addoption(
+        '--quarantine-verify',
+        action='store_true',
+        help='Run only tests selected with --quarantine-list'
     )
     twister_group.addoption(
         '--clear',
@@ -225,14 +227,6 @@ def pytest_configure(config: pytest.Config):
 
     config.pluginmanager.register(plugin=filter_plugin, name='filter_tests')
 
-    if config.getoption('quarantine_list_path'):
-        quarantine_plugin = QuarantinePlugin(config)
-        if not xdist_worker:
-            config.pluginmanager.register(
-                plugin=quarantine_plugin,
-                name='quarantine'
-            )
-
     # configure twister
     logger.debug('ZEPHYR_BASE: %s', zephyr_base)
 
@@ -248,8 +242,6 @@ def pytest_configure(config: pytest.Config):
         'type(test_type): mark test for specific type',
         'slow: mark test as slow',
         'build_only: test can only be built',
-        'quarantine: mark test under quarantine. This mark is added dynamically after parsing '
-        'quarantine-list-yaml file. To mark scenario in code better use skip/skipif',
     ]
     for marker in markers:
         config.addinivalue_line('markers', marker)
@@ -260,6 +252,11 @@ def validate_options(config: pytest.Config) -> None:
     if config.option.device_testing and not config.option.hardware_map:
         pytest.exit(
             'Option `--device-testing` must be used with `--hardware-map`,.'
+        )
+    if config.option.quarantine_verify and not config.option.quarantine_list_path:
+        pytest.exit(
+            'No quarantine list given to be verified. '
+            'Option `--quarantine-verify` must be used with `--quarantine-list`.'
         )
 
 

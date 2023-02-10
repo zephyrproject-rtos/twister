@@ -4,7 +4,7 @@ import textwrap
 import pytest
 
 from twister2.exceptions import TwisterConfigurationException
-from twister2.quarantine_plugin import QuarantineData, QuarantineElement
+from twister2.quarantine import QuarantineData, QuarantineElement
 
 
 def test_quarantine_load_data(tmp_path):
