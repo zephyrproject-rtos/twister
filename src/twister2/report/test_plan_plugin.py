@@ -4,6 +4,7 @@ Plugin to generate test plan report
 from __future__ import annotations
 
 import logging
+import os
 from typing import List, Sequence
 
 import pytest
@@ -108,6 +109,11 @@ def pytest_configure(config: pytest.Config):
         return
 
     test_plan_writers: list[BaseReportWriter] = []
+    testplan_json_path = None
+    if config.getoption('testplan_json_path'):
+        testplan_json_path = config.getoption('testplan_json_path')
+    else:
+        testplan_json_path = os.path.join(config.getoption('output_dir'), 'testplan.json')
     if testplan_csv_path := config.getoption('testplan_csv_path'):
         test_plan_writers.append(CsvTestPlan(testplan_csv_path))
     if testplan_json_path := config.getoption('testplan_json_path'):
