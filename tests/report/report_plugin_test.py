@@ -1,18 +1,8 @@
 import json
 import textwrap
-from collections import namedtuple
 from pathlib import Path
-from unittest import mock
 
 import pytest
-
-
-@pytest.fixture
-def mock_get_zephyr_repo_info():
-    with mock.patch('twister2.environment.environment.get_zephyr_repo_info') as mocked_object:
-        RepoInfo = namedtuple('RepoInfo', 'zephyr_version commit_date')
-        mocked_object.return_value = RepoInfo('123456789012', '20220102')
-        yield mocked_object
 
 
 def test_if_pytest_generate_testplan_json(pytester, copy_example) -> None:
@@ -48,7 +38,7 @@ def test_if_pytest_generate_testplan_csv(pytester, copy_example, extra_args) -> 
 
 
 @pytest.mark.parametrize('extra_args', ['-n 0', '-n 2'], ids=['no_xdist', 'xdist'])
-def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_args, mock_get_zephyr_repo_info) -> None:
+def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_args) -> None:
     test_file_content = textwrap.dedent("""\
         import pytest
 
@@ -84,7 +74,7 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
     """)
     test_file = pytester.path / 'foobar_test.py'
     test_file.write_text(test_file_content)
-    output_result: Path = pytester.path / 'result.json'
+    output_result: Path = pytester.path / 'twister.json'
 
     result = pytester.runpytest(
         f'--zephyr-base={str(pytester.path)}',

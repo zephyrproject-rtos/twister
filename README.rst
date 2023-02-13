@@ -70,7 +70,7 @@ Run tests:
 
 .. code-block:: sh
 
-  pytest <PATH_TO_ZEPHYR>/tests/kernel/common -vv --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --results-json=twister-out/results.json --log-level=DEBUG
+  pytest <PATH_TO_ZEPHYR>/tests/kernel/common -vv --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --log-level=DEBUG
 
 
 If environmental variable ``ZEPHYR_BASE`` is set, one can omit ``--zephyr-base`` argument.
@@ -106,25 +106,25 @@ Provide directory to search for board configuration files:
 Reports
 -------
 
-Generate test plan in JSON format:
+Generate test plan in CSV format:
 
 .. code-block:: sh
 
   pytest tests --testplan-csv=testplan.csv --collect-only
 
 
-Generate test plan in CSV format:
+Use custom path for test plan in JSON format:
 
 .. code-block:: sh
 
-  pytest tests --testplan-json=testplan.json --collect-only
+  pytest tests --testplan-json=custom_plan.json --collect-only
 
 
-Generate test results in JSON format:
+Use custom path for result report in JSON format:
 
 .. code-block:: sh
 
-  pytest tests --resutls-json=results.json
+  pytest tests --resutls-json=custom_name.json
 
 
 Filtering tests

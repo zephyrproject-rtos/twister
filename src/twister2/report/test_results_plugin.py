@@ -246,8 +246,12 @@ def pytest_configure(config: pytest.Config):
         return
 
     test_results_writers = []
-    if test_result_json_path := config.getoption('results_json_path'):
-        test_results_writers.append(JsonResultsReport(test_result_json_path))
+    test_result_json_path = None
+    if config.getoption('results_json_path'):
+        test_result_json_path = config.getoption('results_json_path')
+    else:
+        test_result_json_path = os.path.join(config.getoption('output_dir'), 'twister.json')
+    test_results_writers.append(JsonResultsReport(test_result_json_path))
 
     if test_results_writers and not config.option.collectonly:
         config.pluginmanager.register(
