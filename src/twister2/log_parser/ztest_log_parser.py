@@ -97,7 +97,7 @@ class ZtestLogParser(LogParserAbstract):
         if self.subtests_fixture is None:
             return
 
-        with self.subtests_fixture.test(msg=subtest.testname):
+        with self.subtests_fixture.test(msg=subtest.testname, ztest_testcase_duration=subtest.duration):
             if subtest.result == SubTestStatus.SKIP:
                 pytest.skip('Skipped on runtime')
             if subtest.result == SubTestStatus.BLOCK:

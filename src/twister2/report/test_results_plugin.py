@@ -25,6 +25,9 @@ from twister2.report.helper import (
 )
 from twister2.report.test_results_json import JsonResultsReport
 
+TIME_DECIMAL_PLACES = 2
+TIME_DECIMAL_PLACES_SUBTEST = 2
+
 
 class Status:
     PASSED = 'passed'
@@ -39,25 +42,35 @@ class Status:
 class TestResult:
     """Class stores test result for single test."""
 
-    def __init__(self, outcome: str, report: pytest.TestReport, config: pytest.Config):
-        self.test_id: str = report.nodeid.encode('utf-8').decode('unicode_escape')
-        self.nodeid = report.nodeid
+    def __init__(self, nodeid: str):
+        self.test_id: str = nodeid.encode('utf-8').decode('unicode_escape')
+        self.nodeid = nodeid
         self.name: str = self.test_id
-        if getattr(report, 'when', 'call') != 'call':
-            self.test_id = '::'.join([report.nodeid, report.when])  # type: ignore[list-item]
-        self.status = outcome
-        self.item = report.nodeid
-        self.report = report
-        self.config = config
-        self.duration: float = getattr(report, 'duration', 0.0)  #: whole time spent on running test
+        self.status: str | None = None
+        self.item: str = nodeid
+        self.report = None
+        self.config = None
+        self.duration: float = 0.0  #: whole time spent on running test
         self.call_duration: float = 0.0  #: time spent only on execution (without setup and teardown)
-        self.message: str = report.longreprtext
+        self.message: str = ''
         self.subtests: list = []
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.status!r})'
 
+    def extract_results(self, outcome: str, report: pytest.TestReport, config: pytest.Config):
+        if getattr(report, 'when', 'call') != 'call':
+            self.test_id = '::'.join([report.nodeid, report.when])  # type: ignore[list-item]
+        self._update_status(outcome)
+        self.report = report
+        self.config = config
+        self.message = report.longreprtext
+
     def add_subtest(self, subtest: dict) -> None:
+        self._update_status(subtest['status'])
+        self.subtests.append(subtest)
+
+    def _update_status(self, new_status: str):
         order = (
             Status.SKIPPED,
             Status.PASSED,
@@ -67,9 +80,11 @@ class TestResult:
             Status.FAILED,
             Status.ERROR,
         )
-        status = order[max(order.index(self.status), order.index(subtest['status']))]
-        self.status = status
-        self.subtests.append(subtest)
+        if self.status is None:
+            self.status = new_status
+        else:
+            status = order[max(order.index(self.status), order.index(new_status))]
+            self.status = status
 
 
 class TestResultsPlugin:
@@ -96,31 +111,48 @@ class TestResultsPlugin:
             # Collection was skipped (probably due to xdist)
             session.perform_collect()
 
-    def pytest_runtest_call(self, item):
-        time_start = time.time()
-        yield
-        duration = time.time() - time_start
-        self.test_results[item.nodeid].call_duration = duration
-
     def pytest_runtest_logreport(self, report: pytest.TestReport):
+        if report.nodeid not in self.test_results:
+            self.test_results[report.nodeid] = TestResult(report.nodeid)
+
+        result = self.test_results[report.nodeid]
+
+        if not self._is_sub_test(report):
+            result.duration += getattr(report, 'duration', 0.0)
+            if getattr(report, 'when', '') == 'call':
+                result.call_duration = getattr(report, 'duration', 0.0)
+
         outcome = self._get_outcome(report)
         if not outcome:
             return
 
-        if report.nodeid not in self.test_results:
-            self.test_results[report.nodeid] = TestResult(outcome, report, self.config)
         if self._is_sub_test(report):
-            self.test_results[report.nodeid].add_subtest(
+            ztest_testcase_duration = self._get_ztest_testcase_duration(report)
+            result.add_subtest(
                 dict(
                     name=report.context.msg,
                     status=outcome,
-                    duration=round(report.duration, 2),
+                    execution_time=f'{ztest_testcase_duration:.{TIME_DECIMAL_PLACES_SUBTEST}f}'
                 )
             )
+        else:
+            result.extract_results(outcome, report, self.config)
 
     @staticmethod
     def _is_sub_test(report: pytest.TestReport) -> bool:
         return isinstance(report, SubTestReport)
+
+    @staticmethod
+    def _get_ztest_testcase_duration(report: pytest.TestReport) -> float:
+        duration: float = 0.0
+        context = getattr(report, 'context', None)
+        if context is None:
+            return duration
+        kwargs = getattr(context, 'kwargs', None)
+        if kwargs is None:
+            return duration
+        duration = kwargs.get('ztest_testcase_duration', 0.0)
+        return duration
 
     def pytest_sessionstart(self, session: pytest.Session):
         self.session_start_time = time.time()
@@ -184,8 +216,8 @@ class TestResultsPlugin:
                 runnable=get_item_runnable_status(item),
                 status=result.status,
                 message=result.message,
-                duration=round(result.duration, 2),
-                execution_time=round(result.call_duration, 2),
+                duration=f'{result.duration:.{TIME_DECIMAL_PLACES}f}',
+                execution_time=f'{result.call_duration:.{TIME_DECIMAL_PLACES}f}',
                 subtests=result.subtests,
             )
             tests_list.append(test)
@@ -216,7 +248,7 @@ class TestResultsPlugin:
             toolchain=toolchain,
             run_date=datetime.now(timezone.utc).isoformat(timespec='seconds'),
             pc_name=platform.node() or 'N/A',
-            duration=round(duration, 2),
+            duration=f'{duration:.{TIME_DECIMAL_PLACES}f}',
         )
         return environment
 
