@@ -108,10 +108,10 @@ def pytest_configure(config: pytest.Config):
         testplan_json_path = config.getoption('testplan_json_path')
     else:
         testplan_json_path = os.path.join(config.getoption('output_dir'), 'testplan.json')
+    test_plan_writers.append(JsonTestPlan(testplan_json_path))
+
     if testplan_csv_path := config.getoption('testplan_csv_path'):
         test_plan_writers.append(CsvTestPlan(testplan_csv_path))
-    if testplan_json_path := config.getoption('testplan_json_path'):
-        test_plan_writers.append(JsonTestPlan(testplan_json_path))
 
     if test_plan_writers:
         config.pluginmanager.register(
