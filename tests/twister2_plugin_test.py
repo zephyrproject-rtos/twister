@@ -24,7 +24,7 @@ def test_twister_help(pytester):
         '*--arch=ARCH*',
         '*--all*',
         '*-M {pass,all}, --runtime-artifact-cleanup={pass,all}*',
-        '*--prep-artifacts-for-testing*'
+        '*--prep-artifacts-for-testing*',
     ])
 
 

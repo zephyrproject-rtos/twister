@@ -261,6 +261,7 @@ class MockSpecification:
     harness_config: dict = field(default_factory=dict)
     type: str = 'unit'
     build_only: bool = False
+    slow: bool = False
 
 
 @dataclass
@@ -270,44 +271,59 @@ class MockPlatform:
     simulation_exec: str = ''
 
 
+@dataclass
+class MockConfig:
+    fixtures: list[str] = field(default_factory=list)
+    enable_slow: bool = False
+
+
 @pytest.mark.parametrize(
-    'spec,platform,fixtures',
+    'spec, platform, config',
     [
-        (MockSpecification(), MockPlatform(), []),
-        (MockSpecification(), MockPlatform(simulation_exec='na'), []),
-        (MockSpecification(), MockPlatform(), None),
-        (MockSpecification(type='unit'), MockPlatform(type='nsim', simulation='not-supported'), []),
-        (MockSpecification(type='mcu'), MockPlatform(type='native', simulation='not-supported'), []),
-        (MockSpecification(), MockPlatform(simulation_exec='python'), []),
-        (MockSpecification(harness_config=dict(fixture='fixture_display')), MockPlatform(), ['fixture_display']),
-        (MockSpecification(), MockPlatform(), ['fixture_display']),
-        (MockSpecification(type='integration'), MockPlatform(type='mcu', simulation='na'), []),  # test on hardware
+        (MockSpecification(), MockPlatform(), MockConfig()),
+        (MockSpecification(), MockPlatform(simulation_exec='na'), MockConfig()),
+        (MockSpecification(), MockPlatform(), MockConfig()),
+        (MockSpecification(type='unit'), MockPlatform(type='nsim', simulation='not-supported'), MockConfig()),
+        (MockSpecification(type='mcu'), MockPlatform(type='native', simulation='not-supported'), MockConfig()),
+        (MockSpecification(), MockPlatform(simulation_exec='python'), MockConfig()),
+        (MockSpecification(harness_config=dict(fixture='fixture_display')),
+         MockPlatform(), MockConfig(['fixture_display'])),
+        (MockSpecification(), MockPlatform(), MockConfig(['fixture_display'])),
+        # test on hardware:
+        (MockSpecification(type='integration'), MockPlatform(type='mcu', simulation='na'), MockConfig()),
+        (MockSpecification(slow=True), MockPlatform(), MockConfig(enable_slow=True)),
+        (MockSpecification(slow=False), MockPlatform(), MockConfig(enable_slow=False)),
+        (MockSpecification(slow=False), MockPlatform(), MockConfig(enable_slow=True)),
     ]
 )
-def test_if_test_is_runnable(spec, platform, fixtures):
+def test_if_test_is_runnable(spec, platform, config):
     with mock.patch('os.name', 'linux'):
-        assert is_runnable(spec, platform, fixtures)  # type: ignore
+        assert is_runnable(spec, platform, config)  # type: ignore
 
 
 @pytest.mark.parametrize(
-    'spec,platform,fixtures',
+    'spec,platform,config',
     [
-        (MockSpecification(harness='keyboard'), MockPlatform(), []),  # not supported harness
+        (MockSpecification(harness='keyboard'), MockPlatform(), MockConfig()),  # not supported harness
         # not supported target type:
-        (MockSpecification(type='integration'), MockPlatform(type='sim', simulation='not-supported'), []),
-        (MockSpecification(), MockPlatform(simulation_exec='dummy'), []),  # tool not installed
-        (MockSpecification(harness_config=dict(fixture='fixture_display')), MockPlatform(), []),  # fixture not match
-        (MockSpecification(harness_config=dict(fixture='fixture_ppk')), MockPlatform(), ['fixture_display']),
+        (MockSpecification(type='integration'), MockPlatform(type='sim', simulation='not-supported'), MockConfig()),
+        (MockSpecification(), MockPlatform(simulation_exec='dummy'), MockConfig()),  # tool not installed
+        # fixture not match:
+        (MockSpecification(harness_config=dict(fixture='fixture_display')), MockPlatform(), MockConfig()),
+        (MockSpecification(harness_config=dict(fixture='fixture_ppk')),
+         MockPlatform(), MockConfig(['fixture_display'])),
+        # slow tests
+        (MockSpecification(slow=True), MockPlatform(), MockConfig(enable_slow=False)),
     ]
 )
-def test_if_test_is_not_runnable(spec, platform, fixtures):
+def test_if_test_is_not_runnable(spec, platform, config):
     with mock.patch('os.name', 'linux'):
-        assert is_runnable(spec, platform, fixtures) is False  # type: ignore
+        assert is_runnable(spec, platform, config) is False  # type: ignore
 
 
 def test_if_test_is_not_runnable_on_windows():
     with mock.patch('os.name', 'nt'):
-        assert is_runnable(MockSpecification(), MockPlatform(), []) is False  # type: ignore
+        assert is_runnable(MockSpecification(), MockPlatform(), MockConfig()) is False  # type: ignore
 
 
 @pytest.mark.parametrize(

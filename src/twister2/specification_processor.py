@@ -45,7 +45,7 @@ class SpecificationProcessor(abc.ABC):
     def create_spec_from_dict(self, test_spec_dict: dict, platform: PlatformSpecification) -> YamlTestSpecification:
         test_spec = YamlTestSpecification(**test_spec_dict)
         test_spec.timeout = math.ceil(test_spec.timeout * platform.testing.timeout_multiplier)
-        test_spec.runnable = is_runnable(test_spec, platform, self.twister_config.fixtures)
+        test_spec.runnable = is_runnable(test_spec, platform, self.twister_config)
         test_spec.run_id = self._generate_run_id(test_spec.rel_to_base_path, test_spec.original_name)
         return test_spec
 
@@ -471,14 +471,14 @@ def _join_strings(args: list[str]) -> str:
 def is_runnable(
     spec: YamlTestSpecification,
     platform: PlatformSpecification,
-    fixtures: list[str] | None = None
+    twister_config: TwisterConfig
 ) -> bool:
     """
     Return if test can be executed on current setup.
 
     :param spec: test specification
     :param platform: selected platform
-    :param fixtures: list of additional devices connected to the test setup
+    :param twister_config: twister configuration
     :return: True if test is runnable
     """
     if os.name == 'nt' and platform.simulation != 'na':
@@ -486,6 +486,9 @@ def is_runnable(
         return False
 
     if spec.build_only:
+        return False
+
+    if spec.slow and twister_config.enable_slow is False:
         return False
 
     if spec.harness not in SUPPORTED_HARNESSES:
@@ -505,9 +508,7 @@ def is_runnable(
             if not is_simulation_platform_available(platform.simulation_exec):
                 return False
 
-    if fixtures is None:
-        fixtures = []
-    if (fixture := spec.harness_config.get('fixture')) and fixture not in fixtures:
+    if (fixture := spec.harness_config.get('fixture')) and fixture not in twister_config.fixtures:
         logger.debug('Required fixture {fixture} is not available')
         return False
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any
 
 import pytest
 
@@ -41,6 +40,7 @@ class TwisterConfig:
     # platform filter provided by user via --platform argument in CLI or via hardware map file
     user_platform_filter: list[str] = field(default_factory=list, repr=False)
     used_toolchain_version: str = ''
+    enable_slow: bool = False
 
     def __post_init__(self):
         self.verify_platforms_existence(self.selected_platforms)
@@ -66,6 +66,7 @@ class TwisterConfig:
         emulation_only: bool = config.option.emulation_only
         architectures: list[str] = config.option.arch
         quarantine_verify: bool = config.option.quarantine_verify
+        enable_slow: bool = config.option.enable_slow
 
         hardware_map_list: list[HardwareMap] = []
         if hardware_map_file:
@@ -88,7 +89,7 @@ class TwisterConfig:
             for quarantine_file in config.option.quarantine_list_path:
                 quarantine.extend(QuarantineData.load_data_from_yaml(filename=quarantine_file))
 
-        data: dict[str, Any] = dict(
+        return cls(
             zephyr_base=zephyr_base,
             build_only=build_only,
             platforms=platforms,
@@ -107,13 +108,14 @@ class TwisterConfig:
             architectures=architectures,
             user_platform_filter=user_platform_filter,
             used_toolchain_version=used_toolchain_version,
+            enable_slow=enable_slow,
         )
-        return cls(**data)
 
     def asdict(self) -> dict:
         """Return dictionary which can be serialized as Json."""
         return dict(
             build_only=self.build_only,
+            enable_slow=self.enable_slow,
             selected_platforms=self.selected_platforms,
             board_root=self.board_root,
             output_dir=self.output_dir,

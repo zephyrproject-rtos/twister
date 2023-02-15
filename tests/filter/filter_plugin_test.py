@@ -25,10 +25,6 @@ def test_if_all_filters_are_correctly_applied(pytester, extra_args):
             @pytest.mark.tags('tag1', 'tag3')
             def test_tag1_tag3():
                 assert True
-
-            @pytest.mark.slow
-            def test_slow():
-                assert True
             """)
     )
     result = pytester.runpytest(
@@ -43,30 +39,4 @@ def test_if_all_filters_are_correctly_applied(pytester, extra_args):
     result.stdout.fnmatch_lines([
         '*test_if_all_filters_are_correctly_applied.py::test_tag1*',
         '*test_if_all_filters_are_correctly_applied.py::test_tag1_tag2*',
-    ])
-    result.stdout.no_fnmatch_line('*test_if_all_filters_are_correctly_applied.py::test_slow*')
-
-
-@pytest.mark.parametrize('extra_args', ['', '-n 2'], ids=['no_xdist', 'xdist'])
-def test_if_slow_test_is_not_filtered(pytester, extra_args):
-    pytester.makepyfile(
-        textwrap.dedent(
-            """\
-            import pytest
-
-            @pytest.mark.slow
-            def test_slow():
-                assert True
-            """)
-    )
-    result = pytester.runpytest(
-        '-v',
-        '--zephyr-base=.',
-        '--enable-slow',
-        extra_args
-    )
-    assert result.ret == 0
-    result.assert_outcomes(passed=1)
-    result.stdout.fnmatch_lines([
-        '*test_if_slow_test_is_not_filtered.py::test_slow*',
     ])

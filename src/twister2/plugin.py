@@ -122,10 +122,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='filter test by tags, e.g.: --tags=@tag1,~@tag2 --tags=@tag3'
     )
     twister_group.addoption(
-        '--enable-slow',
+        '-S', '--enable-slow',
         dest='enable_slow',
         action='store_true',
-        help='include slow tests',
+        help='Execute time-consuming test cases that have been marked '
+             'as "slow" in testcase.yaml. Normally these are only built.',
     )
     twister_group.addoption(
         '--quarantine-list',
