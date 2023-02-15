@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import Generator
 
+from twister2.log_files.log_file import LogFile, NullLogFile
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,8 @@ class DeviceAbstract(abc.ABC):
         :param twister_config: twister configuration
         """
         self.twister_config: TwisterConfig = twister_config
+        self.handler_log_file: LogFile = NullLogFile.create()
+        self.device_log_file: LogFile = NullLogFile.create()
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -56,6 +59,14 @@ class DeviceAbstract(abc.ABC):
     @abc.abstractmethod
     def iter_stdout(self) -> Generator[str, None, None]:
         """Iterate stdout from a device."""
+
+    @abc.abstractmethod
+    def initialize_log_files(self, build_dir: str | Path):
+        """
+        Initialize file to store logs.
+
+        :param build_dir: path to directory with built application
+        """
 
     def stop(self) -> None:
         """Stop device."""

@@ -15,6 +15,7 @@ from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterFlashException
 from twister2.helper import log_command
+from twister2.log_files.log_file import DeviceLogFile, HandlerLogFile
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
@@ -145,10 +146,11 @@ class HardwareAdapter(DeviceAbstract):
                 for line in stdout.decode('utf-8').split('\n'):
                     if line:
                         logger.info(line)
-
             if process.returncode == 0:
                 logger.info('Flashing finished')
             else:
+                if stderr:
+                    self.device_log_file.handle(data=stderr)
                 raise TwisterFlashException(f'Could not flash device {self.hardware_map.id}')
 
     def save_serial_output_to_file(self, filename: str | Path) -> None:
@@ -166,4 +168,10 @@ class HardwareAdapter(DeviceAbstract):
         logger.debug('Start listening on serial port %s', self.hardware_map.serial)
         self.connection.flush()
         while self.connection and self.connection.is_open:
-            yield self.connection.readline().decode('UTF-8').strip()
+            stream = self.connection.readline()
+            self.handler_log_file.handle(data=stream)
+            yield stream.decode('UTF-8').strip()
+
+    def initialize_log_files(self, build_dir: str | Path) -> None:
+        self.handler_log_file = HandlerLogFile.create(build_dir=build_dir)
+        self.device_log_file = DeviceLogFile.create(build_dir=build_dir)

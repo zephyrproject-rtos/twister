@@ -6,8 +6,6 @@ import os
 import threading
 from pathlib import Path
 
-from twister2.device import HANDLER_LOG_FILE_NAME
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,10 +18,8 @@ class FifoHandler:
         """
         self._fifo_in = str(fifo) + '.in'
         self._fifo_out = str(fifo) + '.out'
-        self._dump_file_path = Path(fifo).parent / HANDLER_LOG_FILE_NAME
         self.file_in: io.BytesIO | None = None
         self.file_out: io.BytesIO | None = None
-        self.dump_file: io.TextIOBase | None = None
         self._threads: list[threading.Thread] = []
 
     @staticmethod
@@ -44,7 +40,6 @@ class FifoHandler:
             return False
 
     def connect(self):
-        self.dump_file = open(self._dump_file_path, 'w')
         self._make_fifo_file(self._fifo_in)
         self._make_fifo_file(self._fifo_out)
         self._threads = [
@@ -65,9 +60,6 @@ class FifoHandler:
             self.file_in.close()
         if self.file_out is not None:
             self.file_out.close()
-        if self.dump_file is not None and self.dump_file.closed is False:
-            self.dump_file.close()
-            self.dump_file = None
         for t in self._threads:
             t.join(timeout=1)
         logger.debug(f'Unlink {self._fifo_in}')
@@ -80,8 +72,6 @@ class FifoHandler:
 
     def readline(self, __size: int | None = None) -> bytes:
         line = self.file_out.readline(__size)  # type: ignore[union-attr]
-        if self.dump_file:
-            self.dump_file.write(line.decode())  # type: ignore[union-attr]
         return line
 
     def write(self, __buffer: bytes) -> int:

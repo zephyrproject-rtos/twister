@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from twister2.exceptions import TwisterBuildException, TwisterMemoryOverflowException
-from twister2.log_file.build_log_file import BuildLogFile
+from twister2.log_files.log_file import BuildLogFile
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class BuilderAbstract(abc.ABC):
 
     def __init__(self, build_config: BuildConfig) -> None:
         self.build_config = build_config
-        self.build_log_file = BuildLogFile(build_dir=self.build_config.build_dir)
+        self.build_log_file = BuildLogFile.create(build_dir=self.build_config.build_dir)
 
     def __repr__(self):
         return f'{self.__class__.__name__}()'

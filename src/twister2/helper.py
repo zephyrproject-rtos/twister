@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os.path
 import platform
 import shlex
 from pathlib import Path
@@ -64,3 +65,9 @@ def log_command(logger: logging.Logger, msg: str, args: list, level: int = loggi
         logger.log(level, msg, str(args))
     else:
         logger.log(level, msg, shlex.join(args))
+
+
+def normalize_filename(filename: str) -> str:
+    filename = os.path.expanduser(os.path.expandvars(filename))
+    filename = os.path.normpath(os.path.abspath(filename))
+    return filename
