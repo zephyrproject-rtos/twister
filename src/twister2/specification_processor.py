@@ -128,7 +128,7 @@ class YamlSpecificationProcessor(SpecificationProcessor):
             else:
                 platform_scope = [
                     platform for platform in self.twister_config.platforms
-                    if platform.identifier in self.twister_config.selected_platforms
+                    if platform.identifier in self.twister_config.preselected_platforms
                 ]
                 if tc_platform_allow and not self.twister_config.user_platform_filter:
                     self.twister_config.verify_platforms_existence(tc_platform_allow)

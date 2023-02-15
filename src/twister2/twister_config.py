@@ -25,7 +25,8 @@ class TwisterConfig:
     output_dir: str = 'twister-out'
     board_root: list = field(default_factory=list)
     build_only: bool = False
-    selected_platforms: list[str] = field(default_factory=list, repr=False)
+    selected_platforms: set[str] = field(default_factory=set, repr=False)
+    preselected_platforms: list[str] = field(default_factory=list, repr=False)
     platforms: list[PlatformSpecification] = field(default_factory=list, repr=False)
     hardware_map_list: list[HardwareMap] = field(default_factory=list, repr=False)
     quarantine: None | QuarantineData = None
@@ -41,11 +42,13 @@ class TwisterConfig:
     user_platform_filter: list[str] = field(default_factory=list, repr=False)
     used_toolchain_version: str = ''
     enable_slow: bool = False
+    load_tests_path: str = ''
+    only_failed: bool = False
     west_flash: list[str] = field(default_factory=list, repr=False)
     west_runner: str = ''
 
     def __post_init__(self):
-        self.verify_platforms_existence(self.selected_platforms)
+        self.verify_platforms_existence(self.preselected_platforms)
 
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
@@ -68,6 +71,8 @@ class TwisterConfig:
         architectures: list[str] = config.option.arch
         quarantine_verify: bool = config.option.quarantine_verify
         enable_slow: bool = config.option.enable_slow
+        load_tests_path: str = config.option.load_tests_path
+        only_failed: bool = config.option.only_failed
         west_flash: list[str] = []
         if config.option.west_flash:
             west_flash = [w.strip() for w in config.option.west_flash.split(',')]
@@ -85,7 +90,7 @@ class TwisterConfig:
 
         user_platform_filter: list[str] = config.option.platform
 
-        selected_platforms = _get_selected_platforms(config)
+        preselected_platforms = _get_preselected_platforms(config)
 
         used_toolchain_version = get_toolchain_version(output_dir, zephyr_base)
 
@@ -98,7 +103,7 @@ class TwisterConfig:
             zephyr_base=zephyr_base,
             build_only=build_only,
             platforms=platforms,
-            selected_platforms=selected_platforms,
+            preselected_platforms=preselected_platforms,
             board_root=board_root,
             output_dir=output_dir,
             hardware_map_list=hardware_map_list,
@@ -114,6 +119,8 @@ class TwisterConfig:
             user_platform_filter=user_platform_filter,
             used_toolchain_version=used_toolchain_version,
             enable_slow=enable_slow,
+            load_tests_path=load_tests_path,
+            only_failed=only_failed,
             west_flash=west_flash,
             west_runner=west_runner
         )
@@ -123,7 +130,7 @@ class TwisterConfig:
         return dict(
             build_only=self.build_only,
             enable_slow=self.enable_slow,
-            selected_platforms=self.selected_platforms,
+            selected_platforms=list(self.selected_platforms),
             board_root=self.board_root,
             output_dir=self.output_dir,
         )
@@ -183,7 +190,7 @@ def _get_hardware_map_list(config: pytest.Config) -> list[HardwareMap]:
     return hardware_map_list
 
 
-def _get_selected_platforms(config: pytest.Config) -> list[str]:
+def _get_preselected_platforms(config: pytest.Config) -> list[str]:
     """Return list of selected platforms"""
     platforms: list[PlatformSpecification] = config._platforms  # type: ignore
     emulation_only: bool = config.option.emulation_only

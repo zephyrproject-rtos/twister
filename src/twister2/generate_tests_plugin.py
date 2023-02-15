@@ -86,7 +86,7 @@ class GenerateTestPlugin:
 
         platforms_list: list[PlatformSpecification] = [
             platform for platform in twister_config.platforms
-            if platform.identifier in twister_config.selected_platforms
+            if platform.identifier in twister_config.preselected_platforms
         ]
         spec_file_path: Path = \
             Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME  # type: ignore[attr-defined]
@@ -107,7 +107,6 @@ class GenerateTestPlugin:
             'specification', params, scope='function', indirect=True
         )
 
-    @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(
         self,
         session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
@@ -125,6 +124,10 @@ class GenerateTestPlugin:
             # yaml test function has no `callspec`
             if not hasattr(item, 'callspec'):
                 continue
-            if variant := item.callspec.params.get('specification'):
+            if variant := item.callspec.params.get('specification'):  # type: ignore[attr-defined]
                 if spec := generate_yaml_test_specification_for_item(item, variant):
                     session.specifications[item.nodeid] = spec  # type: ignore[attr-defined]
+
+        # as we have all tests collected, update selected platform
+        for specification in session.specifications.values():  # type: ignore[attr-defined]
+            config.twister_config.selected_platforms.add(specification.platform)  # type: ignore[attr-defined]

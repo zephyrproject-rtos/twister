@@ -30,6 +30,14 @@ class YamlPytestPlugin():
         if path.basename in (SAMPLE_FILENAME, TESTCASE_FILENAME):
             return YamlModule.from_parent(parent, path=Path(path))
 
+    def pytest_ignore_collect(self, path, config):
+        if config.option.load_tests_path:
+            return True
+        elif config.option.only_from_yaml:
+            if path.basename not in (SAMPLE_FILENAME, TESTCASE_FILENAME):
+                return True
+        return False
+
 
 class YamlModule(pytest.File):
     """Class for collecting tests from a yaml file."""

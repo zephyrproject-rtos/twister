@@ -27,11 +27,11 @@ class CsvTestPlan(BaseReportWriter):
         """
         :param data: report data
         """
-        if not data or not data.get('tests'):
+        if not data or not data.get('testsuites'):
             logger.warning('No data to generate test plan')
             return
 
-        tests = data['tests']
+        tests = data['testsuites']
         os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         with open(self.filename, 'w', encoding='UTF-8', newline='') as fd:
             fieldnames = list(tests[0].keys())
