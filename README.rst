@@ -185,3 +185,25 @@ List default platforms only:
 .. code-block:: sh
 
   twister_tools --list-platforms --default-only
+
+WARNING
+-------
+
+Our plugin requires pytest-subtest plugin, however, we modify the behavior of "subtests" introduced with this plugin.
+The original implementation is based on subtest concept from unittest framework where such items are counted and reported
+in a peculiar way.
+
+The fact that we modify the behavior of subtests in our plugin can influence users who are using unittest-based subtests in other
+projects. After adding our plugin to their existing environment the reporting of their existing subtests can change. To mitigate such issues
+we recommend running different projects in different virtual environments.
+
+Additional context: Twister defines 2 levels of "test items":
+
+* test suites (configurations) that correspond to built test applications
+
+* test cases that correspond to individual ztest test cases within test applications using ztest framework.
+
+In our plugin, we modified the reporting and counting of subtests to match how twister is doing it. Test suites
+are "tests" in pytest nomenclature and ztest test cases are based on subtests but they don't follow original unittest rules.
+E.g. in unittest, when a subtest fails it is counted towards failing tests but when it passes it is not counted towards tests.
+In our implementation, tests, and subtests have their own counters. I.e. subtests counts are not "leaking" into tests counts.

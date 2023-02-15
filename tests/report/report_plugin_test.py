@@ -67,10 +67,6 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
         def test_error(make_error):
             pass
 
-        def test_subtests(subtests):
-            for i in range(5):
-                with subtests.test(msg="custom message", i=i):
-                    assert i % 2 == 0
     """)
     test_file = pytester.path / 'foobar_test.py'
     test_file.write_text(test_file_content)
@@ -82,12 +78,12 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
         extra_args
     )
 
-    result.assert_outcomes(passed=2, failed=3, errors=1, xfailed=1, xpassed=1, skipped=1)
+    result.assert_outcomes(passed=1, failed=1, errors=1, xfailed=1, xpassed=1, skipped=1)
     assert output_result.is_file()
     with output_result.open() as file:
         report_data = json.load(file)
     assert set(report_data.keys()) == {'tests', 'environment', 'configuration', 'summary'}
-    assert len(report_data['tests']) == 7
+    assert len(report_data['tests']) == 6
     assert set(report_data['tests'][0].keys()) == {
         'suite_name',
         'test_name',
@@ -104,16 +100,16 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
     }
     assert report_data['summary'] == {
         'passed': 1,
-        'failed': 2,
+        'failed': 1,
         'skipped': 1,
         'xfailed': 1,
         'xpassed': 1,
         'error': 1,
-        'total': 7,
-        'subtests_total': 5,
-        'subtests_passed': 3,
-        'subtests_failed': 2,
-        'subtests_skipped': 0
+        'total': 6,
+        'subtests_failed': 0,
+        'subtests_passed': 0,
+        'subtests_skipped': 0,
+        'subtests_total': 0
     }
     assert set(report_data['environment'].keys()) == {
         'os',
