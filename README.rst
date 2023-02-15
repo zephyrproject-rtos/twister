@@ -70,10 +70,34 @@ Run tests:
 
 .. code-block:: sh
 
-  pytest <PATH_TO_ZEPHYR>/tests/kernel/common -vv --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --log-level=DEBUG
+  pytest <PATHS_TO_SCAN_FOR_TEST> -v --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --tb=no
 
+
+``<PATHS_TO_SCAN_FOR_TEST>`` can be e.g. ``tests/kernel/common samples/hello_world``
 
 If environmental variable ``ZEPHYR_BASE`` is set, one can omit ``--zephyr-base`` argument.
+
+We advise here to use an extra pytest argument ``--tb=no``. It will turn off completely pytest traceback since it can be
+very confusing for regular twister users.
+
+Pytest by default captures any output sent to stdout and stderr and only prints it in case of a failure.
+It can be disabled by adding ``-s`` argument. This allows seeing such output in real-time, e.g. an output printed
+by a device under test and build logs in case of build failure.
+
+A user can also set the logging level with ``--log-level``, e.g. ``--log-level=DEBUG``.
+
+The verbosity level can be decreased by removing ``-v`` from the command and increased by adding an extra one.
+
+* At verbosity level 0 only a testcase/sample.yaml currently executed will be printed and each test configuration inside will be marked with a green/red/yellow dot matching its status (pass/fail/skip)
+
+* At verbosity level 1 each test configuration will be listed individually with corresponding written status.
+
+* At verbosity level 2 matched ztest test cases from ztest test configurations will be additionally listed with their statuses (with ``SUB`` prefix, e.g. ``SUBPASS``, to distinguish from "full" tests)
+
+Other usefull commands:
+
+Parallelization of test execution is supported thanks to the xdist plugin. It can be turned on by adding ``-n auto`` to the command.
+``auto`` can be replaced with integers telling explicitly how many workers to spawn.
 
 Show what fixtures and tests would be executed but don't execute anything:
 
