@@ -5,7 +5,6 @@ import logging
 import pytest
 
 from twister2.filter.filter_interface import FilterInterface
-from twister2.filter.slow_test_filter import SlowTestFilter
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,6 @@ class FilterPlugin:
     def __init__(self, config: pytest.Config):
         self.config = config
         self._filters: list[FilterInterface] = []
-        self.add_filter(SlowTestFilter(self.config))
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
