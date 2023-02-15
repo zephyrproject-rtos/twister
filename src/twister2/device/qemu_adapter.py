@@ -19,6 +19,7 @@ from twister2.device.device_abstract import DeviceAbstract
 from twister2.device.fifo_handler import FifoHandler
 from twister2.exceptions import TwisterException, TwisterRunException
 from twister2.helper import log_command
+from twister2.log_files.log_file import HandlerLogFile
 from twister2.twister_config import TwisterConfig
 
 logger = logging.getLogger(__name__)
@@ -173,7 +174,9 @@ class QemuAdapter(DeviceAbstract):
         try:
             while True:
                 try:
-                    yield q.get(timeout=0.1)
+                    stream = q.get(timeout=0.1)
+                    self.handler_log_file.handle(data=stream + '\n')
+                    yield stream
                 except queue.Empty:  # timeout appeared
                     pass
                 if time.time() > end_time:
@@ -183,3 +186,6 @@ class QemuAdapter(DeviceAbstract):
             pass
         finally:
             t.join(1)
+
+    def initialize_log_files(self, build_dir: str | Path):
+        self.handler_log_file = HandlerLogFile.create(build_dir=build_dir)

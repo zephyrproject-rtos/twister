@@ -1,3 +1,4 @@
+import os
 import subprocess
 from unittest import mock
 
@@ -9,6 +10,7 @@ from twister2.device.simulator_adapter import (
     UnitSimulatorAdapter,
 )
 from twister2.exceptions import TwisterRunException
+from twister2.log_files.log_file import HandlerLogFile, NullLogFile
 from twister2.twister_config import TwisterConfig
 
 
@@ -23,7 +25,7 @@ def test_if_native_simulator_adapter_get_command_returns_proper_string(device, r
     assert device.command == [str(resources.joinpath('zephyr', 'zephyr.exe'))]
 
 
-def test_if_native_simulator_adapter_runs_without_errors(resources, device) -> None:
+def test_if_native_simulator_adapter_runs_without_errors(resources, device, tmp_path) -> None:
     """
     Run script which prints text line by line and ends without errors.
     Verify if subprocess was ended without errors, and without timeout.
@@ -31,11 +33,16 @@ def test_if_native_simulator_adapter_runs_without_errors(resources, device) -> N
     script_path = resources.joinpath('mock_script.py')
     # patching original command by mock_script.py to simulate same behaviour as zephyr.exe
     device.command = ['python3', str(script_path)]
+    device.initialize_log_files(tmp_path)
     device.flash_and_run(timeout=4)
     lines = list(device.iter_stdout)  # give it time before close thread
     device.stop()
     assert device._process_ended_with_timeout is False
     assert 'Readability counts.' in lines
+    assert os.path.isfile(device.handler_log_file.filename)
+    with open(device.handler_log_file.filename, 'r') as file:
+        file_lines = [line.strip() for line in file.readlines(2)]
+    assert file_lines == lines[0:2]
 
 
 def test_if_native_simulator_adapter_finishes_after_timeout(device) -> None:
@@ -48,11 +55,12 @@ def test_if_native_simulator_adapter_finishes_after_timeout(device) -> None:
 
 
 def test_if_native_simulator_adapter_finishes_after_timeout_while_there_is_no_data_from_subprocess(
-        resources, device
+        resources, device, tmp_path
 ) -> None:
     """Test if thread finishes after timeout when there is no data on stdout, but subprocess is still running"""
     script_path = resources.joinpath('mock_script.py')
     device.command = ['python3', str(script_path), '--long-sleep', '--sleep=5']
+    device.initialize_log_files(tmp_path)
     device.flash_and_run(timeout=0.5)
     lines = list(device.iter_stdout)
     device.stop()
@@ -76,6 +84,13 @@ def test_if_simulator_adapter_raises_exception_empty_command(device) -> None:
     exception_msg = 'Run simulation command is empty, please verify if it was generated properly.'
     with pytest.raises(TwisterRunException, match=exception_msg):
         device.flash_and_run(timeout=0.1)
+
+
+def test_handler_and_device_log_correct_initialized_on_simulators(device, tmp_path) -> None:
+    device.initialize_log_files(tmp_path)
+    assert isinstance(device.handler_log_file, HandlerLogFile)
+    assert isinstance(device.device_log_file, NullLogFile)
+    assert device.handler_log_file.filename.endswith('handler.log')  # type: ignore[union-attr]
 
 
 @mock.patch('asyncio.run', side_effect=subprocess.SubprocessError(1, 'Exception message'))

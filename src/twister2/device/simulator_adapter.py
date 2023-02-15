@@ -25,6 +25,7 @@ from twister2.device import END_OF_DATA
 from twister2.device.device_abstract import DeviceAbstract
 from twister2.exceptions import TwisterRunException
 from twister2.helper import log_command
+from twister2.log_files.log_file import HandlerLogFile
 from twister2.twister_config import TwisterConfig
 
 
@@ -160,12 +161,16 @@ class SimulatorAdapterBase(DeviceAbstract, abc.ABC):
     def iter_stdout(self) -> Generator[str, None, None]:
         """Return output from serial."""
         while True:
-            line = self.queue.get()
-            if line == END_OF_DATA:
+            stream = self.queue.get()
+            if stream == END_OF_DATA:
                 logger.debug('No more data from running process')
                 break
-            yield line
+            self.handler_log_file.handle(data=stream + '\n')
+            yield stream
             self.queue.task_done()
+
+    def initialize_log_files(self, build_dir: str | Path):
+        self.handler_log_file = HandlerLogFile.create(build_dir=build_dir)
 
 
 class NativeSimulatorAdapter(SimulatorAdapterBase):

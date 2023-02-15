@@ -40,6 +40,7 @@ def dut(
         if setup_manager.is_executable:
             device.connect()
             device.generate_command(build_dir)
+            device.initialize_log_files(build_dir)
             device.flash_and_run(timeout=spec.timeout)
             device.connect()
         yield device

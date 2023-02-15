@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from twister2.device.hardware_adapter import HardwareAdapter
 from twister2.device.hardware_map import HardwareMap
 from twister2.exceptions import TwisterFlashException
+from twister2.log_files.log_file import DeviceLogFile, HandlerLogFile
 from twister2.twister_config import TwisterConfig
 
 
@@ -133,3 +135,29 @@ def test_if_hardware_adapter_raises_exception_empty_command(device) -> None:
     exception_msg = 'Flash command is empty, please verify if it was generated properly.'
     with pytest.raises(TwisterFlashException, match=exception_msg):
         device.flash_and_run(timeout=0.1)
+
+
+def test_handler_and_device_log_correct_initialized_on_hardware(device, tmp_path) -> None:
+    device.initialize_log_files(tmp_path)
+    assert isinstance(device.handler_log_file, HandlerLogFile)
+    assert isinstance(device.device_log_file, DeviceLogFile)
+    assert device.handler_log_file.filename.endswith('handler.log')  # type: ignore[union-attr]
+    assert device.device_log_file.filename.endswith('device.log')  # type: ignore[union-attr]
+
+
+@mock.patch('twister2.device.hardware_adapter.subprocess.Popen')
+def test_device_log_correct_error_handle(patched_popen, device, tmp_path) -> None:
+    popen_mock = mock.Mock()
+    popen_mock.communicate.return_value = (b'', b'flashing error')
+    patched_popen.return_value = popen_mock
+
+    device.initialize_log_files(tmp_path)
+    device.command = [
+        'west', 'flash', '--skip-rebuild', '--build-dir', str(tmp_path),
+        '--runner', 'nrfjprog', '--', '--dev-id', 'p_id'
+    ]
+    with pytest.raises(expected_exception=TwisterFlashException, match='Could not flash device test'):
+        device.flash_and_run()
+    assert os.path.isfile(device.device_log_file.filename)
+    with open(device.device_log_file.filename, 'r') as file:
+        assert 'flashing error' in file.readlines()

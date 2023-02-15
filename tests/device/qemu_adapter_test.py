@@ -1,3 +1,4 @@
+import os
 import subprocess
 from unittest import mock
 from unittest.mock import patch
@@ -6,10 +7,11 @@ import pytest
 
 from twister2.device.qemu_adapter import QemuAdapter
 from twister2.exceptions import TwisterException, TwisterRunException
+from twister2.log_files.log_file import HandlerLogFile, NullLogFile
 
 
 @pytest.fixture(name='device')
-def fixture_device_adapter(tmp_path, twister_config) -> QemuAdapter:
+def fixture_device_adapter(tmp_path, twister_config) -> QemuAdapter:  # type: ignore[misc]
     build_dir = tmp_path / 'build_dir'
     adapter = QemuAdapter(twister_config, build_dir)
     yield adapter
@@ -64,9 +66,14 @@ def test_if_qemu_adapter_runs_without_errors(resources, twister_config, tmp_path
     device.booting_timeout_in_ms = 1000
     device.command = ['python', str(script_path), fifo_file_path]
     device.connect()
+    device.initialize_log_files(tmp_path)
     device.flash_and_run(timeout=1)
     lines = list(device.iter_stdout)
     assert 'Readability counts.' in lines
+    assert os.path.isfile(device.handler_log_file.filename)
+    with open(device.handler_log_file.filename, 'r') as file:
+        file_lines = [line.strip() for line in file.readlines()]
+    assert file_lines[0:2] == lines[0:2]
     device.disconnect()
 
 
@@ -75,3 +82,10 @@ def test_if_qemu_adapter_finishes_after_timeout(device) -> None:
     device.flash_and_run(timeout=0.1)
     device.stop()
     assert device._process_ended_with_timeout is True
+
+
+def test_handler_and_device_log_correct_initialized_on_qemu(device, tmp_path) -> None:
+    device.initialize_log_files(tmp_path)
+    assert isinstance(device.handler_log_file, HandlerLogFile)
+    assert isinstance(device.device_log_file, NullLogFile)
+    assert device.handler_log_file.filename.endswith('handler.log')  # type: ignore[union-attr]
