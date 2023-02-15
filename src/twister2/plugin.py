@@ -11,6 +11,7 @@ import pytest
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
 from twister2.generate_tests_plugin import GenerateTestPlugin
+from twister2.load_tests import LoadTestPlugin
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.twister_config import TwisterConfig
@@ -233,6 +234,40 @@ def pytest_addoption(parser: pytest.Parser):
              'base paths to be able to use those artifacts on another host/'
              'computer/server.'
     )
+    twister_group.addoption(
+        '--save-tests',
+        dest='save_tests_path',
+        metavar='PATH',
+        action='store',
+        default=None,
+        help='save test plan and exit'
+    )
+    twister_group.addoption(
+        '--load-tests',
+        dest='load_tests_path',
+        metavar='PATH',
+        action='store',
+        default=None,
+        help='load testplan from file'
+    )
+    twister_group.addoption(
+        '--only-failed',
+        dest='only_failed',
+        action='store_true',
+        help='Run only those tests that failed the previous twister run invocation.'
+    )
+    # twister_group.addoption(
+    #     '--test-only',
+    #     dest='test_only',
+    #     action='store_true',
+    #     help='Only run device tests with current artifacts, do not build the code'
+    # )
+    twister_group.addoption(
+        '--only-from-yaml',
+        dest='only_from_yaml',
+        action='store_true',
+        help='Run only tests generated from yaml files. Do not collect pytest scenarios'
+    )
 
 
 def pytest_configure(config: pytest.Config):
@@ -253,29 +288,26 @@ def pytest_configure(config: pytest.Config):
         )
 
     validate_options(config)
+    update_load_tests_path(config)
 
-    output_dir = config.option.output_dir
+    config.option.output_dir = _normalize_path(config.option.output_dir)
 
     # Export zephyr_base variable so other tools like west would also use the same one
     os.environ['ZEPHYR_BASE'] = zephyr_base
 
     xdist_worker = hasattr(config, 'workerinput')  # xdist worker
 
-    if not config.option.collectonly and not xdist_worker:
-        choice = config.option.clear
-        if config.option.build_only and choice == 'no':
-            msg = 'To apply `--build-only` option, `--clear` option cannot be set as `no`.'
-            logger.error(msg)
-            pytest.exit(msg)
-        run_artifactory_cleanup(choice, output_dir)
+    if not xdist_worker:
+        run_artifactory_cleanup(config)
 
     # create output directory if not exists
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(config.option.output_dir, exist_ok=True)
 
     configure_logging(config)
 
     # register plugins
     config.pluginmanager.register(plugin=TwisterExtPlugin(), name='twister ext plugin')
+    config.pluginmanager.register(plugin=LoadTestPlugin(), name='load test plugin')
     config.pluginmanager.register(plugin=YamlPytestPlugin(), name='yaml file plugin')
     config.pluginmanager.register(plugin=GenerateTestPlugin(), name='generate tests plugin')
 
@@ -339,6 +371,10 @@ def validate_options(config: pytest.Config) -> None:
             'Not allowed to combine arguments: `--hardware-map`, `--device-serial` '
             'and `--device-serial-pty`.'
         )
+    if config.option.build_only and config.option.clear == 'no':
+        pytest.exit(
+            'To apply `--build-only` option, `--clear` option cannot be set as `no`.'
+        )
     if config.option.quarantine_verify and not config.option.quarantine_list_path:
         pytest.exit(
             'No quarantine list given to be verified. '
@@ -351,20 +387,81 @@ def validate_options(config: pytest.Config) -> None:
         )
 
 
-def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
-    if os.path.exists(output_dir) is False:
+def run_artifactory_cleanup(config: pytest.Config) -> None:
+    """Clean, archive or delete an output dir. If load test file
+    is in impacted directory, backup them or update path"""
+    if any([
+        os.path.exists(config.option.output_dir) is False,
+        config.option.collectonly,
+        config.option.save_tests_path
+    ]):
         return
-    elif choice == 'no':
+
+    choice = config.option.clear
+    output_dir = config.option.output_dir
+    if choice == 'no':
         print('Keeping previous artifacts untouched')
     elif choice == 'delete':
+        load_tests_content = store_load_tests_file_content(config)
         print(f'Deleting previous artifacts from {output_dir}')
         shutil.rmtree(output_dir, ignore_errors=True)
+        restore_load_tests_file(config, load_tests_content)
     elif choice == 'archive':
         timestamp = os.path.getmtime(output_dir)
         file_date = datetime.datetime.fromtimestamp(timestamp).strftime('%y%m%d%H%M%S')
         new_output_dir = f'{output_dir}_{file_date}'
         print(f'Renaming output directory to {new_output_dir}')
         shutil.move(str(output_dir), new_output_dir)
+        update_load_tests_path_if_archieved(config, new_output_dir)
+
+
+def update_load_tests_path(config: pytest.Config) -> None:
+    """Update load tests path if using `only-failed` option. Normalize and validate"""
+    if config.option.only_failed:
+        if not config.option.load_tests_path:
+            config.option.load_tests_path = str(os.path.join(config.option.output_dir, 'twister.json'))
+    if config.option.load_tests_path:
+        config.option.load_tests_path = _normalize_path(config.option.load_tests_path)
+        load_tests = Path(config.option.load_tests_path)
+        if not load_tests.is_file():
+            pytest.exit(f'File {load_tests} does not exists.')
+    # --collect only should be set to exit pytest just after collecting tests (works with xdist)
+    if config.option.save_tests_path:
+        config.option.collectonly = True
+
+
+def update_load_tests_path_if_archieved(config: pytest.Config, new_output_dir: str) -> None:
+    if not config.option.load_tests_path:
+        return
+    load_tests = Path(config.option.load_tests_path)
+    if str(load_tests.parent) == config.option.output_dir:
+        config.option.load_tests_path = _normalize_path(
+            Path(new_output_dir) / load_tests.name
+        )
+
+
+def store_load_tests_file_content(config: pytest.Config) -> None | str:
+    if not config.option.load_tests_path:
+        return None
+    load_tests = Path(config.option.load_tests_path)
+    if str(load_tests.parent) == config.option.output_dir:
+        with open(load_tests, 'r') as fp:
+            return fp.read()
+    return None
+
+
+def restore_load_tests_file(config: pytest.Config, load_tests_content: str | None) -> None:
+    if not load_tests_content:
+        return
+    os.makedirs(config.option.output_dir, exist_ok=True)
+    with open(config.option.load_tests_path, 'w') as fp:
+        fp.write(load_tests_content)
+
+
+def _normalize_path(path: str | Path) -> str:
+    path = os.path.expanduser(os.path.expandvars(path))
+    path = os.path.normpath(os.path.abspath(path))
+    return path
 
 
 class TwisterExtPlugin():

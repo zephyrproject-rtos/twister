@@ -3,6 +3,8 @@ Plugin to generate custom report for twister.
 """
 from __future__ import annotations
 
+import json
+import logging
 import os
 import platform
 import time
@@ -21,11 +23,14 @@ from twister2.report.helper import (
     get_item_platform,
     get_item_runnable_status,
     get_item_type,
+    get_retries,
     get_run_id,
     get_suite_name,
     get_test_name,
 )
 from twister2.report.test_results_json import JsonResultsReport
+
+logger = logging.getLogger(__name__)
 
 TIME_DECIMAL_PLACES = 2
 TIME_DECIMAL_PLACES_SUBTEST = 2
@@ -162,6 +167,8 @@ class TestResultsPlugin:
     def pytest_sessionfinish(self, session: pytest.Session):
         self.session_finish_time = time.time()
         data = self._generate_report(session)
+        if self.config.option.only_failed:
+            data = self._merge_with_load_tests_data(data, self.config.option.load_tests_path)
         self._save_report(data)
 
     def pytest_terminal_summary(self, terminalreporter):
@@ -214,6 +221,7 @@ class TestResultsPlugin:
                 platform=get_item_platform(item),
                 run_id=get_run_id(item),
                 runnable=get_item_runnable_status(item),
+                retries=get_retries(item),
                 status=result.status,
                 message=result.message,
                 execution_time=f'{result.call_duration:.{TIME_DECIMAL_PLACES}f}',
@@ -239,6 +247,24 @@ class TestResultsPlugin:
             summary=summary,
             testsuites=tests_list,
         )
+
+    def _merge_with_load_tests_data(self, data: dict, load_tests_path: str) -> dict:
+        with open(load_tests_path, 'r') as fp:
+            load_data = json.load(fp)
+        test_list: list = []
+        for ts in load_data['testsuites']:
+            if (matched_ts := self._find_testsuite(data['testsuites'], ts['name'])):
+                test_list.append(matched_ts)
+            else:
+                test_list.append(ts)
+        data['testsuites'] = test_list
+        return data
+
+    def _find_testsuite(self, testsuites: list[dict], name: str) -> dict | None:
+        for ts in testsuites:
+            if ts['name'] == name:
+                return ts
+        return None
 
     def _get_environment(self) -> dict:
         duration = self.session_finish_time - self.session_start_time
@@ -288,7 +314,7 @@ def pytest_configure(config: pytest.Config):
         test_result_json_path = os.path.join(config.getoption('output_dir'), 'twister.json')
     test_results_writers.append(JsonResultsReport(test_result_json_path))
 
-    if test_results_writers and not config.option.collectonly:
+    if test_results_writers and not config.option.collectonly and not config.option.save_tests_path:
         config.pluginmanager.register(
             plugin=TestResultsPlugin(config, writers=test_results_writers),
             name='test_results'

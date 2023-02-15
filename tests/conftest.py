@@ -27,7 +27,7 @@ def twister_config(platform) -> TwisterConfig:
     """Return new instance of TwisterConfig"""
     return TwisterConfig(
         zephyr_base='dummy_path',
-        selected_platforms=[platform.identifier],
+        preselected_platforms=[platform.identifier],
         platforms=[platform]
     )
 

@@ -17,9 +17,10 @@ from twister2.report.helper import (
     get_item_platform,
     get_item_runnable_status,
     get_item_type,
+    get_retries,
+    get_run_id,
     get_suite_name,
     get_test_name,
-    get_test_path,
 )
 from twister2.report.test_plan_csv import CsvTestPlan
 from twister2.report.test_plan_json import JsonTestPlan
@@ -48,18 +49,19 @@ class TestPlanPlugin:
             name=get_suite_name(item),
             arch=get_item_arch(item),
             platform=get_item_platform(item),
+            run_id=get_run_id(item),
             runnable=get_item_runnable_status(item),
+            retries=get_retries(item),
             test_name=get_test_name(item),
             nodeid=item.nodeid,
             type=get_item_type(item),
-            build_only=get_item_build_only_status(item),
-            path=get_test_path(item)
+            build_only=get_item_build_only_status(item)
         )
 
     def generate(self, items: List[pytest.Item]) -> dict:
         """Build test plan"""
-        tests = [self._item_as_dict(item) for item in items]
-        return dict(tests=tests)
+        testsuites = [self._item_as_dict(item) for item in items]
+        return dict(testsuites=testsuites)
 
     @pytest.hookimpl(trylast=True)
     def pytest_collection_modifyitems(
@@ -68,6 +70,8 @@ class TestPlanPlugin:
         # generate test plan and save
         data = self.generate(items)
         self._save_report(data)
+        if save_tests_path := config.getoption('save_tests_path'):
+            pytest.exit(f'Testplan stored in {save_tests_path}', returncode=0)
 
     def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
         # print summary to terminal
@@ -109,15 +113,19 @@ def pytest_configure(config: pytest.Config):
         return
 
     test_plan_writers: list[BaseReportWriter] = []
-    testplan_json_path = None
-    if config.getoption('testplan_json_path'):
-        testplan_json_path = config.getoption('testplan_json_path')
-    else:
-        testplan_json_path = os.path.join(config.getoption('output_dir'), 'testplan.json')
-    test_plan_writers.append(JsonTestPlan(testplan_json_path))
 
-    if testplan_csv_path := config.getoption('testplan_csv_path'):
-        test_plan_writers.append(CsvTestPlan(testplan_csv_path))
+    if save_tests_path := config.getoption('save_tests_path'):
+        test_plan_writers.append(JsonTestPlan(save_tests_path))
+    else:
+        testplan_json_path = None
+        if config.getoption('testplan_json_path'):
+            testplan_json_path = config.getoption('testplan_json_path')
+        else:
+            testplan_json_path = os.path.join(config.getoption('output_dir'), 'testplan.json')
+        test_plan_writers.append(JsonTestPlan(testplan_json_path))
+
+        if testplan_csv_path := config.getoption('testplan_csv_path'):
+            test_plan_writers.append(CsvTestPlan(testplan_csv_path))
 
     if test_plan_writers:
         config.pluginmanager.register(

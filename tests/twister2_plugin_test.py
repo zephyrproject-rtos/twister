@@ -32,6 +32,9 @@ def test_twister_help(pytester):
         '*--prep-artifacts-for-testing*',
         '*--west-flash*',
         '*--west-runner*',
+        '*--save-tests=PATH*',
+        '*--load-tests=PATH*',
+        '*--only-from-yaml*',
     ])
 
 

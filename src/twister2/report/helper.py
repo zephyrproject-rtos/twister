@@ -94,6 +94,14 @@ def get_run_id(item: pytest.Item) -> str:
     return ''
 
 
+def get_retries(item: pytest.Item) -> int:
+    """Return `retries` from specification."""
+    if hasattr(item.session, 'specifications'):
+        if spec := item.session.specifications.get(item.nodeid):
+            return spec.retries
+    return 0
+
+
 def get_item_platform_allow(item: pytest.Item) -> str:
     """Return allowed platforms."""
     if hasattr(item.session, 'specifications'):

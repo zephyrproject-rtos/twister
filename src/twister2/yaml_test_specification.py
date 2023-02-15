@@ -57,6 +57,7 @@ class YamlTestSpecification:
     modules: list[str] = field(default_factory=list)
     testcases: list[str] = field(default_factory=list)
     sysbuild: bool = False
+    retries: int = 0
 
     def __post_init__(self):
         self.tags = string_to_set(self.tags)
