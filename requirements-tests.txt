@@ -1,3 +1,5 @@
 pytest>=7.0.0
 pytest-cov
+pytest-rerunfailures==11.0
+pytest-split
 pytest-xdist
