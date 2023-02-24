@@ -48,7 +48,7 @@ class TwisterConfig:
     @classmethod
     def create(cls, config: pytest.Config) -> TwisterConfig:
         """Create new instance from pytest.Config."""
-        zephyr_base: str = (
+        zephyr_base: str = os.path.expanduser(
             config.option.zephyr_base
             or config.getini('zephyr_base')
             or os.environ.get('ZEPHYR_BASE', '')
