@@ -82,21 +82,23 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
     assert output_result.is_file()
     with output_result.open() as file:
         report_data = json.load(file)
-    assert set(report_data.keys()) == {'tests', 'environment', 'configuration', 'summary'}
-    assert len(report_data['tests']) == 6
-    assert set(report_data['tests'][0].keys()) == {
-        'suite_name',
+    assert set(report_data.keys()) == {'testsuites', 'environment', 'configuration', 'summary'}
+    assert len(report_data['testsuites']) == 6
+    assert set(report_data['testsuites'][0].keys()) == {
+        'name',
         'test_name',
         'nodeid',
         'platform',
+        'arch',
         'type',
         'build_only',
         'runnable',
+        'run_id',
         'status',
         'duration',
         'execution_time',
         'message',
-        'subtests',
+        'testcases',
     }
     assert report_data['summary'] == {
         'passed': 1,

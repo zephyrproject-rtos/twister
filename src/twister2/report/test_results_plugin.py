@@ -16,10 +16,12 @@ from pytest_subtests import SubTestReport
 from twister2.environment.environment import get_toolchain_version, get_zephyr_repo_info
 from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
+    get_item_arch,
     get_item_build_only_status,
     get_item_platform,
     get_item_runnable_status,
     get_item_type,
+    get_run_id,
     get_suite_name,
     get_test_name,
 )
@@ -130,9 +132,9 @@ class TestResultsPlugin:
             ztest_testcase_duration = self._get_ztest_testcase_duration(report)
             result.add_subtest(
                 dict(
-                    name=report.context.msg,
+                    identifier=report.context.msg,
+                    execution_time=f'{ztest_testcase_duration:.{TIME_DECIMAL_PLACES_SUBTEST}f}',
                     status=outcome,
-                    execution_time=f'{ztest_testcase_duration:.{TIME_DECIMAL_PLACES_SUBTEST}f}'
                 )
             )
         else:
@@ -206,21 +208,23 @@ class TestResultsPlugin:
             subtests_fail_count += sum(1 for st in result.subtests if st['status'] == Status.FAILED)
             subtests_skip_count += sum(1 for st in result.subtests if st['status'] == Status.SKIPPED)
 
-            test = dict(
-                suite_name=get_suite_name(item),
-                test_name=get_test_name(item),
-                nodeid=item.nodeid,
+            testsuites = dict(
+                name=get_suite_name(item),
+                arch=get_item_arch(item),
                 platform=get_item_platform(item),
-                type=get_item_type(item),
-                build_only=get_item_build_only_status(item),
+                run_id=get_run_id(item),
                 runnable=get_item_runnable_status(item),
                 status=result.status,
                 message=result.message,
-                duration=f'{result.duration:.{TIME_DECIMAL_PLACES}f}',
                 execution_time=f'{result.call_duration:.{TIME_DECIMAL_PLACES}f}',
-                subtests=result.subtests,
+                duration=f'{result.duration:.{TIME_DECIMAL_PLACES}f}',
+                test_name=get_test_name(item),
+                nodeid=item.nodeid,
+                type=get_item_type(item),
+                build_only=get_item_build_only_status(item),
+                testcases=result.subtests,
             )
-            tests_list.append(test)
+            tests_list.append(testsuites)
 
         summary = dict(self.counter)
         summary['total'] = sum(self.counter.values())
@@ -233,7 +237,7 @@ class TestResultsPlugin:
             environment=self._get_environment(),
             configuration=self.config.twister_config.asdict(),  # type: ignore
             summary=summary,
-            tests=tests_list,
+            testsuites=tests_list,
         )
 
     def _get_environment(self) -> dict:
