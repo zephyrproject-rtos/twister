@@ -12,6 +12,7 @@ from _pytest.terminal import TerminalReporter
 
 from twister2.report.base_report_writer import BaseReportWriter
 from twister2.report.helper import (
+    get_item_arch,
     get_item_build_only_status,
     get_item_platform,
     get_item_runnable_status,
@@ -44,13 +45,15 @@ class TestPlanPlugin:
     def _item_as_dict(self, item: pytest.Item) -> dict:
         """Return test metadata as dictionary."""
         return dict(
-            suite_name=get_suite_name(item),
-            test_name=get_test_name(item),
-            path=get_test_path(item),
+            name=get_suite_name(item),
+            arch=get_item_arch(item),
             platform=get_item_platform(item),
+            runnable=get_item_runnable_status(item),
+            test_name=get_test_name(item),
+            nodeid=item.nodeid,
             type=get_item_type(item),
             build_only=get_item_build_only_status(item),
-            runnable=get_item_runnable_status(item),
+            path=get_test_path(item)
         )
 
     def generate(self, items: List[pytest.Item]) -> dict:
