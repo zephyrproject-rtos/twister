@@ -11,6 +11,9 @@ from pytest_subtests import SubTestReport
 @pytest.hookimpl(tryfirst=True)
 def pytest_report_teststatus(report, config):
 
+    if not hasattr(config, 'twister_config'):
+        return
+
     if hasattr(report, 'wasxfail'):
         return None
 

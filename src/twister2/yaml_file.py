@@ -17,7 +17,18 @@ from twister2.twister_config import TwisterConfig
 from twister2.yaml_test_function import YamlFunction, yaml_test_function_factory
 from twister2.yaml_test_specification import YamlTestSpecification
 
+SAMPLE_FILENAME: str = 'sample.yaml'
+TESTCASE_FILENAME: str = 'testcase.yaml'
+
 logger = logging.getLogger(__name__)
+
+
+class YamlPytestPlugin():
+
+    def pytest_collect_file(self, parent, path):
+        # discovers all yaml tests in test directory
+        if path.basename in (SAMPLE_FILENAME, TESTCASE_FILENAME):
+            return YamlModule.from_parent(parent, path=Path(path))
 
 
 class YamlModule(pytest.File):

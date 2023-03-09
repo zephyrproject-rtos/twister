@@ -66,11 +66,18 @@ Show all available options:
   pytest --help
 
 
+To use the plugin in a pytest run, simply add `--twister` to the command line invocation:
+
+.. code-block:: sh
+
+  pytest --twister ...
+
+
 Run tests:
 
 .. code-block:: sh
 
-  pytest <PATHS_TO_SCAN_FOR_TEST> -v --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --tb=no
+  pytest --twister <PATHS_TO_SCAN_FOR_TEST> -v --zephyr-base=<PATH_TO_ZEPHYR> --platform=native_posix --tb=no
 
 
 ``<PATHS_TO_SCAN_FOR_TEST>`` can be e.g. ``tests/kernel/common samples/hello_world``
@@ -103,28 +110,28 @@ Show what fixtures and tests would be executed but don't execute anything:
 
 .. code-block:: sh
 
-  pytest tests --setup-plan
+  pytest --twister tests --setup-plan
 
 
 List all tests without executing:
 
 .. code-block:: sh
 
-  pytest tests --collect-only
+  pytest --twister tests --collect-only
 
 
 Run tests only for specific platforms:
 
 .. code-block:: sh
 
-  pytest tests --platform=native_posix --platform=nrf52840dk_nrf52840
+  pytest --twister tests --platform=native_posix --platform=nrf52840dk_nrf52840
 
 
 Provide directory to search for board configuration files:
 
 .. code-block:: sh
 
-  pytest tests --board-root=path_to_board_dir
+  pytest --twister tests --board-root=path_to_board_dir
 
 
 Reports
@@ -134,21 +141,21 @@ Generate test plan in CSV format:
 
 .. code-block:: sh
 
-  pytest tests --testplan-csv=testplan.csv --collect-only
+  pytest --twister tests --testplan-csv=testplan.csv --collect-only
 
 
 Use custom path for test plan in JSON format:
 
 .. code-block:: sh
 
-  pytest tests --testplan-json=custom_plan.json --collect-only
+  pytest --twister tests --testplan-json=custom_plan.json --collect-only
 
 
 Use custom path for result report in JSON format:
 
 .. code-block:: sh
 
-  pytest tests --resutls-json=custom_name.json
+  pytest --twister tests --resutls-json=custom_name.json
 
 
 Filtering tests
@@ -158,7 +165,7 @@ Run tests with given tags (`@` is optional and can be omitted):
 
 .. code-block:: sh
 
-  pytest tests --tags=@tag1,@tag2
+  pytest --twister tests --tags=@tag1,@tag2
 
 
 Examples of usage:

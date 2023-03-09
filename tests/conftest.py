@@ -58,8 +58,10 @@ def mock_get_zephyr_repo_info():
     we need to mock
     twister2.environment.environment.get_zephyr_repo_info
     because in unit tests we don't have Zephyr repo to call this script
+    comment: when using `from module import method_to_mock`, this method
+        must be mocked using name of current module
     """
-    with mock.patch('twister2.environment.environment.get_zephyr_repo_info') as mocked_object:
+    with mock.patch('twister2.report.test_results_plugin.get_zephyr_repo_info') as mocked_object:
         RepoInfo = namedtuple('RepoInfo', 'zephyr_version commit_date')
         mocked_object.return_value = RepoInfo('123456789012', '20220102')
         yield mocked_object

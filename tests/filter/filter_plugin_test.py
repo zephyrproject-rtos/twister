@@ -28,6 +28,7 @@ def test_if_all_filters_are_correctly_applied(pytester, extra_args):
             """)
     )
     result = pytester.runpytest(
+        '--twister',
         '--tags=@tag1',
         '--tags=~@tag3',
         '-v',

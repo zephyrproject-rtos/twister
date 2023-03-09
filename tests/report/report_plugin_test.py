@@ -73,6 +73,7 @@ def test_if_pytest_generates_json_results_with_expected_data(pytester, extra_arg
     output_result: Path = pytester.path / 'twister.json'
 
     result = pytester.runpytest(
+        '--twister',
         f'--zephyr-base={str(pytester.path)}',
         f'--results-json={output_result}',
         extra_args

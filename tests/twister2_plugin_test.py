@@ -1,3 +1,5 @@
+
+import os
 import textwrap
 
 
@@ -9,6 +11,7 @@ def test_twister_help(pytester):
         '*--testplan-json=PATH*generate test plan in JSON format*',
         '*--results-json=PATH*generate test results report in JSON format*',
         '*Twister:*',
+        '*--twister*',
         '*--build-only*build only*',
         '*--platform=PLATFORM*build tests for specific platforms*',
         '*--board-root=PATH*directory to search for board configuration files*',
@@ -105,3 +108,64 @@ def test_if_regular_tests_work_with_specification_file(pytester, resources):
     result.stdout.no_fnmatch_line(
         '*<Function*test_foo*native_posix:scenario3*>*',  # should be marked as skip
     )
+
+
+def test_if_pytest_skip_twister_tests_if_not_enabled(pytester, resources) -> None:
+    pytester.copy_example(str(resources))
+    if os.path.exists('pytest.ini'):
+        os.remove('pytest.ini')
+    result = pytester.runpytest(
+        f'--zephyr-base={str(pytester.path)}',
+        '--co',
+    )
+    result.stdout.re_match_lines_random([
+        r'collected 0 items',
+    ])
+
+
+def test_if_pytest_skip_twister_regular_tests_if_not_enabled(pytester, resources):
+    pytester.copy_example(str(resources))
+    if os.path.exists('pytest.ini'):
+        os.remove('pytest.ini')
+    test_file_content = textwrap.dedent("""
+        import pytest
+
+        @pytest.mark.build_specification
+        def test_foo(builder):
+            pass
+
+        def test_bar():
+            pass
+    """)
+    test_file = pytester.path / 'tests' / 'foobar_test.py'
+    test_file.write_text(test_file_content)
+    test_spec_content = textwrap.dedent("""
+        tests:
+            scenario1:
+                tags: tag1
+    """)
+    test_spec_file = pytester.path / 'tests' / 'testspec.yaml'
+    test_spec_file.write_text(test_spec_content)
+
+    result = pytester.runpytest(
+        str(test_file),
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=native_posix',
+        '--co',
+        '-m not skip',
+    )
+    result.stdout.re_match_lines_random([
+        '.*test_bar',
+    ])
+    result.stdout.no_fnmatch_line('.*test_foo')
+
+    result = pytester.runpytest(
+        str(test_file),
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=native_posix',
+        '-v',
+    )
+    result.stdout.re_match_lines_random([
+        '.*test_bar PASSED',
+        '.*test_foo SKIPPED.*Twister is not enabled'
+    ])
