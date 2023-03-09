@@ -50,56 +50,6 @@ def get_scenarios_from_yaml(spec_file: Path) -> list[str]:
         return []
 
 
-def pytest_generate_tests(metafunc: pytest.Metafunc):
-    # generate parametrized tests for each selected platform for ordinary pytest tests
-    # if `build_specification` marker is used
-    if not metafunc.definition.get_closest_marker('build_specification'):
-        return
-
-    # inject fixture for parametrized tests
-    if 'specification' not in metafunc.definition.fixturenames:
-        metafunc.definition.fixturenames.append('specification')
-
-    twister_config = metafunc.config.twister_config  # type: ignore[attr-defined]
-
-    platforms_list: list[PlatformSpecification] = [
-        platform for platform in twister_config.platforms
-        if platform.identifier in twister_config.selected_platforms
-    ]
-    spec_file_path: Path = Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME  # type: ignore[attr-defined]
-    scenarios = get_scenarios_from_fixture(metafunc)
-    assert spec_file_path.exists(), f'There is no specification file for the test: {spec_file_path}'
-    if not scenarios:
-        scenarios = get_scenarios_from_yaml(spec_file_path)
-    variants = itertools.product(platforms_list, scenarios)
-    params: list[NamedTuple] = []
-    for variant in variants:
-        v = Variant(*variant)
-        params.append(
-            pytest.param(v, marks=pytest.mark.platform(v.platform.identifier), id=str(v))
-        )
-
-    # using indirect=True to inject value from `specification` fixture instead of param
-    metafunc.parametrize(
-        'specification', params, scope='function', indirect=True
-    )
-
-
-@pytest.fixture(scope='function')
-def specification(request: pytest.FixtureRequest) -> YamlTestSpecification | None:
-    """Return test specification from yaml file taking into account the appropriate platform and scenario."""
-    if hasattr(request.session, 'specifications'):
-        return request.session.specifications.get(request.node.nodeid)
-    else:
-        return None
-
-
-def pytest_configure(config: pytest.Config):
-    config.addinivalue_line(
-        'markers', 'build_specification(names="scenario1,scenario2"): select scenarios to build'
-    )
-
-
 def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Variant) -> YamlTestSpecification | None:
     """Add test specification from yaml file to test item."""
     logger.debug('Adding test specification to item "%s"', item.nodeid)
@@ -112,20 +62,69 @@ def generate_yaml_test_specification_for_item(item: pytest.Item, variant: Varian
     return test_spec
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(
-    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
-):
-    if not hasattr(session, 'specifications'):
-        session.specifications = {}  # type: ignore[attr-defined]
+class GenerateTestPlugin:
 
-    for item in items:
-        # add YAML test specification to session for consistency with python tests
-        if hasattr(item.function, 'spec') and item.nodeid not in session.specifications:  # type: ignore[attr-defined]
-            session.specifications[item.nodeid] = item.function.spec  # type: ignore[attr-defined]
-        # yaml test function has no `callspec`
-        if not hasattr(item, 'callspec'):
-            continue
-        if variant := item.callspec.params.get('specification'):
-            if spec := generate_yaml_test_specification_for_item(item, variant):
-                session.specifications[item.nodeid] = spec  # type: ignore[attr-defined]
+    @pytest.fixture(scope='function')
+    def specification(self, request: pytest.FixtureRequest) -> YamlTestSpecification | None:
+        """Return test specification from yaml file taking into account the appropriate platform and scenario."""
+        if hasattr(request.session, 'specifications'):
+            return request.session.specifications.get(request.node.nodeid)  # type: ignore[attr-defined]
+        else:
+            return None
+
+    def pytest_generate_tests(self, metafunc: pytest.Metafunc):
+        # generate parametrized tests for each selected platform for ordinary pytest tests
+        # if `build_specification` marker is used
+        if not metafunc.definition.get_closest_marker('build_specification'):
+            return
+
+        # inject fixture for parametrized tests
+        if 'specification' not in metafunc.definition.fixturenames:
+            metafunc.definition.fixturenames.append('specification')
+
+        twister_config = metafunc.config.twister_config  # type: ignore[attr-defined]
+
+        platforms_list: list[PlatformSpecification] = [
+            platform for platform in twister_config.platforms
+            if platform.identifier in twister_config.selected_platforms
+        ]
+        spec_file_path: Path = \
+            Path(metafunc.definition.fspath.dirname) / TEST_SPEC_FILE_NAME  # type: ignore[attr-defined]
+        scenarios = get_scenarios_from_fixture(metafunc)
+        assert spec_file_path.exists(), f'There is no specification file for the test: {spec_file_path}'
+        if not scenarios:
+            scenarios = get_scenarios_from_yaml(spec_file_path)
+        variants = itertools.product(platforms_list, scenarios)
+        params: list[NamedTuple] = []
+        for variant in variants:
+            v = Variant(*variant)
+            params.append(
+                pytest.param(v, marks=pytest.mark.platform(v.platform.identifier), id=str(v))
+            )
+
+        # using indirect=True to inject value from `specification` fixture instead of param
+        metafunc.parametrize(
+            'specification', params, scope='function', indirect=True
+        )
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_collection_modifyitems(
+        self,
+        session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+    ):
+        if not hasattr(session, 'specifications'):
+            session.specifications = {}  # type: ignore[attr-defined]
+
+        for item in items:
+            # add YAML test specification to session for consistency with python tests
+            if all([
+                hasattr(item.function, 'spec'),  # type: ignore[attr-defined]
+                item.nodeid not in session.specifications   # type: ignore[attr-defined]
+            ]):
+                session.specifications[item.nodeid] = item.function.spec  # type: ignore[attr-defined]
+            # yaml test function has no `callspec`
+            if not hasattr(item, 'callspec'):
+                continue
+            if variant := item.callspec.params.get('specification'):
+                if spec := generate_yaml_test_specification_for_item(item, variant):
+                    session.specifications[item.nodeid] = spec  # type: ignore[attr-defined]

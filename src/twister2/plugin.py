@@ -10,13 +10,11 @@ import pytest
 
 from twister2.filter.filter_plugin import FilterPlugin
 from twister2.filter.tag_filter import TagFilter
+from twister2.generate_tests_plugin import GenerateTestPlugin
 from twister2.log import configure_logging
 from twister2.platform_specification import search_platforms
 from twister2.twister_config import TwisterConfig
-from twister2.yaml_file import YamlModule
-
-SAMPLE_FILENAME: str = 'sample.yaml'
-TESTCASE_FILENAME: str = 'testcase.yaml'
+from twister2.yaml_file import YamlPytestPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +23,25 @@ pytest_plugins = (
     'twister2.fixtures.dut',
     'twister2.fixtures.fixtures',
     'twister2.fixtures.log_parser',
-    'twister2.generate_tests_plugin',
     'twister2.report.test_plan_plugin',
     'twister2.report.test_results_plugin',
     'twister2.report.yaml_test_reporting_plugin',
 )
 
 
-def pytest_collect_file(parent, path):
-    # discovers all yaml tests in test directory
-    if path.basename in (SAMPLE_FILENAME, TESTCASE_FILENAME):
-        return YamlModule.from_parent(parent, path=Path(path))
-
-
 def pytest_addoption(parser: pytest.Parser):
     twister_group = parser.getgroup('Twister')
+    twister_group.addoption(
+        '--twister',
+        action='store_true',
+        default=False,
+        help='Activate twister plugin'
+    )
+    parser.addini(
+        'twister',
+        'Activate twister plugin',
+        type='bool'
+    )
     twister_group.addoption(
         '--build-only',
         default=False,
@@ -209,6 +211,11 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('help'):
         return
 
+    register_custom_markers(config)
+
+    if not (config.getoption('twister') or config.getini('twister')):
+        return
+
     zephyr_base = os.path.expanduser(
         config.getoption('zephyr_base') or config.getini('zephyr_base') or os.environ.get('ZEPHYR_BASE', '')
     )
@@ -240,10 +247,13 @@ def pytest_configure(config: pytest.Config):
     configure_logging(config)
 
     # register plugins
+    config.pluginmanager.register(plugin=TwisterExtPlugin(), name='twister ext plugin')
+    config.pluginmanager.register(plugin=YamlPytestPlugin(), name='yaml file plugin')
+    config.pluginmanager.register(plugin=GenerateTestPlugin(), name='generate tests plugin')
+
     filter_plugin = FilterPlugin(config)
     if config.getoption('tags'):
         filter_plugin.add_filter(TagFilter(config))
-
     config.pluginmanager.register(plugin=filter_plugin, name='filter_tests')
 
     # configure twister
@@ -254,6 +264,8 @@ def pytest_configure(config: pytest.Config):
     config._platforms = search_platforms(zephyr_base, board_root)  # type: ignore
     config.twister_config = TwisterConfig.create(config)  # type: ignore
 
+
+def register_custom_markers(config: pytest.Config) -> None:
     # register custom markers for twister
     markers = [
         'tags(tag1, tag2, ...): mark test for specific tags',
@@ -261,6 +273,7 @@ def pytest_configure(config: pytest.Config):
         'type(test_type): mark test for specific type',
         'slow: mark test as slow',
         'build_only: test can only be built',
+        'build_specification(names="scenario1,scenario2"): select scenarios to build',
     ]
     for marker in markers:
         config.addinivalue_line('markers', marker)
@@ -295,25 +308,41 @@ def run_artifactory_cleanup(choice: str, output_dir: str | Path) -> None:
         shutil.move(str(output_dir), new_output_dir)
 
 
-def pytest_runtest_setup(item: pytest.Item) -> None:
-    # extend JUnitXML report for user properties
-    if marker := item.get_closest_marker('type'):
-        item.user_properties.append(('type', marker.args[0]))
-    if marker := item.get_closest_marker('tags'):
-        item.user_properties.append(('tags', ' '.join(marker.args)))
-    if marker := item.get_closest_marker('platform'):
-        item.user_properties.append(('platform', marker.args[0]))
+class TwisterExtPlugin():
+
+    def pytest_runtest_setup(self, item: pytest.Item) -> None:
+        # extend JUnitXML report for user properties
+        if marker := item.get_closest_marker('type'):
+            item.user_properties.append(('type', marker.args[0]))
+        if marker := item.get_closest_marker('tags'):
+            item.user_properties.append(('tags', ' '.join(marker.args)))
+        if marker := item.get_closest_marker('platform'):
+            item.user_properties.append(('platform', marker.args[0]))
+
+    @pytest.hookimpl(hookwrapper=True, tryfirst=True)
+    def pytest_runtest_makereport(self, item, call):
+        """
+        Hook used to store information about failed test, which can be used in
+        fixture's teardown. Example of use in fixture:
+        test_failed = getattr(request.node, '_test_failed', False)
+        """
+        outcome = yield
+        report = outcome.get_result()
+        if report.failed:
+            setattr(item, '_test_failed', True)
+        return report
 
 
-@pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_runtest_makereport(item, call):
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+):
     """
-    Hook used to store information about failed test, which can be used in
-    fixture's teardown. Example of use in fixture:
-    test_failed = getattr(request.node, '_test_failed', False)
+    If Twister plugin is not enabled, then mark `build_specification` tests
+    as skipped.
     """
-    outcome = yield
-    report = outcome.get_result()
-    if report.failed:
-        setattr(item, '_test_failed', True)
-    return report
+    if hasattr(config, 'twister_config'):
+        return
+
+    for item in items:
+        if item.get_closest_marker('build_specification'):
+            item.add_marker(pytest.mark.skip('Twister is not enabled'))

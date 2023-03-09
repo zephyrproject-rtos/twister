@@ -122,12 +122,12 @@ def _run_cmake_script(script: str | Path, cmake_extra_args: list[str] | None = N
     return results
 
 
-def get_zephyr_repo_info() -> tuple[str, str]:
+def get_zephyr_repo_info(zephyr_base: str) -> tuple[str, str]:
     class RepoInfo(NamedTuple):
         zephyr_version: str
         commit_date: str
 
-    repo = Repo(os.getenv('ZEPHYR_BASE'))
+    repo = Repo(zephyr_base)
     zephyr_version = repo.head.commit.hexsha[:12]
     commit_date = repo.head.commit.authored_datetime.isoformat(timespec='seconds')
     return RepoInfo(zephyr_version, commit_date)

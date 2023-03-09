@@ -105,6 +105,9 @@ def pytest_configure(config: pytest.Config):
     if hasattr(config, 'workerinput'):  # xdist worker
         return
 
+    if not (config.getoption('twister') or config.getini('twister')):
+        return
+
     test_plan_writers: list[BaseReportWriter] = []
     testplan_json_path = None
     if config.getoption('testplan_json_path'):

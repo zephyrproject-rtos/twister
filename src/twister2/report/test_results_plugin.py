@@ -242,7 +242,7 @@ class TestResultsPlugin:
 
     def _get_environment(self) -> dict:
         duration = self.session_finish_time - self.session_start_time
-        repo_info = get_zephyr_repo_info()
+        repo_info = get_zephyr_repo_info(self.config.twister_config.zephyr_base)
         toolchain = get_toolchain_version(self.config.twister_config.output_dir, self.config.twister_config.zephyr_base)
 
         environment = dict(
@@ -275,6 +275,9 @@ def pytest_addoption(parser: pytest.Parser):
 
 def pytest_configure(config: pytest.Config):
     if hasattr(config, 'workerinput'):  # xdist worker
+        return
+
+    if not (config.getoption('twister') or config.getini('twister')):
         return
 
     test_results_writers = []
