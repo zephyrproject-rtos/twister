@@ -122,6 +122,7 @@ def scan(persistent: bool = False) -> list[HardwareMap]:
 def write_to_file(filename: str | Path, hardware_map_list: list[HardwareMap]) -> None:
     """Save hardware map to file."""
     new_hardware_map_list = hardware_map_list
+    new_hardware_map_list.sort(key=lambda x: x.serial or '')
     merged_hardware_map_list = []
 
     # update existing hardware map
@@ -152,6 +153,8 @@ def write_to_file(filename: str | Path, hardware_map_list: list[HardwareMap]) ->
         hardware_map_list_as_dict = [device.asdict() for device in merged_hardware_map_list]
         yaml.dump(hardware_map_list_as_dict, file, Dumper=yaml.Dumper, default_flow_style=False)
         logger.info('Saved as %s', filename)
+
+    print_hardware_map(merged_hardware_map_list)
 
 
 def filter_hardware_map(
@@ -196,7 +199,7 @@ def print_hardware_map(hardware_map_list: Iterable[HardwareMap]) -> None:
     headers = ['platform', 'id', 'serial']
     table = (
         (hardware.platform, hardware.id, hardware.serial)
-        for hardware in hardware_map_list
+        for hardware in hardware_map_list if hardware.connected
     )
 
     print()

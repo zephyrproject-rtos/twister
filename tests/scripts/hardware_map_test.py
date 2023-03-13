@@ -201,3 +201,14 @@ def test_if_hardware_map_can_update_existing_hardware_map(tmp_path):
     assert {hw['id'] for hw in data} == {'id1'}
     assert {hw['connected'] for hw in data} == {True}
     assert {hw['serial'] for hw in data} == {'/dev/ttyACM2', '/dev/ttyACM3'}
+
+
+def test_if_hardware_map_can_be_saved_to_empty_file(tmp_path, hm_list):
+    hm_file = tmp_path / 'hardware-map.yaml'
+    hm_file.write_text('')
+    hardware_map.write_to_file(hm_file, hm_list)
+
+    data = yaml.safe_load(hm_file.read_text())
+    assert len(data) == 2
+    assert {hw['id'] for hw in data} == {'id1', 'id2'}
+    assert {hw['connected'] for hw in data} == {True}

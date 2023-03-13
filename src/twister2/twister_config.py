@@ -72,7 +72,9 @@ class TwisterConfig:
         if hardware_map_file:
             hardware_map_list = HardwareMap.read_from_file(filename=hardware_map_file)
             if not config.option.platform:
-                config.option.platform = [p.platform for p in hardware_map_list if p.connected]
+                config.option.platform = [
+                    p.platform for p in hardware_map_list if p.connected and p.platform != 'unknown'
+                ]
 
         if config.option.all:
             # When --all used, any --platform arguments ignored

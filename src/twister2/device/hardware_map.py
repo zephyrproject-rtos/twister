@@ -18,7 +18,7 @@ class HardwareMap:
     notes: str = ''
     probe_id: str = ''
     serial: str = ''
-    baud: str = '115200'
+    baud: int = 115200
     pre_script: str = ''
     post_script: str = ''
     post_flash_script: str = ''
@@ -28,8 +28,16 @@ class HardwareMap:
     def read_from_file(cls, filename: str | Path) -> list[HardwareMap]:
         with open(filename, 'r', encoding='UTF-8') as file:
             data = yaml.safe_load(file)
+        if not data:
+            return []
         return [cls(**hardware) for hardware in data]
 
     def asdict(self):
         """Return hardware map dict valid for map file."""
-        return asdict(self)
+        not_excluded = ['connected', 'serial']
+        return asdict(
+            self,
+            dict_factory=lambda x: {
+                k: v for (k, v) in x if v or k in not_excluded
+            }
+        )
