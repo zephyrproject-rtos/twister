@@ -42,7 +42,6 @@ def main() -> int:
     if args.hardware_map_path:
         hardware_map_list = scan(persistent=args.persistent)
         write_to_file(hardware_map_list=hardware_map_list, filename=args.hardware_map_path)
-        print_hardware_map(hardware_map_list)
         return 0
     if args.list_hardware_map:
         hardware_map_list = scan(persistent=args.persistent)
