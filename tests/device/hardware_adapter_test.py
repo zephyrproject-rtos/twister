@@ -161,3 +161,34 @@ def test_device_log_correct_error_handle(patched_popen, device, tmp_path) -> Non
     assert os.path.isfile(device.device_log_file.filename)
     with open(device.device_log_file.filename, 'r') as file:
         assert 'flashing error' in file.readlines()
+
+
+@mock.patch('twister2.device.hardware_adapter.subprocess.Popen')
+@mock.patch('twister2.device.hardware_adapter.serial.Serial')
+def test_if_hardware_adapter_uses_serial_pty(patched_serial, patched_popen, device, monkeypatch):
+    device.hardware_map.serial_pty = 'script.py'
+
+    popen_mock = mock.Mock()
+    popen_mock.communicate.return_value = (b'output', b'error')
+    patched_popen.return_value = popen_mock
+
+    monkeypatch.setattr('twister2.device.hardware_adapter.pty.openpty', lambda: (123, 456))
+    monkeypatch.setattr('twister2.device.hardware_adapter.os.ttyname', lambda x: f'/pty/ttytest/{x}')
+
+    serial_mock = mock.Mock()
+    serial_mock.port = '/pty/ttytest/456'
+    patched_serial.return_value = serial_mock
+
+    device.connect()
+    assert device.connection.port == '/pty/ttytest/456'
+    assert device.serial_pty_proc
+    patched_popen.assert_called_with(
+        ['script.py'],
+        stdout=123,
+        stdin=123,
+        stderr=123
+    )
+
+    device.disconnect()
+    assert not device.connection
+    assert not device.serial_pty_proc

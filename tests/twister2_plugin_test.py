@@ -2,6 +2,8 @@
 import os
 import textwrap
 
+import pytest
+
 
 def test_twister_help(pytester):
     result = pytester.runpytest('--help')
@@ -169,3 +171,53 @@ def test_if_pytest_skip_twister_regular_tests_if_not_enabled(pytester, resources
         '.*test_bar PASSED',
         '.*test_foo SKIPPED.*Twister is not enabled'
     ])
+
+
+@pytest.mark.parametrize(
+    ('extend_command, expected'),
+    [
+        (
+            '--quarantine-verify',
+            ['Exit: No quarantine list given to be verified*']
+        ),
+        (
+            '--build-only --clear=no',
+            ['Exit: To apply `--build-only` option*']
+        ),
+        (
+            '--device-testing',
+            ['Exit: Option `--device-testing` must be used with*'],
+        ),
+        (
+            '--device-testing --device-serial=/dev/ACM0 --platform=A --platform=B',
+            ['*only one platform is allowed*'],
+        ),
+        (
+            '--device-testing --device-serial=/dev/ACM0',
+            ['*platform must be provided*'],
+        ),
+        (
+            '--device-serial=/dev/ACM0 --device-serial-pty=script.py',
+            ['Exit: Not allowed to combine arguments:*']
+        )
+    ],
+    ids=[
+        'only_quarantine_verify',
+        'build_only_with_clear',
+        'only_device_testing',
+        'device_serial_with_more_platforms',
+        'device_serial_without_platform',
+        'combined_with_device_serial'
+    ]
+)
+def test_if_invalid_parameters_raises_error(pytester, resources, extend_command, expected):
+    pytester.copy_example(str(resources))
+
+    runpytest_args = [
+        '--zephyr-base=.'
+    ]
+    if extend_command:
+        runpytest_args.extend(extend_command.split(' '))
+    result = pytester.runpytest(*runpytest_args)
+
+    result.stderr.fnmatch_lines_random(expected)

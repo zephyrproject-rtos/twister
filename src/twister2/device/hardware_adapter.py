@@ -4,6 +4,9 @@ This module implements adapter class for real device (DK board).
 from __future__ import annotations
 
 import logging
+import os
+import pty
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -41,6 +44,7 @@ class HardwareAdapter(DeviceAbstract):
             'cwd': self.twister_config.zephyr_base,
             'env': self.env,
         }
+        self.serial_pty_proc: subprocess.Popen | None = None
 
     def connect(self, timeout: float = 1) -> None:
         """
@@ -52,10 +56,11 @@ class HardwareAdapter(DeviceAbstract):
             # already opened
             return
 
-        logger.info('Opening serial connection for %s', self.hardware_map.serial)
+        serial_name = self._open_serial_pty() or self.hardware_map.serial
+        logger.info('Opening serial connection for %s', serial_name)
         try:
             self.connection = serial.Serial(
-                self.hardware_map.serial,
+                serial_name,
                 baudrate=self.hardware_map.baud,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -64,6 +69,7 @@ class HardwareAdapter(DeviceAbstract):
             )
         except serial.SerialException as e:
             logger.exception('Cannot open connection: %s', e)
+            self._close_serial_pty()
             raise
 
         self.connection.flush()
@@ -71,9 +77,37 @@ class HardwareAdapter(DeviceAbstract):
     def disconnect(self) -> None:
         """Close serial connection."""
         if self.connection:
+            serial_name = self.connection.port
             self.connection.close()
             self.connection = None
-            logger.info('Closed serial connection for %s', self.hardware_map.serial)
+            logger.info('Closed serial connection for %s', serial_name)
+        self._close_serial_pty()
+
+    def _open_serial_pty(self) -> str | None:
+        """Open a pty pair, run process and return tty name"""
+        if not self.hardware_map.serial_pty:
+            return None
+        master, slave = pty.openpty()
+        try:
+            self.serial_pty_proc = subprocess.Popen(
+                re.split(',| ', self.hardware_map.serial_pty),
+                stdout=master,
+                stdin=master,
+                stderr=master
+            )
+        except subprocess.CalledProcessError as e:
+            logger.exception('Failed to run subprocess %s, error %s',
+                             self.hardware_map.serial_pty, str(e))
+            raise
+        return os.ttyname(slave)
+
+    def _close_serial_pty(self) -> None:
+        """Terminate the process opened for serial pty script"""
+        if self.serial_pty_proc:
+            self.serial_pty_proc.terminate()
+            self.serial_pty_proc.communicate()
+            logger.info('Process %s terminated', self.hardware_map.serial_pty)
+            self.serial_pty_proc = None
 
     def generate_command(self, build_dir: Path | str) -> None:
         """
@@ -127,7 +161,8 @@ class HardwareAdapter(DeviceAbstract):
             msg = 'Flash command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterFlashException(msg)
-        logger.info('Flashing device %s', self.hardware_map.id)
+        if self.hardware_map.id:
+            logger.info('Flashing device %s', self.hardware_map.id)
         log_command(logger, 'Flashing command', self.command, level=logging.INFO)
         try:
             process = subprocess.Popen(
