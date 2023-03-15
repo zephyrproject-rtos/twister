@@ -101,7 +101,23 @@ def pytest_addoption(parser: pytest.Parser):
     twister_group.addoption(
         '--hardware-map',
         metavar='PATH',
-        help='load hardware map from a file',
+        help='load hardware map from a file'
+    )
+    twister_group.addoption(
+        '--device-serial',
+        help='Serial device for accessing the board '
+             '(e.g., /dev/ttyACM0)'
+    )
+    twister_group.addoption(
+        '--device-serial-baud',
+        default=115200,
+        help='Serial device baud rate (default 115200)'
+    )
+    twister_group.addoption(
+        '--device-serial-pty',
+        metavar='PATH',
+        help='Script for controlling pseudoterminal. '
+             'E.g --device-testing --device-serial-pty=<script>'
     )
     twister_group.addoption(
         '-G', '--integration',
@@ -236,7 +252,7 @@ def pytest_configure(config: pytest.Config):
     if not config.option.collectonly and not xdist_worker:
         choice = config.option.clear
         if config.option.build_only and choice == 'no':
-            msg = 'To apply "--build-only" option, "--clear" option cannot be set as "no".'
+            msg = 'To apply `--build-only` option, `--clear` option cannot be set as `no`.'
             logger.error(msg)
             pytest.exit(msg)
         run_artifactory_cleanup(choice, output_dir)
@@ -281,9 +297,35 @@ def register_custom_markers(config: pytest.Config) -> None:
 
 def validate_options(config: pytest.Config) -> None:
     """Verify if user provided proper options"""
-    if config.option.device_testing and not config.option.hardware_map:
+    if config.option.device_testing and not (
+            config.option.hardware_map
+            or config.option.device_serial
+            or config.option.device_serial_pty
+    ):
         pytest.exit(
-            'Option `--device-testing` must be used with `--hardware-map`,.'
+            'Option `--device-testing` must be used with `--hardware-map` '
+            'or `--device-serial` or `--device-serial-pty`.'
+        )
+    if config.option.device_testing and \
+            (config.option.device_serial or config.option.device_serial_pty):
+        if not config.option.platform:
+            pytest.exit(
+                'When `--device-testing` is used with `--device-serial` or '
+                '`--device-serial-pty`, a platform must be provided.'
+            )
+        elif len(config.option.platform) > 1:
+            pytest.exit(
+                'When `--device-testing` is used with `--device-serial` or '
+                '`--device-serial-pty`, only one platform is allowed.'
+            )
+    if ([
+        bool(config.option.hardware_map),
+        bool(config.option.device_serial),
+        bool(config.option.device_serial_pty)
+    ].count(True) > 1):
+        pytest.exit(
+            'Not allowed to combine arguments: `--hardware-map`, `--device-serial` '
+            'and `--device-serial-pty`.'
         )
     if config.option.quarantine_verify and not config.option.quarantine_list_path:
         pytest.exit(

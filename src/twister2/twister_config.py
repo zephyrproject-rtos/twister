@@ -57,7 +57,6 @@ class TwisterConfig:
         board_root: list[str] = config.option.board_root or config.getini('board_root')
         platforms: list[PlatformSpecification] = config._platforms  # type: ignore
         output_dir: str = config.option.output_dir
-        hardware_map_file: str = config.option.hardware_map
         device_testing: bool = config.option.device_testing
         fixtures: list[str] = config.option.fixtures
         extra_args_cli: list[str] = config.getoption('--extra-args')
@@ -68,13 +67,11 @@ class TwisterConfig:
         quarantine_verify: bool = config.option.quarantine_verify
         enable_slow: bool = config.option.enable_slow
 
-        hardware_map_list: list[HardwareMap] = []
-        if hardware_map_file:
-            hardware_map_list = HardwareMap.read_from_file(filename=hardware_map_file)
-            if not config.option.platform:
-                config.option.platform = [
-                    p.platform for p in hardware_map_list if p.connected and p.platform != 'unknown'
-                ]
+        hardware_map_list: list[HardwareMap] = _get_hardware_map_list(config)
+        if not config.option.platform and hardware_map_list:
+            config.option.platform = [
+                p.platform for p in hardware_map_list if p.connected and p.platform != 'unknown'
+            ]
 
         if config.option.all:
             # When --all used, any --platform arguments ignored
@@ -151,6 +148,31 @@ class TwisterConfig:
                 msg = f'Unrecognized platform - {platform}.'
                 logger.error(msg)
                 raise TwisterConfigurationException(msg)
+
+
+def _get_hardware_map_list(config: pytest.Config) -> list[HardwareMap]:
+    """Process input parameters and return list of hardware maps"""
+    hardware_map_list: list[HardwareMap] = []
+    if config.option.hardware_map:
+        hardware_map_list = HardwareMap.read_from_file(filename=config.option.hardware_map)
+    elif config.option.device_serial:
+        hardware_map_list = [
+            HardwareMap(
+                connected=True,
+                platform=config.option.platform[0],
+                serial=config.option.device_serial,
+                baud=config.option.device_serial_baud
+            )
+        ]
+    elif config.option.device_serial_pty:
+        hardware_map_list = [
+            HardwareMap(
+                connected=True,
+                platform=config.option.platform[0],
+                serial_pty=config.option.device_serial_pty
+            )
+        ]
+    return hardware_map_list
 
 
 def _get_selected_platforms(config: pytest.Config) -> list[str]:
