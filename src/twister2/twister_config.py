@@ -41,6 +41,8 @@ class TwisterConfig:
     user_platform_filter: list[str] = field(default_factory=list, repr=False)
     used_toolchain_version: str = ''
     enable_slow: bool = False
+    west_flash: list[str] = field(default_factory=list, repr=False)
+    west_runner: str = ''
 
     def __post_init__(self):
         self.verify_platforms_existence(self.selected_platforms)
@@ -66,6 +68,10 @@ class TwisterConfig:
         architectures: list[str] = config.option.arch
         quarantine_verify: bool = config.option.quarantine_verify
         enable_slow: bool = config.option.enable_slow
+        west_flash: list[str] = []
+        if config.option.west_flash:
+            west_flash = [w.strip() for w in config.option.west_flash.split(',')]
+        west_runner: str = config.option.west_runner or ''
 
         hardware_map_list: list[HardwareMap] = _get_hardware_map_list(config)
         if not config.option.platform and hardware_map_list:
@@ -108,6 +114,8 @@ class TwisterConfig:
             user_platform_filter=user_platform_filter,
             used_toolchain_version=used_toolchain_version,
             enable_slow=enable_slow,
+            west_flash=west_flash,
+            west_runner=west_runner
         )
 
     def asdict(self) -> dict:

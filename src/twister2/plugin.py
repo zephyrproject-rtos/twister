@@ -120,6 +120,18 @@ def pytest_addoption(parser: pytest.Parser):
              'E.g --device-testing --device-serial-pty=<script>'
     )
     twister_group.addoption(
+        '--west-flash',
+        action='store',
+        help='Extend parameters for west flash. '
+             'E.g. -device-testing -west-flash="--board-id=foobar,--erase" '
+             'will translate to "west flash -- --board-id=foobar --erase"'
+    )
+    twister_group.addoption(
+        '--west-runner',
+        action='store',
+        help='use the specified west runner. E.g. --west-runner=pyocd'
+    )
+    twister_group.addoption(
         '-G', '--integration',
         action='store_true',
         help='Run integration tests',
@@ -331,6 +343,11 @@ def validate_options(config: pytest.Config) -> None:
         pytest.exit(
             'No quarantine list given to be verified. '
             'Option `--quarantine-verify` must be used with `--quarantine-list`.'
+        )
+    if (config.option.west_flash or config.option.west_runner) \
+            and not config.option.device_testing:
+        pytest.exit(
+            'Options `--west-flash` or `--west-runner` must be used with `--device-testing`.'
         )
 
 
