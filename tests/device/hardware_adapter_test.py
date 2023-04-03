@@ -192,3 +192,30 @@ def test_if_hardware_adapter_uses_serial_pty(patched_serial, patched_popen, devi
     device.disconnect()
     assert not device.connection
     assert not device.serial_pty_proc
+
+
+@mock.patch('twister2.device.hardware_adapter.shutil.which')
+def test_if_get_command_returns_proper_string_with_west_runner(patched_which, device) -> None:
+    patched_which.return_value = 'west'
+    device.twister_config.west_runner = 'pyocd'
+    device.hardware_map.runner = ''
+    device.hardware_map.id = ''
+    device.generate_command('src')
+    assert isinstance(device.command, list)
+    assert device.command == [
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'pyocd'
+    ]
+
+
+@mock.patch('twister2.device.hardware_adapter.shutil.which')
+def test_if_get_command_returns_proper_string_with_west_flash(patched_which, device) -> None:
+    patched_which.return_value = 'west'
+    device.twister_config.west_flash = ['--board-id=foobar', '--erase']
+    device.hardware_map.runner = 'pyocd'
+    device.hardware_map.id = ''
+    device.generate_command('src')
+    assert isinstance(device.command, list)
+    assert device.command == [
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'src', '--runner', 'pyocd',
+        '--', '--board-id=foobar', '--erase'
+    ]

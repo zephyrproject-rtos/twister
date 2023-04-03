@@ -127,33 +127,39 @@ class HardwareAdapter(DeviceAbstract):
             '--build-dir', str(build_dir),
         ]
 
-        board_id: str = self.hardware_map.probe_id or self.hardware_map.id
-        if self.hardware_map.runner and board_id:
-            command.extend(['--runner', self.hardware_map.runner])
-            command_extra_args = []
-            if self.hardware_map.runner == 'pyocd':
-                command_extra_args.append('--board-id')
-                command_extra_args.append(board_id)
-            elif self.hardware_map.runner == 'nrfjprog':
-                command_extra_args.append('--dev-id')
-                command_extra_args.append(board_id)
-            elif self.hardware_map.runner == 'openocd' and self.hardware_map.product == 'STM32 STLink':
-                command_extra_args.append('--cmd-pre-init')
-                command_extra_args.append(f'hla_serial {board_id}')
-            elif self.hardware_map.runner == 'openocd' and self.hardware_map.product == 'STLINK-V3':
-                command_extra_args.append('--cmd-pre-init')
-                command_extra_args.append(f'hla_serial {board_id}')
-            elif self.hardware_map.runner == 'openocd' and self.hardware_map.product == 'EDBG CMSIS-DAP':
-                command_extra_args.append('--cmd-pre-init')
-                command_extra_args.append(f'cmsis_dap_serial {board_id}')
-            elif self.hardware_map.runner == 'jlink':
-                command.append(f'--tool-opt=-SelectEmuBySN {board_id}')
-            elif self.hardware_map.runner == 'stm32cubeprogrammer':
-                command.append(f'--tool-opt=sn={board_id}')
+        command_extra_args = []
+        if self.twister_config.west_flash:
+            command_extra_args.extend(self.twister_config.west_flash)
 
-            if command_extra_args:
-                command.append('--')
-                command.extend(command_extra_args)
+        runner = self.hardware_map.runner or self.twister_config.west_runner
+        if runner:
+            command.extend(['--runner', runner])
+
+            board_id: str = self.hardware_map.probe_id or self.hardware_map.id
+            if board_id:
+                if runner == 'pyocd':
+                    command_extra_args.append('--board-id')
+                    command_extra_args.append(board_id)
+                elif runner == 'nrfjprog':
+                    command_extra_args.append('--dev-id')
+                    command_extra_args.append(board_id)
+                elif runner == 'openocd' and self.hardware_map.product == 'STM32 STLink':
+                    command_extra_args.append('--cmd-pre-init')
+                    command_extra_args.append(f'hla_serial {board_id}')
+                elif runner == 'openocd' and self.hardware_map.product == 'STLINK-V3':
+                    command_extra_args.append('--cmd-pre-init')
+                    command_extra_args.append(f'hla_serial {board_id}')
+                elif runner == 'openocd' and self.hardware_map.product == 'EDBG CMSIS-DAP':
+                    command_extra_args.append('--cmd-pre-init')
+                    command_extra_args.append(f'cmsis_dap_serial {board_id}')
+                elif runner == 'jlink':
+                    command.append(f'--tool-opt=-SelectEmuBySN {board_id}')
+                elif runner == 'stm32cubeprogrammer':
+                    command.append(f'--tool-opt=sn={board_id}')
+
+        if command_extra_args:
+            command.append('--')
+            command.extend(command_extra_args)
         self.command = command
 
     def flash_and_run(self, timeout: float = 60.0) -> None:

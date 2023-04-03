@@ -30,6 +30,8 @@ def test_twister_help(pytester):
         '*--all*',
         '*-M {pass,all}, --runtime-artifact-cleanup={pass,all}*',
         '*--prep-artifacts-for-testing*',
+        '*--west-flash*',
+        '*--west-runner*',
     ])
 
 
@@ -199,6 +201,14 @@ def test_if_pytest_skip_twister_regular_tests_if_not_enabled(pytester, resources
         (
             '--device-serial=/dev/ACM0 --device-serial-pty=script.py',
             ['Exit: Not allowed to combine arguments:*']
+        ),
+        (
+            '--west-flash=--erase',
+            ['*must be used with `--device-testing`*']
+        ),
+        (
+            '--west-runner=jlink',
+            ['*must be used with `--device-testing`*']
         )
     ],
     ids=[
@@ -207,7 +217,9 @@ def test_if_pytest_skip_twister_regular_tests_if_not_enabled(pytester, resources
         'only_device_testing',
         'device_serial_with_more_platforms',
         'device_serial_without_platform',
-        'combined_with_device_serial'
+        'combined_with_device_serial',
+        'west_flash',
+        'west_runner'
     ]
 )
 def test_if_invalid_parameters_raises_error(pytester, resources, extend_command, expected):
