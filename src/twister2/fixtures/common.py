@@ -60,7 +60,7 @@ class SetupTestManager:
             return State(
                 False,
                 'Skipping test after building because platform type is "mcu", '
-                'but device-testing was selected',
+                'but device-testing was not selected',
                 'Built but not executed because device-testing was not selected for platform type mcu'
             )
         if runnable is False:

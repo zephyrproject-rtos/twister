@@ -19,7 +19,6 @@ from twister2.platform_specification import (
 )
 from twister2.quarantine import QuarantineElement, get_matched_quarantine
 from twister2.twister_config import TwisterConfig
-from twister2.yaml_test_function import add_markers_from_specification
 from twister2.yaml_test_specification import (
     SUPPORTED_HARNESSES,
     YamlTestSpecification,
@@ -35,12 +34,26 @@ logger = logging.getLogger(__name__)
 class SpecificationProcessor(abc.ABC):
     """Prepars specification for test"""
 
-    def __init__(self, twister_config: TwisterConfig) -> None:
+    def __init__(self, twister_config: TwisterConfig, spec_filepath: Path) -> None:
         self.twister_config = twister_config
+        assert spec_filepath.exists(), f'Spec file does not exist: {spec_filepath}'
+        self.spec_file_path = spec_filepath
+        self.tests: dict = extract_tests(safe_load_yaml(spec_filepath))
+        self.test_directory_path: Path = spec_filepath.parent
+
+    def process(  # type: ignore[return]
+        self, platform: PlatformSpecification, scenario: str
+    ) -> YamlTestSpecification | None:
+        """Create yaml specification for platform and scenario."""
+        test_spec_dict = self.prepare_spec_dict(platform, scenario)
+        test_spec = self.create_spec_from_dict(test_spec_dict, platform)
+        if not should_be_skip(test_spec, platform, self.twister_config):
+            logger.debug('Generated test %s for platform %s', scenario, platform.identifier)
+            return test_spec
 
     @abc.abstractmethod
-    def process(self, platform: PlatformSpecification, scenario: str) -> YamlTestSpecification | None:
-        """Create yaml specification for platform and scenario."""
+    def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
+        """Prepare spec dict to create yaml specification."""
 
     def create_spec_from_dict(self, test_spec_dict: dict, platform: PlatformSpecification) -> YamlTestSpecification:
         test_spec = YamlTestSpecification(**test_spec_dict)
@@ -58,48 +71,6 @@ class SpecificationProcessor(abc.ABC):
         hash_object.update(random_str)
         run_id = hash_object.hexdigest()
         return run_id
-
-
-class YamlSpecificationProcessor(SpecificationProcessor):
-    """Specification processor class for twister tests."""
-
-    def __init__(self, twister_config: TwisterConfig, filepath: Path) -> None:
-        super().__init__(twister_config)
-        self.spec_file_path = filepath
-        self.zephyr_base: str = self.twister_config.zephyr_base
-        self.test_directory_path: Path = self.spec_file_path.parent
-        self.raw_spec: dict = safe_load_yaml(self.spec_file_path)
-        self.tests: dict = extract_tests(self.raw_spec)
-        self.scenarios: list[str] = list(self.tests.keys())
-
-    def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
-        try:
-            test_spec_dict = self.tests[scenario]
-        except KeyError:
-            msg = f'There is no specification for {scenario} in file {self.spec_file_path}'
-            logger.error(msg)
-            raise TwisterConfigurationException(msg)
-
-        test_spec_dict['name'] = f'{scenario}[{platform.identifier}]'
-        test_spec_dict['original_name'] = scenario
-        test_spec_dict['platform'] = platform.identifier
-        test_spec_dict['source_dir'] = self.test_directory_path
-        try:
-            test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.zephyr_base)
-        except ValueError:
-            # Test not in zephyr tree
-            test_spec_dict['rel_to_base_path'] = Path('out_of_tree')
-
-        return test_spec_dict
-
-    def process(  # type: ignore[return]
-        self, platform: PlatformSpecification, scenario: str
-    ) -> YamlTestSpecification | None:
-        test_spec_dict = self.prepare_spec_dict(platform, scenario)
-        test_spec = self.create_spec_from_dict(test_spec_dict, platform)
-        if not should_be_skip(test_spec, platform, self.twister_config):
-            logger.debug('Generated test %s for platform %s', scenario, platform.identifier)
-            return test_spec
 
     def get_test_configurations(self) -> Generator[tuple[PlatformSpecification, str], None, None]:
         """
@@ -161,28 +132,45 @@ class YamlSpecificationProcessor(SpecificationProcessor):
                 yield (platform, scenario)
 
 
+class YamlSpecificationProcessor(SpecificationProcessor):
+    """Specification processor class for twister tests."""
+
+    def __init__(self, twister_config: TwisterConfig, filepath: Path) -> None:
+        super().__init__(twister_config, filepath)
+        self.zephyr_base: str = self.twister_config.zephyr_base
+
+    def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
+        try:
+            test_spec_dict = self.tests[scenario]
+        except KeyError:
+            msg = f'There is no specification for {scenario} in file {self.spec_file_path}'
+            logger.error(msg)
+            raise TwisterConfigurationException(msg)
+
+        test_spec_dict['name'] = f'{scenario}[{platform.identifier}]'
+        test_spec_dict['original_name'] = scenario
+        test_spec_dict['platform'] = platform.identifier
+        test_spec_dict['source_dir'] = self.test_directory_path
+        try:
+            test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.zephyr_base)
+        except ValueError:
+            # Test not in zephyr tree
+            test_spec_dict['rel_to_base_path'] = Path('out_of_tree')
+
+        return test_spec_dict
+
+
 class RegularSpecificationProcessor(SpecificationProcessor):
     """Specification processor class for regular pytest tests."""
 
     def __init__(self, twister_config: TwisterConfig, item: pytest.Item) -> None:
-        super().__init__(twister_config)
+        super().__init__(
+            twister_config,
+            item.path.parent.joinpath(TEST_SPEC_FILE_NAME)
+        )
         self.item = item
         self.config = self.item.config
         self.rootpath = self.config.rootpath
-        self.test_directory_path: Path = self.item.path.parent
-        self.spec_file_path: Path = self.test_directory_path.joinpath(TEST_SPEC_FILE_NAME)
-        assert self.spec_file_path.exists(), f'Spec file does not exist: {self.spec_file_path}'
-        self.raw_spec = safe_load_yaml(self.spec_file_path)
-        self.tests = extract_tests(self.raw_spec)
-
-    def process(self, platform: PlatformSpecification, scenario: str) -> YamlTestSpecification | None:
-        test_spec_dict = self.prepare_spec_dict(platform, scenario)
-        test_spec = self.create_spec_from_dict(test_spec_dict, platform)
-        add_markers_from_specification(self.item, test_spec)
-        if should_be_skip(test_spec, platform, self.twister_config):
-            self.item.add_marker(pytest.mark.skip('Does not match requirements'))
-
-        return test_spec
 
     def prepare_spec_dict(self, platform: PlatformSpecification, scenario: str) -> dict:
         try:

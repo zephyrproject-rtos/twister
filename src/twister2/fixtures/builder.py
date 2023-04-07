@@ -79,15 +79,15 @@ def fixture_build_manager(
 
 @pytest.fixture(name='builder', scope='function')
 def fixture_builder(
-        request: pytest.FixtureRequest, build_manager: BuildManager
+        request: pytest.FixtureRequest,
+        build_manager: BuildManager,
+        setup_manager: SetupTestManager
 ) -> Generator[BuilderAbstract, None, None]:
     """Build hex files for test suite."""
-    setup = SetupTestManager(request)
-
     try:
         build_manager.build()
     except TwisterMemoryOverflowException as overflow_exception:
-        if setup.twister_config.overflow_as_errors:
+        if setup_manager.twister_config.overflow_as_errors:
             raise
         else:
             pytest.skip(str(overflow_exception))
@@ -98,9 +98,20 @@ def fixture_builder(
 
     if not isinstance(request.function, YamlTestCase):
         # skip regular tests
-        should_run = setup.is_executable
-        if setup.is_executable is False:
+        should_run = setup_manager.is_executable
+        if setup_manager.is_executable is False:
             logger.warning(f'{should_run.message}: {request.node.nodeid}')
             pytest.skip(should_run.reason)
 
     yield build_manager.builder
+
+
+@pytest.fixture(name='skip_if_not_executable', scope='function')
+def fixture_skip_if_not_executable(
+    builder: BuilderAbstract,
+    setup_manager: SetupTestManager
+) -> None:
+    """Skip tests after building if not executable"""
+    if not setup_manager.is_executable:
+        logger.info(f'{setup_manager.is_executable.message}')
+        pytest.skip(setup_manager.is_executable.reason)

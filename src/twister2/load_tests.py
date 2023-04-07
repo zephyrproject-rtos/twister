@@ -35,6 +35,9 @@ class LoadedTestData:
         with open(filename) as file:
             test_data = json.load(file)
         for ts in test_data['testsuites']:
+            if 'nodeid' in ts and '.py::' in ts['nodeid']:
+                logger.debug('Not supported for regular python tests: %s' % ts['nodeid'])
+                continue
             testdir, testname = ts['name'].rsplit('/', 1)
             testfile = Path(testdir) / 'testcase.yaml'
             if not testfile.exists():

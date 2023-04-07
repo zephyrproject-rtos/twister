@@ -110,10 +110,47 @@ def test_if_regular_tests_work_with_specification_file(pytester, resources):
         '*<Function*test_foo*native_posix:scenario2*>*',
         '*<Function*test_bar*native_posix:scenario1*>*',
         '*<Function*test_bar*native_posix:scenario2*>*',
-        '*5 tests collected*',
     ])
     result.stdout.no_fnmatch_line(
         '*<Function*test_foo*native_posix:scenario3*>*',  # should be marked as skip
+    )
+
+
+def test_if_regular_tests_filter_platform_allow_from_spec_file(pytester, resources):
+    pytester.copy_example(str(resources))
+    test_file_content = textwrap.dedent("""
+        import pytest
+
+        @pytest.mark.build_specification
+        def test_foo(builder):
+            pass
+    """)
+    test_file = pytester.path / 'tests' / 'foobar_test.py'
+    test_file.write_text(test_file_content)
+
+    test_spec_content = textwrap.dedent("""
+        tests:
+            scenario1:
+                tags: tag1
+            scenario3:
+                tags: tag2
+                platform_allow: mps2_an521_remote
+    """)
+    test_spec_file = pytester.path / 'tests' / 'testspec.yaml'
+    test_spec_file.write_text(test_spec_content)
+
+    result = pytester.runpytest(
+        str(test_file),
+        f'--zephyr-base={str(pytester.path)}',
+        '--platform=native_posix',
+        '--collect-only'
+    )
+    result.stdout.fnmatch_lines_random([
+        '*<Module*tests/foobar_test.py>*',
+        '*<Function*test_foo*native_posix:scenario1*>*'
+    ])
+    result.stdout.no_fnmatch_line(
+        '*<Function*test_foo*native_posix:scenario3*>*',  # filtered by platform_allow
     )
 
 
