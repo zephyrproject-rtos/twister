@@ -38,6 +38,23 @@ class YamlPytestPlugin():
                 return True
         return False
 
+    def pytest_collection_modifyitems(
+        self,
+        session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+    ):
+        if not hasattr(session, 'specifications'):
+            session.specifications = {}  # type: ignore[attr-defined]
+
+        for item in items:
+            if item.nodeid in session.specifications:  # type: ignore[attr-defined]
+                continue
+            # add YAML test specification to session for consistency with python tests
+            if hasattr(item.function, 'spec'):  # type: ignore[attr-defined]
+                session.specifications[item.nodeid] = item.function.spec  # type: ignore[attr-defined]
+                config.twister_config.selected_platforms.add(  # type: ignore[attr-defined]
+                    item.function.spec.platform  # type: ignore[attr-defined]
+                )
+
 
 class YamlModule(pytest.File):
     """Class for collecting tests from a yaml file."""

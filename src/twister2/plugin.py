@@ -248,7 +248,7 @@ def pytest_addoption(parser: pytest.Parser):
         metavar='PATH',
         action='store',
         default=None,
-        help='load testplan from file'
+        help='load testplan from file. Note: regular python tests not supported'
     )
     twister_group.addoption(
         '--only-failed',
@@ -256,12 +256,6 @@ def pytest_addoption(parser: pytest.Parser):
         action='store_true',
         help='Run only those tests that failed the previous twister run invocation.'
     )
-    # twister_group.addoption(
-    #     '--test-only',
-    #     dest='test_only',
-    #     action='store_true',
-    #     help='Only run device tests with current artifacts, do not build the code'
-    # )
     twister_group.addoption(
         '--only-from-yaml',
         dest='only_from_yaml',

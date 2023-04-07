@@ -2,8 +2,6 @@
 import textwrap
 from pathlib import Path
 
-import pytest
-
 
 def test_if_pytest_use_quarantine_file(pytester, resources) -> None:
     """
@@ -97,43 +95,54 @@ def test_if_pytest_handle_quarantine_verify(pytester, resources) -> None:
     result.stdout.no_re_match_line(r'.*sample.basic.helloworld\[qemu_cortex_m3\]>')
 
 
-@pytest.mark.skip('Quarnatine not supported for pytest scenarios without test specification')
-def test_quarantine_for_python_tests(pytester):
+def test_quarantine_for_python_tests(pytester, resources):
+    pytester.copy_example(str(resources))
     quarantine_file = pytester.path / 'quarantine.yml'
     quarantine_file.write_text(textwrap.dedent("""\
       - scenarios:
           - test_quarantine_1
           - test_quarantine_2
     """))
+    testspec_file = pytester.path / 'testspec.yaml'
+    testspec_file.write_text(textwrap.dedent("""\
+        tests:
+            sample.test:
+                tags: pytest
+    """))
     pytester.makepyfile(
-        textwrap.dedent(
+        test_example=textwrap.dedent(
             """\
             import pytest
+            @pytest.mark.build_specification
             def test_quarantine_1():
                 assert True
 
+            @pytest.mark.build_specification
             def test_quarantine_2():
                 assert True
 
+            @pytest.mark.build_specification
             def test_no_quarantine():
                 assert True
             """)
     )
     # quarantine tests should be skipped
     result = pytester.runpytest(
-        '-v',
         '--zephyr-base=.',
-        f'--quarantine-list={quarantine_file}'
+        '--platform=altera_max10',
+        f'--quarantine-list={quarantine_file}',
+        '-k=test_example'
     )
     assert result.ret == 0
     result.assert_outcomes(passed=1)
 
     # only tests under quarantine should be run
     result = pytester.runpytest(
-        '-v',
         '--zephyr-base=.',
+        '--platform=altera_max10',
         f'--quarantine-list={quarantine_file}',
-        '--quarantine-verify'
+        '--quarantine-verify',
+        '-k=test_example'
     )
     assert result.ret == 0
     result.assert_outcomes(passed=2)
