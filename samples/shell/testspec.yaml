@@ -1,0 +1,5 @@
+sample:
+  name: Shell Sample
+tests:
+  sample.shell.shell_module:
+    source_dir: samples/subsys/shell/shell_module
