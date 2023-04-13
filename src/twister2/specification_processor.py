@@ -37,6 +37,7 @@ class SpecificationProcessor(abc.ABC):
 
     def __init__(self, twister_config: TwisterConfig) -> None:
         self.twister_config = twister_config
+        self.zephyr_base: str = self.twister_config.zephyr_base
 
     @abc.abstractmethod
     def process(self, platform: PlatformSpecification, scenario: str) -> YamlTestSpecification | None:
@@ -66,7 +67,6 @@ class YamlSpecificationProcessor(SpecificationProcessor):
     def __init__(self, twister_config: TwisterConfig, filepath: Path) -> None:
         super().__init__(twister_config)
         self.spec_file_path = filepath
-        self.zephyr_base: str = self.twister_config.zephyr_base
         self.test_directory_path: Path = self.spec_file_path.parent
         self.raw_spec: dict = safe_load_yaml(self.spec_file_path)
         self.tests: dict = extract_tests(self.raw_spec)
@@ -197,7 +197,12 @@ class RegularSpecificationProcessor(SpecificationProcessor):
         test_spec_dict['source_dir'] = self._resolve_source_dir(test_spec_dict)
         test_spec_dict['platform'] = platform.identifier
         test_spec_dict['build_name'] = scenario
-        test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.rootpath)
+        try:
+            test_spec_dict['rel_to_base_path'] = Path.relative_to(test_spec_dict['source_dir'], self.zephyr_base)
+        except ValueError:
+            # Test not in zephyr tree
+            test_spec_dict['rel_to_base_path'] = Path('out_of_tree')
+
         return test_spec_dict
 
     def _resolve_source_dir(self, test_spec_dict):
