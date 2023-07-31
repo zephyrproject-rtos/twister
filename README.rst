@@ -1,3 +1,7 @@
+# DEPRECATED
+
+https://github.com/zephyrproject-rtos/zephyr/issues/42458#issuecomment-1655795101
+
 ==========
 Twister v2
 ==========
